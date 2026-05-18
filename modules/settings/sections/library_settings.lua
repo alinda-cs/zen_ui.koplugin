@@ -36,115 +36,159 @@ function M.build(ctx)
                     save_and_apply("browser_hide_up_folder")
                 end,
             },
+            -- Cover mode subsection
             {
-                text = _("Show folder covers as gallery"),
-                checked_func = function()
-                    local ok, bim = pcall(require, "bookinfomanager")
-                    if not ok then return false end
-                    return bim:getSetting("folder_gallery_mode") ~= nil
-                end,
-                callback = function()
-                    local ok, bim = pcall(require, "bookinfomanager")
-                    if not ok then return end
-                    bim:toggleSetting("folder_gallery_mode")
-                    UIManager:setDirty(nil, "full")
-                end,
-            },
-            {
-                text = _("Show folder name on cover"),
-                checked_func = function()
-                    local ok, bim = pcall(require, "bookinfomanager")
-                    if not ok then return true end
-                    return not bim:getSetting("folder_name_show")
-                end,
-                callback = function()
-                    local ok, bim = pcall(require, "bookinfomanager")
-                    if not ok then return end
-                    bim:toggleSetting("folder_name_show")
-                    UIManager:setDirty(nil, "full")
-                end,
-            },
-            {
-                text = _("Show item count on folder covers"),
-                checked_func = function()
-                    local ok, bim = pcall(require, "bookinfomanager")
-                    if not ok then return true end
-                    return not bim:getSetting("folder_item_count_show")
-                end,
-                callback = function()
-                    local ok, bim = pcall(require, "bookinfomanager")
-                    if not ok then return end
-                    bim:toggleSetting("folder_item_count_show")
-                    UIManager:setDirty(nil, "full")
-                end,
-            },
-            {
-                text = _("Folder name opaque background"),
-                checked_func = function()
-                    local ok, bim = pcall(require, "bookinfomanager")
-                    if not ok then return true end
-                    return not bim:getSetting("folder_name_opaque")
-                end,
-                callback = function()
-                    local ok, bim = pcall(require, "bookinfomanager")
-                    if not ok then return end
-                    bim:toggleSetting("folder_name_opaque")
-                    UIManager:setDirty(nil, "full")
-                end,
-            },
-            {
-                text = _("Show spine lines on folder covers"),
-                checked_func = function()
-                    local ok, bim = pcall(require, "bookinfomanager")
-                    if not ok then return true end
-                    return not bim:getSetting("folder_spine_lines_show")
-                end,
-                callback = function()
-                    local ok, bim = pcall(require, "bookinfomanager")
-                    if not ok then return end
-                    bim:toggleSetting("folder_spine_lines_show")
-                    UIManager:setDirty(nil, "full")
-                end,
-            },
-            {
-                text = _("Folder name position"),
+                text = _("Covers"),
                 sub_item_table = {
                     {
-                        text = _("Center"),
+                        text = _("Gallery"),
                         radio = true,
+                        checked_func = function()
+                            return G_reader_settings:isTrue("folder_gallery_mode")
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("folder_gallery_mode", true)
+                            G_reader_settings:saveSetting("folder_stack_mode", false)
+                            local ui = require("apps/filemanager/filemanager").instance
+                            if ui and ui.file_chooser then
+                                ui.file_chooser:updateItems()
+                            end
+                        end,
+                    },
+                    {
+                        text = _("First cover image"),
+                        radio = true,
+                        checked_func = function()
+                            return not G_reader_settings:isTrue("folder_gallery_mode")
+                                and not G_reader_settings:isTrue("folder_stack_mode")
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("folder_gallery_mode", false)
+                            G_reader_settings:saveSetting("folder_stack_mode", false)
+                            local ui = require("apps/filemanager/filemanager").instance
+                            if ui and ui.file_chooser then
+                                ui.file_chooser:updateItems()
+                            end
+                        end,
+                    },
+                    {
+                        text = _("Stack"),
+                        radio = true,
+                        checked_func = function()
+                            return G_reader_settings:isTrue("folder_stack_mode")
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("folder_stack_mode", true)
+                            G_reader_settings:saveSetting("folder_gallery_mode", false)
+                            local ui = require("apps/filemanager/filemanager").instance
+                            if ui and ui.file_chooser then
+                                ui.file_chooser:updateItems()
+                            end
+                        end,
+                    },
+                    {
+                        text = _("Show spine lines"),
                         checked_func = function()
                             local ok, bim = pcall(require, "bookinfomanager")
                             if not ok then return true end
-                            return not bim:getSetting("folder_name_centered")
+                            return not bim:getSetting("folder_spine_lines_show")
                         end,
                         callback = function()
                             local ok, bim = pcall(require, "bookinfomanager")
                             if not ok then return end
-                            if bim:getSetting("folder_name_centered") then
-                                bim:toggleSetting("folder_name_centered")
-                            end
+                            bim:toggleSetting("folder_spine_lines_show")
                             UIManager:setDirty(nil, "full")
                         end,
                     },
                     {
-                        text = _("Bottom"),
-                        radio = true,
+                        text = _("Show item count"),
                         checked_func = function()
                             local ok, bim = pcall(require, "bookinfomanager")
-                            if not ok then return false end
-                            return bim:getSetting("folder_name_centered") ~= nil
+                            if not ok then return true end
+                            return not bim:getSetting("folder_item_count_show")
                         end,
                         callback = function()
                             local ok, bim = pcall(require, "bookinfomanager")
                             if not ok then return end
-                            if not bim:getSetting("folder_name_centered") then
-                                bim:toggleSetting("folder_name_centered")
-                            end
+                            bim:toggleSetting("folder_item_count_show")
                             UIManager:setDirty(nil, "full")
                         end,
                     },
                 },
-            }
+            },
+            -- Folder name subsection
+            {
+                text = _("Folder name"),
+                sub_item_table = {
+                    {
+                        text = _("Opaque background"),
+                        checked_func = function()
+                            local ok, bim = pcall(require, "bookinfomanager")
+                            if not ok then return true end
+                            return not bim:getSetting("folder_name_opaque")
+                        end,
+                        callback = function()
+                            local ok, bim = pcall(require, "bookinfomanager")
+                            if not ok then return end
+                            bim:toggleSetting("folder_name_opaque")
+                            UIManager:setDirty(nil, "full")
+                        end,
+                    },
+                    {
+                        text = _("Folder name position"),
+                        sub_item_table = {
+                            {
+                                text = _("Center"),
+                                radio = true,
+                                checked_func = function()
+                                    local ok, bim = pcall(require, "bookinfomanager")
+                                    if not ok then return true end
+                                    return not bim:getSetting("folder_name_centered")
+                                end,
+                                callback = function()
+                                    local ok, bim = pcall(require, "bookinfomanager")
+                                    if not ok then return end
+                                    if bim:getSetting("folder_name_centered") then
+                                        bim:toggleSetting("folder_name_centered")
+                                    end
+                                    UIManager:setDirty(nil, "full")
+                                end,
+                            },
+                            {
+                                text = _("Bottom"),
+                                radio = true,
+                                checked_func = function()
+                                    local ok, bim = pcall(require, "bookinfomanager")
+                                    if not ok then return false end
+                                    return bim:getSetting("folder_name_centered") ~= nil
+                                end,
+                                callback = function()
+                                    local ok, bim = pcall(require, "bookinfomanager")
+                                    if not ok then return end
+                                    if not bim:getSetting("folder_name_centered") then
+                                        bim:toggleSetting("folder_name_centered")
+                                    end
+                                    UIManager:setDirty(nil, "full")
+                                end,
+                            },
+                        },
+                    },
+                    {
+                        text = _("Show folder name"),
+                        checked_func = function()
+                            local ok, bim = pcall(require, "bookinfomanager")
+                            if not ok then return true end
+                            return not bim:getSetting("folder_name_show")
+                        end,
+                        callback = function()
+                            local ok, bim = pcall(require, "bookinfomanager")
+                            if not ok then return end
+                            bim:toggleSetting("folder_name_show")
+                            UIManager:setDirty(nil, "full")
+                        end,
+                    },
+                },
+            },
         },
     })
 
@@ -286,6 +330,49 @@ function M.build(ctx)
                 },
             },
             {
+                text = _("Uniform covers"),
+                sub_item_table = {
+                    {
+                        text = _("Uniform covers"),
+                        checked_func = function()
+                            return type(config.features) == "table"
+                                and config.features.browser_cover_mosaic_uniform == true
+                        end,
+                        callback = function()
+                            if type(config.features) ~= "table" then config.features = {} end
+                            config.features.browser_cover_mosaic_uniform =
+                                not (config.features.browser_cover_mosaic_uniform == true)
+                            plugin:saveConfig()
+                            settings_apply.prompt_restart()
+                        end,
+                    },
+                    {
+                        text = "2:3 " .. _("(standard)"),
+                        radio = true,
+                        checked_func = function()
+                            return G_reader_settings:readSetting("uniform_cover_ratio") ~= "3:4"
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("uniform_cover_ratio", "2:3")
+                            local ui = require("apps/filemanager/filemanager").instance
+                            if ui and ui.file_chooser then ui.file_chooser:updateItems() end
+                        end,
+                    },
+                    {
+                        text = "3:4 " .. _("(Kindle)"),
+                        radio = true,
+                        checked_func = function()
+                            return G_reader_settings:readSetting("uniform_cover_ratio") == "3:4"
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("uniform_cover_ratio", "3:4")
+                            local ui = require("apps/filemanager/filemanager").instance
+                            if ui and ui.file_chooser then ui.file_chooser:updateItems() end
+                        end,
+                    },
+                },
+            },
+            {
                 text = _("Dim finished books"),
                 checked_func = function()
                     return type(config.browser_cover_badges) == "table"
@@ -313,20 +400,6 @@ function M.build(ctx)
                         not (config.features.browser_cover_rounded_corners == true)
                     plugin:saveConfig()
                     UIManager:setDirty(nil, "full")
-                end,
-            },
-            {
-                text = _("Uniform covers"),
-                checked_func = function()
-                    return type(config.features) == "table"
-                        and config.features.browser_cover_mosaic_uniform == true
-                end,
-                callback = function()
-                    if type(config.features) ~= "table" then config.features = {} end
-                    config.features.browser_cover_mosaic_uniform =
-                        not (config.features.browser_cover_mosaic_uniform == true)
-                    plugin:saveConfig()
-                    settings_apply.prompt_restart()
                 end,
             },
             {

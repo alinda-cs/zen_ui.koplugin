@@ -16,28 +16,23 @@ local function apply_context_menu()
     local paths        = require("common/paths")
     local icons        = require("common/inline_icon_map")
     local zen_plugin   = rawget(_G, "__ZEN_UI_PLUGIN")
+    local Cover        = require("common/cover_utils")
+    local VerticalGroup   = require("ui/widget/verticalgroup")
+    local VerticalSpan    = require("ui/widget/verticalspan")
+    local LeftContainer   = require("ui/widget/container/leftcontainer")
+    local CenterContainer = require("ui/widget/container/centercontainer")
+    local FrameContainer  = require("ui/widget/container/framecontainer")
+    local HorizontalGroup = require("ui/widget/horizontalgroup")
+    local HorizontalSpan  = require("ui/widget/horizontalspan")
+    local ImageWidget     = require("ui/widget/imagewidget")
+    local TextWidget      = require("ui/widget/textwidget")
+    local Font            = require("ui/font")
+    local Geom            = require("ui/geometry")
+    local Blitbuffer      = require("ffi/blitbuffer")
 
-    -- ── MoveChooser ──────────────────────────────────────────────────────────
-    -- PathChooser subclass for picking a move destination.
-    --   • Cover-browser rendering applies automatically when the coverbrowser
-    --     plugin is active (it hooks MosaicMenuItem.update on FileChooser items).
-    --   • genItemTable strips hidden folders (.sdr, .thumbnails, etc.) and the
-    --     go-up row — the list is intentionally flat.
-    --   • onMenuSelect fires immediately on single tap (no navigate-into behaviour).
-    -- _zen_no_forced_repaint: opt out of the partial_page_repaint forced flush.
-    -- MoveChooser is a transient overlay — the full-page E-ink flash it causes
-    -- when folder count < perpage is visually jarring and unnecessary.
+    -- MoveChooser
     local MoveChooser = PathChooser:extend{ _zen_no_forced_repaint = true }
 
-    -- Build a flat, depth-first folder list from root up to 2 levels deep.
-    -- Each folder is immediately followed by its own children so the list reads:
-    --   Home/
-    --   FolderA               ← child of root
-    --   FolderA/Sub1          ← child of FolderA (level 2)
-    --   FolderA/Sub2
-    --   FolderB               ← next child of root
-    --   FolderB/Sub1
-    --   …
     function MoveChooser:genItemTableFromPath(path)
         local ffiUtil3 = require("ffi/util")
         local lfs3     = require("libs/libkoreader-lfs")
@@ -46,7 +41,6 @@ local function apply_context_menu()
         local MAX_DEPTH = 3
         local items    = {}
 
-        -- Skip root if the item already lives there (moving would be a no-op).
         if not self.src_dir or self.src_dir ~= root then
             table.insert(items, {
                 text           = ffiUtil3.basename(root),
@@ -57,8 +51,6 @@ local function apply_context_menu()
             })
         end
 
-        -- prefix: prepended to rel paths (e.g. "Books" -> "Books/1", "Books/2")
-        -- skip_set: set of realpath strings to omit entirely (not shown, not recursed)
         local function scan(dir_path, depth, base, prefix, skip_set)
             base = base or root
             local ok3, iter3, dir_obj3 = pcall(lfs3.dir, dir_path)
@@ -77,9 +69,8 @@ local function apply_context_menu()
             table.sort(subdirs, function(a, b) return a.name < b.name end)
             for _i, sub in ipairs(subdirs) do
                 local sub_real = ffiUtil3.realpath(sub.path) or sub.path
-                -- Skip paths already shown in another section (e.g. primary home is a subdir here)
                 if not (skip_set and skip_set[sub_real]) then
-                    local rel = sub.path:sub(#base + 2)  -- e.g. "Fantasy/Pratchett"
+                    local rel = sub.path:sub(#base + 2)
                     local display = prefix and (prefix .. "/" .. rel) or rel
                     table.insert(items, {
                         text           = display,
@@ -97,10 +88,7 @@ local function apply_context_menu()
 
         scan(root, 1)
 
-        -- Append additional home dirs after all primary-root entries.
         if type(self.extra_roots) == "table" then
-            -- Build a skip set: primary root + all other extra roots, so their
-            -- subtrees aren't duplicated when scanning a parent extra root.
             local skip_set = { [root] = true }
             for _i, er_path in ipairs(self.extra_roots) do
                 local er = ffiUtil3.realpath(er_path) or er_path
@@ -120,8 +108,6 @@ local function apply_context_menu()
                             mandatory      = self:getMenuItemMandatory({ path = er }),
                         })
                     end
-                    -- Subfolders prefixed with root name: "Books/1", "Books/2"
-                    -- skip_set prevents showing already-listed roots as sub-entries
                     scan(er, 1, er, er_name, skip_set)
                 end
             end
@@ -148,7 +134,6 @@ local function apply_context_menu()
 
     function MoveChooser:init()
         PathChooser.init(self)
-        -- Remove the home icon that PathChooser sets; clear and rebuild TitleBar without it.
         local tb = self.title_bar
         if tb and tb.has_left_icon then
             tb:clear()
@@ -158,7 +143,6 @@ local function apply_context_menu()
             tb:init()
         end
     end
-    -- ─────────────────────────────────────────────────────────────────────────
 
     local orig_setupLayout = FileManager.setupLayout
 
@@ -170,8 +154,6 @@ local function apply_context_menu()
 
         local orig_showFileDialog = file_chooser.showFileDialog
 
-        -- Shared sort-order dialog: icons defined here once, called from
-        -- authors/series, collections, and this context menu.
         file_chooser.showSortOrderDialog = function(self_fc, opts)
             local UIManager_sod    = require("ui/uimanager")
             local ButtonDialog_sod = require("ui/widget/buttondialog")
@@ -206,22 +188,18 @@ local function apply_context_menu()
         end
 
         file_chooser.showFileDialog = function(self_fc, item)
-            -- Never show a context menu for the up-folder item.
             if item.is_go_up then return end
 
-            -- Lockdown: block context menu across all views (filebrowser, groups, collections, etc.)
             if zen_plugin then
-                local ft = zen_plugin.config and zen_plugin.config.features
+                local features = zen_plugin.config and zen_plugin.config.features
                 local lc = zen_plugin.config and zen_plugin.config.lockdown
-                if type(ft) == "table" and ft.lockdown_mode == true
+                if type(features) == "table" and features.lockdown_mode == true
                         and type(lc) == "table" and lc.disable_context_menu == true then
-                    return
+                    return  -- suppress context menu entirely in lockdown
                 end
             end
 
-            -- ── Group context menu (authors/series views) ─────────────────────────────
-            -- Check this before the home-dir gate: these items always come from Zen UI
-            -- and don't have a filesystem path to compare against.
+            -- Group context menu (authors/series views)
             if item._zen_group_files then
                 local group_files = item._zen_group_files
                 local group_name  = item._zen_group_name or ""
@@ -234,8 +212,12 @@ local function apply_context_menu()
                 local dlg_w    = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.9)
                 local avail_w  = dlg_w - 2 * (SizeR.border.window + SizeR.padding.button)
                                         - 2 * (SizeR.padding.default + SizeR.margin.default)
-                local cover_max_w = Screen:scaleBySize(90)
+
+                -- Calculate cover dimensions respecting uniform_cover_ratio
+                local ratio = Cover.getRatio()
                 local cover_max_h = Screen:scaleBySize(140)
+                local cover_max_w = math.floor(cover_max_h * ratio)
+
                 local Blitbuffer      = require("ffi/blitbuffer")
                 local CenterContainer = require("ui/widget/container/centercontainer")
                 local Font            = require("ui/font")
@@ -249,50 +231,32 @@ local function apply_context_menu()
                 local TextWidget      = require("ui/widget/textwidget")
                 local VerticalGroup   = require("ui/widget/verticalgroup")
                 local VerticalSpan    = require("ui/widget/verticalspan")
-                local covers = {}
-                local ok_bim, BookInfoManager = pcall(require, "bookinfomanager")
-                if ok_bim then
-                    for _, fpath in ipairs(group_files) do
-                        local bi = BookInfoManager:getBookInfo(fpath, true)
-                        if bi and bi.has_cover and bi.cover_bb and not bi.ignore_cover then
-                            table.insert(covers, { data = bi.cover_bb:copy() })
-                            if #covers >= 4 then break end
+
+                -- Build fake chooser for group files
+                local fake_chooser = {
+                    genItemTableFromPath = function()
+                        local entries = {}
+                        for _, fpath in ipairs(group_files) do
+                            table.insert(entries, { path = fpath, is_file = true })
                         end
+                        return entries
                     end
-                end
-                local sep     = 1
-                local half_w  = math.floor((cover_max_w - sep) / 2)
-                local half_w2 = cover_max_w - sep - half_w
-                local half_h  = math.floor((cover_max_h - sep) / 2)
-                local half_h2 = cover_max_h - sep - half_h
-                local cell_dims = {
-                    { w = half_w,  h = half_h  },
-                    { w = half_w2, h = half_h  },
-                    { w = half_w,  h = half_h2 },
-                    { w = half_w2, h = half_h2 },
                 }
-                local cells = {}
-                for i = 1, 4 do
-                    local c  = covers[i]
-                    local cd = cell_dims[i]
-                    if c then
-                        cells[i] = CenterContainer:new{
-                            dimen = Geom:new{ w = cd.w, h = cd.h },
-                            ImageWidget:new{
-                                image            = c.data,
-                                image_disposable = true,
-                                width            = cd.w,
-                                height           = cd.h,
-                            },
-                        }
-                    else
-                        cells[i] = CenterContainer:new{
-                            dimen = Geom:new{ w = cd.w, h = cd.h },
-                            VerticalSpan:new{ width = 1 },
-                        }
-                    end
+
+                -- Use unified makeCover for folder (gallery mode)
+                local cover_widget, mode, scenario = Cover.makeCover(group_name, fake_chooser, {
+                    is_folder = true,
+                    max_w = cover_max_w,
+                    max_h = cover_max_h,
+                    folder_name = group_name,
+                })
+
+                -- Apply rounded corners
+                if cover_widget and _zen_apply_rounded_cover then
+                    _zen_apply_rounded_cover(cover_widget, border)
                 end
-                local framed_gallery = FrameContainer:new{
+
+                local framed_gallery = cover_widget or FrameContainer:new{
                     padding    = 0,
                     bordersize = border,
                     width      = cover_max_w + 2 * border,
@@ -300,37 +264,16 @@ local function apply_context_menu()
                     background = Blitbuffer.COLOR_LIGHT_GRAY,
                     CenterContainer:new{
                         dimen = Geom:new{ w = cover_max_w, h = cover_max_h },
-                        VerticalGroup:new{
-                            HorizontalGroup:new{
-                                cells[1],
-                                LineWidget:new{
-                                    background = Blitbuffer.COLOR_WHITE,
-                                    dimen      = Geom:new{ w = sep, h = half_h },
-                                },
-                                cells[2],
-                            },
-                            LineWidget:new{
-                                background = Blitbuffer.COLOR_WHITE,
-                                dimen      = Geom:new{ w = cover_max_w, h = sep },
-                            },
-                            HorizontalGroup:new{
-                                cells[3],
-                                LineWidget:new{
-                                    background = Blitbuffer.COLOR_WHITE,
-                                    dimen      = Geom:new{ w = sep, h = half_h2 },
-                                },
-                                cells[4],
-                            },
-                        },
+                        VerticalSpan:new{ width = 1 },
                     },
                 }
-                -- Apply rounded corners consistent with the file browser cover
+
+                -- Apply rounded corners
                 local plug = zen_plugin or rawget(_G, "__ZEN_UI_PLUGIN")
                 if plug and type(plug.config) == "table"
                     and type(plug.config.features) == "table"
-                    and plug.config.features.browser_cover_rounded_corners == true
-                then
-                    local r       = Screen:scaleBySize(6)
+                    and plug.config.features.browser_cover_rounded_corners == true then
+                    local r = Screen:scaleBySize(6)
                     local r_inner = r - border
                     local orig_pt = framed_gallery.paintTo
                     framed_gallery.paintTo = function(self, bb, x, y)
@@ -338,16 +281,16 @@ local function apply_context_menu()
                         if not (self.dimen and self.dimen.x) then return end
                         local tx, ty = self.dimen.x, self.dimen.y
                         local tw, th = self.dimen.w, self.dimen.h
-                        local wh  = Blitbuffer.COLOR_WHITE
+                        local wh = Blitbuffer.COLOR_WHITE
                         local blk = Blitbuffer.COLOR_BLACK
                         for j = 0, r - 1 do
                             local inner = math.sqrt(r * r - (r - j) * (r - j))
-                            local cut   = math.ceil(r - inner)
+                            local cut = math.ceil(r - inner)
                             if cut > 0 then
-                                bb:paintRect(tx,            ty + j,           cut, 1, wh)
-                                bb:paintRect(tx + tw - cut, ty + j,           cut, 1, wh)
-                                bb:paintRect(tx,            ty + th - 1 - j,  cut, 1, wh)
-                                bb:paintRect(tx + tw - cut, ty + th - 1 - j,  cut, 1, wh)
+                                bb:paintRect(tx, ty + j, cut, 1, wh)
+                                bb:paintRect(tx + tw - cut, ty + j, cut, 1, wh)
+                                bb:paintRect(tx, ty + th - 1 - j, cut, 1, wh)
+                                bb:paintRect(tx + tw - cut, ty + th - 1 - j, cut, 1, wh)
                             end
                         end
                         for j = 0, r - 1 do
@@ -355,44 +298,46 @@ local function apply_context_menu()
                                 local dx, dy = r - c - 0.5, r - j - 0.5
                                 local dist = math.sqrt(dx * dx + dy * dy)
                                 if dist >= r_inner and dist <= r then
-                                    bb:paintRect(tx + c,          ty + j,           1, 1, blk)
-                                    bb:paintRect(tx + tw - 1 - c, ty + j,           1, 1, blk)
-                                    bb:paintRect(tx + c,          ty + th - 1 - j,  1, 1, blk)
-                                    bb:paintRect(tx + tw - 1 - c, ty + th - 1 - j,  1, 1, blk)
+                                    bb:paintRect(tx + c, ty + j, 1, 1, blk)
+                                    bb:paintRect(tx + tw - 1 - c, ty + j, 1, 1, blk)
+                                    bb:paintRect(tx + c, ty + th - 1 - j, 1, 1, blk)
+                                    bb:paintRect(tx + tw - 1 - c, ty + th - 1 - j, 1, 1, blk)
                                 end
                             end
                         end
                     end
                 end
-                local framed_h   = cover_max_h + 2 * border
+
+                local framed_h = cover_max_h + 2 * border
                 local text_col_w = math.max(avail_w - cover_max_w - 2 * border - gap, Screen:scaleBySize(60))
-                local n_files    = #group_files
-                local subtitle   = item._zen_group_subtitle
+                local n_files = #group_files
+                local subtitle = item._zen_group_subtitle
                     or (n_files == 1 and _("1 book") or (tostring(n_files) .. " " .. _("books")))
                 local vstack = VerticalGroup:new{ align = "left" }
                 table.insert(vstack, TextWidget:new{
-                    text      = BD.auto(group_name),
-                    face      = Font:getFace("cfont", 20),
-                    bold      = true,
+                    text = BD.auto(group_name),
+                    face = Font:getFace("cfont", 20),
+                    bold = true,
                     max_width = text_col_w,
                 })
                 table.insert(vstack, VerticalSpan:new{ width = Screen:scaleBySize(2) })
                 table.insert(vstack, TextWidget:new{
-                    text      = subtitle,
-                    face      = Font:getFace("cfont", 17),
+                    text = subtitle,
+                    face = Font:getFace("cfont", 17),
                     max_width = text_col_w,
                 })
+
                 local header_widget = LeftContainer:new{
                     dimen = Geom:new{ w = avail_w, h = framed_h },
                     HorizontalGroup:new{
-                        align = "top",
+                        align = "center",
                         framed_gallery,
                         HorizontalSpan:new{ width = gap },
                         vstack,
                     },
                 }
+
                 local buttons = {}
-                -- Caller-supplied buttons to show before Sort
                 if item._zen_prepend_buttons then
                     for _, row in ipairs(item._zen_prepend_buttons) do
                         table.insert(buttons, row)
@@ -400,8 +345,8 @@ local function apply_context_menu()
                 end
                 if display_cb then
                     table.insert(buttons, {{
-                        text     = "\u{F06D0}  " .. _("Display") .. "  \u{25B8}",
-                        align    = "left",
+                        text = "\u{F06D0}  " .. _("Display") .. "  \u{25B8}",
+                        align = "left",
                         callback = function()
                             UIManager:close(self_fc.file_dialog)
                             display_cb()
@@ -410,16 +355,15 @@ local function apply_context_menu()
                 end
                 if sort_cb then
                     table.insert(buttons, {{
-                        text     = "\u{F04BF}  " .. _("Sort") .. "  \u{25B8}",
-                        align    = "left",
+                        text = "\u{F04BF}  " .. _("Sort") .. "  \u{25B8}",
+                        align = "left",
                         callback = function()
                             UIManager:close(self_fc.file_dialog)
                             sort_cb()
                         end,
                     }})
                 end
-                -- Filter by read status (global setting, same as library filter)
-                -- Only shown inside a specific group/collection folder, not the top-level list.
+
                 local function showGroupFilterDialog()
                     local cur_st = FileChooser.show_filter and FileChooser.show_filter.status
                     local is_all = cur_st == nil
@@ -436,16 +380,16 @@ local function apply_context_menu()
                         if item._zen_filter_refresh_cb then item._zen_filter_refresh_cb() end
                     end
                     local STATUS_OPTS = {
-                        { key = "new",       icon = icons.status,   label = _("Unread")     },
-                        { key = "reading",   icon = icons.reading,  label = _("Reading")    },
-                        { key = "abandoned", icon = icons.tbr,      label = _("To Be Read") },
-                        { key = "complete",  icon = icons.finished, label = _("Finished")   },
+                        { key = "new", icon = icons.status, label = _("Unread") },
+                        { key = "reading", icon = icons.reading, label = _("Reading") },
+                        { key = "abandoned", icon = icons.tbr, label = _("To Be Read") },
+                        { key = "complete", icon = icons.finished, label = _("Finished") },
                     }
                     local fbts = {}
                     table.insert(fbts, {{
-                        text     = _("All") .. (is_all and "  " .. icons.check or ""),
-                        align    = "left",
-                        enabled  = not is_all,
+                        text = _("All") .. (is_all and "  " .. icons.check or ""),
+                        align = "left",
+                        enabled = not is_all,
                         callback = function()
                             UIManager:close(filter_dialog)
                             setGlobalFilter(nil)
@@ -454,9 +398,9 @@ local function apply_context_menu()
                     for _i, st in ipairs(STATUS_OPTS) do
                         local is_active = cur_st and cur_st[st.key] == true
                         table.insert(fbts, {{
-                            text     = st.icon .. "  " .. st.label
+                            text = st.icon .. "  " .. st.label
                                 .. (is_active and "  " .. icons.check or ""),
-                            align    = "left",
+                            align = "left",
                             callback = function()
                                 UIManager:close(filter_dialog)
                                 local new_st = {}
@@ -467,7 +411,6 @@ local function apply_context_menu()
                                 else new_st[st.key] = true end
                                 local n = 0
                                 for _k, v in pairs(new_st) do if v then n = n + 1 end end
-                                -- n==0 or all 4 selected collapses back to nil (All)
                                 if n == 0 or n == 4 then setGlobalFilter(nil)
                                 else setGlobalFilter(new_st) end
                                 UIManager:nextTick(showGroupFilterDialog)
@@ -475,12 +418,13 @@ local function apply_context_menu()
                         }})
                     end
                     filter_dialog = ButtonDialog:new{
-                        title       = _("Filter by status"),
+                        title = _("Filter by status"),
                         title_align = "center",
-                        buttons     = fbts,
+                        buttons = fbts,
                     }
                     UIManager:show(filter_dialog)
                 end
+
                 if item._zen_is_folder_view then
                     local n_gf = 0
                     if FileChooser.show_filter and FileChooser.show_filter.status then
@@ -489,34 +433,33 @@ local function apply_context_menu()
                         end
                     end
                     table.insert(buttons, {{
-                        text     = icons.filter .. "  " .. _("Filter")
+                        text = icons.filter .. "  " .. _("Filter")
                             .. (n_gf > 0 and " (" .. n_gf .. ")" or "")
                             .. "  \u{25B8}",
-                        align    = "left",
+                        align = "left",
                         callback = function()
                             UIManager:close(self_fc.file_dialog)
                             UIManager:nextTick(showGroupFilterDialog)
                         end,
                     }})
                 end
-                -- Caller-supplied extra buttons (e.g. collection-specific actions)
+
                 if item._zen_extra_buttons then
                     for _, row in ipairs(item._zen_extra_buttons) do
                         table.insert(buttons, row)
                     end
                 end
+
                 self_fc.file_dialog = ButtonDialog:new{
-                    buttons        = buttons,
+                    buttons = buttons,
                     _added_widgets = { header_widget },
                 }
                 UIManager:show(self_fc.file_dialog)
                 return true
             end
 
-            -- Delegate to stock KOReader dialog outside home directory (and additional home dirs).
             local home_dir = paths.getHomeDir()
             local cur_path = self_fc.path or ""
-            -- Collection items can live anywhere; skip the home-dir gate for them.
             if home_dir and not item._zen_collection_name then
                 if not paths.isInHomeDir(cur_path) then
                     return orig_showFileDialog(self_fc, item)
@@ -538,10 +481,8 @@ local function apply_context_menu()
                 end)
             end
 
-            -- Build dialog header: cover+text when cover available, text-only otherwise.
             local dialog_title, dialog_cover_widget, book_description
 
-            -- Open the full-resolution cover art in a fullscreen ImageViewer.
             local function showCoverFullscreen(cover_path)
                 local ok2, bim2 = pcall(require, "bookinfomanager")
                 if not ok2 then return end
@@ -550,32 +491,29 @@ local function apply_context_menu()
                     or bi2.ignore_cover then return end
                 local ImageViewer = require("ui/widget/imageviewer")
                 local iv = ImageViewer:new{
-                    image            = bi2.cover_bb,
+                    image = bi2.cover_bb,
                     image_disposable = false,
-                    fullscreen       = true,
-                    with_title_bar   = false,
+                    fullscreen = true,
+                    with_title_bar = false,
                 }
                 function iv:onTap() self:onClose() return true end
                 UIManager:show(iv)
             end
 
             do
-                local Screen   = Device.screen
-                local SizeR    = require("ui/size")
-                local border   = SizeR.border.thin
-                local gap      = Screen:scaleBySize(8)
-                local dlg_w    = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.9)
-                -- inner width available to _added_widgets inside ButtonDialog
-                local avail_w  = dlg_w - 2 * (SizeR.border.window + SizeR.padding.button)
+                local Screen = Device.screen
+                local SizeR = require("ui/size")
+                local border = SizeR.border.thin
+                local gap = Screen:scaleBySize(8)
+                local dlg_w = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.9)
+                local avail_w = dlg_w - 2 * (SizeR.border.window + SizeR.padding.button)
                                        - 2 * (SizeR.padding.default + SizeR.margin.default)
-                local cover_max_w = Screen:scaleBySize(90)
-                local cover_max_h = Screen:scaleBySize(140)
 
-                -- ── Rounded cover corners ─────────────────────────────────────────────
-                -- Monkey-patches a FrameContainer instance's paintTo to paint white
-                -- quarter-circle masks at each corner (simulating rounded corners) and
-                -- redraws a clean border arc, when the "Rounded cover corners" setting
-                -- is enabled.  Consistent with browser_cover_rounded_corners.lua.
+                -- Calculate cover dimensions respecting uniform_cover_ratio
+                local ratio = Cover.getRatio()
+                local cover_max_h = Screen:scaleBySize(140)
+                local cover_max_w = math.floor(cover_max_h * ratio)
+
                 local function _zen_apply_rounded_cover(frame_widget, bsz)
                     local plug = zen_plugin or rawget(_G, "__ZEN_UI_PLUGIN")
                     if not (plug
@@ -585,7 +523,7 @@ local function apply_context_menu()
                     then
                         return
                     end
-                    local r       = Screen:scaleBySize(6)
+                    local r = Screen:scaleBySize(6)
                     local r_inner = r - bsz
                     local orig_pt = frame_widget.paintTo
                     frame_widget.paintTo = function(self, bb, x, y)
@@ -594,121 +532,119 @@ local function apply_context_menu()
                         local tx, ty = self.dimen.x, self.dimen.y
                         local tw, th = self.dimen.w, self.dimen.h
                         local Blitbuffer_rc = require("ffi/blitbuffer")
-                        local wh  = Blitbuffer_rc.COLOR_WHITE
+                        local wh = Blitbuffer_rc.COLOR_WHITE
                         local blk = Blitbuffer_rc.COLOR_BLACK
                         for j = 0, r - 1 do
                             local inner = math.sqrt(r * r - (r - j) * (r - j))
-                            local cut   = math.ceil(r - inner)
+                            local cut = math.ceil(r - inner)
                             if cut > 0 then
-                                bb:paintRect(tx,            ty + j,           cut, 1, wh)
-                                bb:paintRect(tx + tw - cut, ty + j,           cut, 1, wh)
-                                bb:paintRect(tx,            ty + th - 1 - j,  cut, 1, wh)
-                                bb:paintRect(tx + tw - cut, ty + th - 1 - j,  cut, 1, wh)
+                                bb:paintRect(tx, ty + j, cut, 1, wh)
+                                bb:paintRect(tx + tw - cut, ty + j, cut, 1, wh)
+                                bb:paintRect(tx, ty + th - 1 - j, cut, 1, wh)
+                                bb:paintRect(tx + tw - cut, ty + th - 1 - j, cut, 1, wh)
                             end
                         end
                         for j = 0, r - 1 do
                             for c = 0, r - 1 do
-                                local dx   = r - c - 0.5
-                                local dy   = r - j - 0.5
+                                local dx = r - c - 0.5
+                                local dy = r - j - 0.5
                                 local dist = math.sqrt(dx * dx + dy * dy)
                                 if dist >= r_inner and dist <= r then
-                                    bb:paintRect(tx + c,          ty + j,           1, 1, blk)
-                                    bb:paintRect(tx + tw - 1 - c, ty + j,           1, 1, blk)
-                                    bb:paintRect(tx + c,          ty + th - 1 - j,  1, 1, blk)
-                                    bb:paintRect(tx + tw - 1 - c, ty + th - 1 - j,  1, 1, blk)
+                                    bb:paintRect(tx + c, ty + j, 1, 1, blk)
+                                    bb:paintRect(tx + tw - 1 - c, ty + j, 1, 1, blk)
+                                    bb:paintRect(tx + c, ty + th - 1 - j, 1, 1, blk)
+                                    bb:paintRect(tx + tw - 1 - c, ty + th - 1 - j, 1, 1, blk)
                                 end
                             end
                         end
                     end
                 end
 
-                -- Build an OverlapGroup with cover at left edge, text stack at right edge.
                 local function makeSideBySide(cover_bb, src_w, src_h, sf, title_str, authors_str, series_str_arg, tags_str_arg, pages_str_arg, on_cover_tap)
-                    local rendered_w  = math.floor(src_w * sf)
-                    local rendered_h  = math.floor(src_h * sf)
-                    local framed_h    = rendered_h + 2 * border
-                    local text_col_w  = math.max(avail_w - rendered_w - 2 * border - gap,
+                    local rendered_w = math.floor(src_w * sf)
+                    local rendered_h = math.floor(src_h * sf)
+                    local framed_h = rendered_h + 2 * border
+                    local text_col_w = math.max(avail_w - rendered_w - 2 * border - gap,
                                                  Screen:scaleBySize(60))
-                    local ImageWidget     = require("ui/widget/imagewidget")
-                    local FrameContainer  = require("ui/widget/container/framecontainer")
-                    local LeftContainer   = require("ui/widget/container/leftcontainer")
+                    local ImageWidget = require("ui/widget/imagewidget")
+                    local FrameContainer = require("ui/widget/container/framecontainer")
+                    local LeftContainer = require("ui/widget/container/leftcontainer")
                     local HorizontalGroup = require("ui/widget/horizontalgroup")
-                    local HorizontalSpan  = require("ui/widget/horizontalspan")
-                    local TextWidget      = require("ui/widget/textwidget")
-                    local VerticalGroup   = require("ui/widget/verticalgroup")
-                    local VerticalSpan    = require("ui/widget/verticalspan")
-                    local Font            = require("ui/font")
-                    local Blitbuffer      = require("ffi/blitbuffer")
-                    local Geom            = require("ui/geometry")
-                    -- Raw point sizes (not pre-scaled) to match KOReader dialog conventions.
-                    local fs_title   = 20
+                    local HorizontalSpan = require("ui/widget/horizontalspan")
+                    local TextWidget = require("ui/widget/textwidget")
+                    local VerticalGroup = require("ui/widget/verticalgroup")
+                    local VerticalSpan = require("ui/widget/verticalspan")
+                    local Font = require("ui/font")
+                    local Blitbuffer = require("ffi/blitbuffer")
+                    local Geom = require("ui/geometry")
+                    local fs_title = 20
                     local fs_authors = 17
-                    local fs_tags    = 14
+                    local fs_tags = 14
                     local vstack = VerticalGroup:new{ align = "left" }
                     if title_str then
                         table.insert(vstack, TextWidget:new{
-                            text      = title_str,
-                            face      = Font:getFace("cfont", fs_title),
-                            bold      = true,
+                            text = title_str,
+                            face = Font:getFace("cfont", fs_title),
+                            bold = true,
                             max_width = text_col_w,
                         })
                     end
                     if authors_str then
                         table.insert(vstack, VerticalSpan:new{ width = Screen:scaleBySize(2) })
                         table.insert(vstack, TextWidget:new{
-                            text      = authors_str,
-                            face      = Font:getFace("cfont", fs_authors),
+                            text = authors_str,
+                            face = Font:getFace("cfont", fs_authors),
                             max_width = text_col_w,
                         })
                     end
                     if series_str_arg then
                         table.insert(vstack, VerticalSpan:new{ width = Screen:scaleBySize(2) })
                         table.insert(vstack, TextWidget:new{
-                            text      = series_str_arg,
-                            face      = Font:getFace("cfont", fs_authors),
-                            fgcolor   = Blitbuffer.COLOR_GRAY_3,
+                            text = series_str_arg,
+                            face = Font:getFace("cfont", fs_authors),
+                            fgcolor = Blitbuffer.COLOR_GRAY_3,
                             max_width = text_col_w,
                         })
                     end
                     if tags_str_arg and tags_str_arg ~= "" then
                         table.insert(vstack, VerticalSpan:new{ width = Screen:scaleBySize(3) })
                         table.insert(vstack, TextWidget:new{
-                            text      = tags_str_arg,
-                            face      = Font:getFace("cfont", fs_tags),
-                            fgcolor   = Blitbuffer.COLOR_GRAY_3,
+                            text = tags_str_arg,
+                            face = Font:getFace("cfont", fs_tags),
+                            fgcolor = Blitbuffer.COLOR_GRAY_3,
                             max_width = text_col_w,
                         })
                     end
                     if pages_str_arg then
                         table.insert(vstack, VerticalSpan:new{ width = Screen:scaleBySize(3) })
                         table.insert(vstack, TextWidget:new{
-                            text      = pages_str_arg,
-                            face      = Font:getFace("cfont", fs_tags),
-                            fgcolor   = Blitbuffer.COLOR_GRAY_3,
+                            text = pages_str_arg,
+                            face = Font:getFace("cfont", fs_tags),
+                            fgcolor = Blitbuffer.COLOR_GRAY_3,
                             max_width = text_col_w,
                         })
                     end
                     local cover_frame = FrameContainer:new{
-                        padding    = 0,
+                        padding = 0,
                         bordersize = border,
                         ImageWidget:new{
-                            image            = cover_bb,
+                            image = cover_bb,
                             image_disposable = true,
-                            scale_factor     = sf,
+                            scale_factor = sf,
                         },
                     }
                     _zen_apply_rounded_cover(cover_frame, border)
                     local cover_component
                     if on_cover_tap then
                         local InputContainer2 = require("ui/widget/container/inputcontainer")
-                        local GestureRange2   = require("ui/gesturerange")
+                        local GestureRange2 = require("ui/gesturerange")
                         local cw = rendered_w + 2 * border
                         local wrapper = InputContainer2:new{
                             dimen = Geom:new{ w = cw, h = framed_h },
                             ges_events = {
                                 TapCover = {
                                     GestureRange2:new{
-                                        ges   = "tap",
+                                        ges = "tap",
                                         range = Geom:new{
                                             x = 0, y = 0,
                                             w = Screen:getWidth(),
@@ -753,7 +689,7 @@ local function apply_context_menu()
                         if bookinfo then
                             if not bookinfo.ignore_meta then
                                 if bookinfo.title then
-                                    title_str   = BD.auto(bookinfo.title)
+                                    title_str = BD.auto(bookinfo.title)
                                     authors_str = bookinfo.authors and BD.auto(bookinfo.authors) or nil
                                 end
                                 if bookinfo.series then
@@ -772,8 +708,6 @@ local function apply_context_menu()
                                 end
                                 local n_pages = tonumber(bookinfo.pages)
                                 if not (n_pages and n_pages > 0) then
-                                    -- CRE docs (EPUB/FB2) don't store pages in the
-                                    -- cover-browser cache; fall back to the sidecar.
                                     local ok_ds, DocSettings = pcall(require, "docsettings")
                                     if ok_ds then
                                         pcall(function()
@@ -791,15 +725,18 @@ local function apply_context_menu()
                                 and bookinfo.description ~= "" then
                                 book_description = bookinfo.description
                             end
-                            if bookinfo.cover_bb and bookinfo.has_cover
-                                and not bookinfo.ignore_cover then
-                                local _, _, sf = BookInfoManager.getCachedCoverSize(
-                                    bookinfo.cover_w, bookinfo.cover_h,
-                                    cover_max_w, cover_max_h)
+
+                            -- Use unified makeCover for single book (with proper scaling)
+                            local cover_bb, w, h, mode, scenario = Cover.makeCover(file, nil, {
+                                is_folder = false,
+                                width = cover_max_w,
+                                height = cover_max_h,
+                            })
+
+                            if cover_bb then
+                                -- cover_bb is already scaled to target dimensions, so sf = 1.0
                                 dialog_cover_widget = makeSideBySide(
-                                    bookinfo.cover_bb,
-                                    bookinfo.cover_w, bookinfo.cover_h,
-                                    sf,
+                                    cover_bb, w, h, 1.0,
                                     title_str or BD.filename(file:match("([^/]+)$")),
                                     authors_str,
                                     series_str_local,
@@ -809,8 +746,6 @@ local function apply_context_menu()
                             end
                         end
                     end
-                    -- dialog_title is the plain text fallback used by the text-only header
-                    -- and the status sub-dialog: keep it as "title\nauthors"
                     local text_str
                     if title_str then
                         text_str = title_str
@@ -822,263 +757,214 @@ local function apply_context_menu()
                     -- folder
                     local name = (file:match("([^/]+)/?$") or file):gsub("/$", "")
                     local folder_name_str = BD.directory(name)
-                    -- Recursively collect all book files (ignores folders/hidden, all subdirs).
-                    local lfs    = require("libs/libkoreader-lfs")
+                    local lfs = require("libs/libkoreader-lfs")
                     local DocReg = require("document/documentregistry")
-                    local all_book_files = {}
-                    local function collect_books(dir, depth)
-                        if depth > 5 then return end
-                        local ok_d, it, obj = pcall(lfs.dir, dir)
-                        if not ok_d then return end
-                        for fname in it, obj do
-                            if fname ~= "." and fname ~= ".." and not fname:match("^%.") then
-                                local fpath = dir .. "/" .. fname
-                                local mode  = lfs.attributes(fpath, "mode")
-                                if mode == "file" and DocReg:hasProvider(fpath) then
-                                    table.insert(all_book_files, fpath)
-                                elseif mode == "directory" then
-                                    collect_books(fpath, depth + 1)
-                                end
-                            end
-                        end
-                    end
-                    collect_books(file, 0)
-                    table.sort(all_book_files)
-                    local n_books = #all_book_files
-                    local folder_count_str = n_books > 0
-                        and (n_books == 1 and _("1 book") or (tostring(n_books) .. " " .. _("books")))
-                        or nil
-                    -- Plain-text fallback for text-only header (no cover)
-                    dialog_title = folder_count_str
-                        and (folder_name_str .. "\n" .. folder_count_str)
-                        or folder_name_str
-                    -- 1. Prefer cover.jpg / cover.jpeg / cover.png inside the folder.
-                    local cover_candidates = { "cover.jpg", "cover.jpeg", "cover.png",
-                                               "Cover.jpg", "Cover.jpeg", "Cover.png" }
-                    local folder_cover_path
-                    for _, cn in ipairs(cover_candidates) do
-                        local cp = file .. "/" .. cn
-                        if lfs.attributes(cp, "mode") == "file" then
-                            folder_cover_path = cp
-                            break
-                        end
-                    end
-                    if folder_cover_path then
-                        local ok_ri, RenderImage = pcall(require, "ui/renderimage")
-                        if ok_ri then
-                            local cover_bb = RenderImage:renderImageFile(
-                                folder_cover_path, false, cover_max_w, cover_max_h)
-                            if cover_bb then
-                                local src_w = cover_bb:getWidth()
-                                local src_h = cover_bb:getHeight()
-                                dialog_cover_widget = makeSideBySide(
-                                    cover_bb, src_w, src_h, 1.0,
-                                    folder_name_str, folder_count_str, nil, nil, nil, nil)
-                            end
-                        end
-                    end
-                    -- 2. Fall back: gallery of up to 4 books' embedded covers (2×2 mosaic).
-                    if not dialog_cover_widget then
-                        local ok, BookInfoManager = pcall(require, "bookinfomanager")
-                        if ok then
-                            -- Use the recursive book list collected above.
-                            if #all_book_files > 0 then
-                                if true then -- scope keeps covers local
-                                    -- Collect up to 4 covers.
-                                    local covers = {}
-                                    for _, fpath in ipairs(all_book_files) do
-                                        local bi = BookInfoManager:getBookInfo(fpath, true)
-                                        if bi and bi.has_cover and bi.cover_bb
-                                                and not bi.ignore_cover then
-                                            table.insert(covers, { data = bi.cover_bb:copy() })
-                                            if #covers >= 4 then break end
+
+                    -- Build fake chooser for this folder
+                    local fake_chooser = {
+                        genItemTableFromPath = function()
+                            local entries = {}
+                            local function collect_books(dir, depth)
+                                if depth > 5 then return end
+                                local ok_d, it, obj = pcall(lfs.dir, dir)
+                                if not ok_d then return end
+                                for fname in it, obj do
+                                    if fname ~= "." and fname ~= ".." and not fname:match("^%.") then
+                                        local fpath = dir .. "/" .. fname
+                                        local mode = lfs.attributes(fpath, "mode")
+                                        if mode == "file" and DocReg:hasProvider(fpath) then
+                                            table.insert(entries, { path = fpath, is_file = true })
+                                        elseif mode == "directory" then
+                                            collect_books(fpath, depth + 1)
                                         end
-                                    end
-                                    if #covers > 0 then
-                                        local Blitbuffer2      = require("ffi/blitbuffer")
-                                        local CenterContainer2 = require("ui/widget/container/centercontainer")
-                                        local FrameContainer2  = require("ui/widget/container/framecontainer")
-                                        local Font2            = require("ui/font")
-                                        local Geom2            = require("ui/geometry")
-                                        local HorizontalGroup2 = require("ui/widget/horizontalgroup")
-                                        local HorizontalSpan2  = require("ui/widget/horizontalspan")
-                                        local ImageWidget2     = require("ui/widget/imagewidget")
-                                        local LeftContainer2   = require("ui/widget/container/leftcontainer")
-                                        local LineWidget2      = require("ui/widget/linewidget")
-                                        local TextWidget2      = require("ui/widget/textwidget")
-                                        local VerticalGroup2   = require("ui/widget/verticalgroup")
-                                        local VerticalSpan2    = require("ui/widget/verticalspan")
-                                        -- 2×2 grid geometry (1 px separator lines).
-                                        local sep     = 1
-                                        local half_w  = math.floor((cover_max_w - sep) / 2)
-                                        local half_w2 = cover_max_w - sep - half_w
-                                        local half_h  = math.floor((cover_max_h - sep) / 2)
-                                        local half_h2 = cover_max_h - sep - half_h
-                                        local cell_dims = {
-                                            { w = half_w,  h = half_h  },
-                                            { w = half_w2, h = half_h  },
-                                            { w = half_w,  h = half_h2 },
-                                            { w = half_w2, h = half_h2 },
-                                        }
-                                        local cells = {}
-                                        for i = 1, 4 do
-                                            local c  = covers[i]
-                                            local cd = cell_dims[i]
-                                            if c then
-                                                cells[i] = CenterContainer2:new{
-                                                    dimen = Geom2:new{ w = cd.w, h = cd.h },
-                                                    ImageWidget2:new{
-                                                        image            = c.data,
-                                                        image_disposable = true,
-                                                        width            = cd.w,
-                                                        height           = cd.h,
-                                                    },
-                                                }
-                                            else
-                                                cells[i] = CenterContainer2:new{
-                                                    dimen = Geom2:new{ w = cd.w, h = cd.h },
-                                                    VerticalSpan2:new{ width = 1 },
-                                                }
-                                            end
-                                        end
-                                        local framed_gallery = FrameContainer2:new{
-                                            padding    = 0,
-                                            bordersize = border,
-                                            width      = cover_max_w + 2 * border,
-                                            height     = cover_max_h + 2 * border,
-                                            background = Blitbuffer2.COLOR_LIGHT_GRAY,
-                                            CenterContainer2:new{
-                                                dimen = Geom2:new{ w = cover_max_w, h = cover_max_h },
-                                                VerticalGroup2:new{
-                                                    HorizontalGroup2:new{
-                                                        cells[1],
-                                                        LineWidget2:new{
-                                                            background = Blitbuffer2.COLOR_WHITE,
-                                                            dimen = Geom2:new{ w = sep, h = half_h },
-                                                        },
-                                                        cells[2],
-                                                    },
-                                                    LineWidget2:new{
-                                                        background = Blitbuffer2.COLOR_WHITE,
-                                                        dimen = Geom2:new{ w = cover_max_w, h = sep },
-                                                    },
-                                                    HorizontalGroup2:new{
-                                                        cells[3],
-                                                        LineWidget2:new{
-                                                            background = Blitbuffer2.COLOR_WHITE,
-                                                            dimen = Geom2:new{ w = sep, h = half_h2 },
-                                                        },
-                                                        cells[4],
-                                                    },
-                                                },
-                                            },
-                                        }
-                                        _zen_apply_rounded_cover(framed_gallery, border)
-                                        -- Side-by-side layout: gallery left, text right.
-                                        local framed_h   = cover_max_h + 2 * border
-                                        local text_col_w = math.max(
-                                            avail_w - cover_max_w - 2 * border - gap,
-                                            Screen:scaleBySize(60))
-                                        local vstack = VerticalGroup2:new{ align = "left" }
-                                        table.insert(vstack, TextWidget2:new{
-                                            text      = folder_name_str,
-                                            face      = Font2:getFace("cfont", 20),
-                                            bold      = true,
-                                            max_width = text_col_w,
-                                        })
-                                        if folder_count_str then
-                                            table.insert(vstack, VerticalSpan2:new{
-                                                width = Screen:scaleBySize(2),
-                                            })
-                                            table.insert(vstack, TextWidget2:new{
-                                                text      = folder_count_str,
-                                                face      = Font2:getFace("cfont", 17),
-                                                max_width = text_col_w,
-                                            })
-                                        end
-                                        dialog_cover_widget = LeftContainer2:new{
-                                            dimen = Geom2:new{ w = avail_w, h = framed_h },
-                                            HorizontalGroup2:new{
-                                                align = "top",
-                                                framed_gallery,
-                                                HorizontalSpan2:new{ width = gap },
-                                                vstack,
-                                            },
-                                        }
                                     end
                                 end
                             end
+                            collect_books(file, 0)
+                            return entries
                         end
+                    }
+
+                    -- Use unified makeCover for folder
+                    local cover_widget, mode, scenario = Cover.makeCover(file, fake_chooser, {
+                        is_folder = true,
+                        max_w = cover_max_w,
+                        max_h = cover_max_h,
+                        folder_name = folder_name_str,
+                    })
+
+                 -- Apply rounded corners
+                if cover_widget and _zen_apply_rounded_cover then
+                    _zen_apply_rounded_cover(cover_widget, border)
+                end
+
+                    if cover_widget then
+                        local n_books = #(fake_chooser:genItemTableFromPath())
+                        local folder_count_str = n_books > 0
+                            and (n_books == 1 and _("1 book") or (tostring(n_books) .. " " .. _("books")))
+                            or nil
+                        dialog_title = folder_count_str
+                            and (folder_name_str .. "\n" .. folder_count_str)
+                            or folder_name_str
+
+                        local framed_h = cover_max_h + 2 * border
+                        local text_col_w = math.max(avail_w - cover_max_w - 2 * border - gap, Screen:scaleBySize(60))
+                        local vstack = VerticalGroup:new{ align = "left" }
+                        table.insert(vstack, TextWidget:new{
+                            text = folder_name_str,
+                            face = Font:getFace("cfont", 20),
+                            bold = true,
+                            max_width = text_col_w,
+                        })
+                        if folder_count_str then
+                            table.insert(vstack, VerticalSpan:new{ width = Screen:scaleBySize(2) })
+                            table.insert(vstack, TextWidget:new{
+                                text = folder_count_str,
+                                face = Font:getFace("cfont", 17),
+                                max_width = text_col_w,
+                            })
+                        end
+
+                        dialog_cover_widget = LeftContainer:new{
+                            dimen = Geom:new{ w = avail_w, h = framed_h },
+                            HorizontalGroup:new{
+                                align = "center",
+                                cover_widget,
+                                HorizontalSpan:new{ width = gap },
+                                vstack,
+                            },
+                        }
                     end
                 end
 
-                -- ── Placeholder cover (always shown when no real cover was found) ──────
+                -- Placeholder cover (when no cover widget yet)
                 if not dialog_cover_widget then
-                    local Blitbuffer2      = require("ffi/blitbuffer")
+                    local Blitbuffer2 = require("ffi/blitbuffer")
                     local CenterContainer2 = require("ui/widget/container/centercontainer")
-                    local Font2            = require("ui/font")
-                    local FrameContainer2  = require("ui/widget/container/framecontainer")
-                    local Geom2            = require("ui/geometry")
+                    local Font2 = require("ui/font")
+                    local FrameContainer2 = require("ui/widget/container/framecontainer")
+                    local Geom2 = require("ui/geometry")
                     local HorizontalGroup2 = require("ui/widget/horizontalgroup")
-                    local HorizontalSpan2  = require("ui/widget/horizontalspan")
-                    local LeftContainer2   = require("ui/widget/container/leftcontainer")
-                    local TextWidget2      = require("ui/widget/textwidget")
-                    local VerticalGroup2   = require("ui/widget/verticalgroup")
-                    local VerticalSpan2    = require("ui/widget/verticalspan")
+                    local HorizontalSpan2 = require("ui/widget/horizontalspan")
+                    local LeftContainer2 = require("ui/widget/container/leftcontainer")
+                    local ImageWidget2 = require("ui/widget/imagewidget")
+                    local TextWidget2 = require("ui/widget/textwidget")
+                    local VerticalGroup2 = require("ui/widget/verticalgroup")
+                    local VerticalSpan2 = require("ui/widget/verticalspan")
 
-                    local ph_w    = cover_max_w
-                    local ph_h    = cover_max_h
+                    local ph_w = cover_max_w
+                    local ph_h = math.floor(ph_w / ratio)  -- Respect ratio
                     local framed_h = ph_h + 2 * border
-                    local Widget2  = require("ui/widget/widget")
-                    local ph_frame = FrameContainer2:new{
-                        padding    = 0,
-                        bordersize = border,
-                        background = Blitbuffer2.COLOR_LIGHT_GRAY,
-                        Widget2:new{ dimen = Geom2:new{ w = ph_w, h = ph_h } },
+
+                    local final_bb = Cover.genCover(file, ph_w, ph_h)
+
+                    local cover_img = ImageWidget2:new{
+                        image = final_bb,
+                        width = ph_w,
+                        height = ph_h,
                     }
-                    _zen_apply_rounded_cover(ph_frame, border)
+
+                    local ph_frame = FrameContainer2:new{
+                        padding = 0,
+                        bordersize = border,
+                        width = ph_w + 2 * border,
+                        height = ph_h + 2 * border,
+                        background = Blitbuffer2.COLOR_WHITE,
+                        CenterContainer2:new{
+                            dimen = Geom2:new{ w = ph_w, h = ph_h },
+                            cover_img,
+                        },
+                    }
+
+                    local function apply_rounded(widget, bsz)
+                        local plug = zen_plugin or rawget(_G, "__ZEN_UI_PLUGIN")
+                        if not (plug and type(plug.config) == "table"
+                            and type(plug.config.features) == "table"
+                            and plug.config.features.browser_cover_rounded_corners == true)
+                        then
+                            return
+                        end
+                        local r = Screen:scaleBySize(6)
+                        local r_inner = r - bsz
+                        local orig_pt = widget.paintTo
+                        widget.paintTo = function(self, bb, x, y)
+                            orig_pt(self, bb, x, y)
+                            if not (self.dimen and self.dimen.x) then return end
+                            local tx, ty = self.dimen.x, self.dimen.y
+                            local tw, th = self.dimen.w, self.dimen.h
+                            local wh = Blitbuffer2.COLOR_WHITE
+                            local blk = Blitbuffer2.COLOR_BLACK
+                            for j = 0, r - 1 do
+                                local inner = math.sqrt(r * r - (r - j) * (r - j))
+                                local cut = math.ceil(r - inner)
+                                if cut > 0 then
+                                    bb:paintRect(tx, ty + j, cut, 1, wh)
+                                    bb:paintRect(tx + tw - cut, ty + j, cut, 1, wh)
+                                    bb:paintRect(tx, ty + th - 1 - j, cut, 1, wh)
+                                    bb:paintRect(tx + tw - cut, ty + th - 1 - j, cut, 1, wh)
+                                end
+                            end
+                            for j = 0, r - 1 do
+                                for c = 0, r - 1 do
+                                    local dx = r - c - 0.5
+                                    local dy = r - j - 0.5
+                                    local dist = math.sqrt(dx * dx + dy * dy)
+                                    if dist >= r_inner and dist <= r then
+                                        bb:paintRect(tx + c, ty + j, 1, 1, blk)
+                                        bb:paintRect(tx + tw - 1 - c, ty + j, 1, 1, blk)
+                                        bb:paintRect(tx + c, ty + th - 1 - j, 1, 1, blk)
+                                        bb:paintRect(tx + tw - 1 - c, ty + th - 1 - j, 1, 1, blk)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    apply_rounded(ph_frame, border)
+
                     local text_col_w = math.max(
                         avail_w - ph_w - 2 * border - gap,
                         Screen:scaleBySize(60))
                     local vstack = VerticalGroup2:new{ align = "left" }
-                    -- Use the already-computed dialog_title as the text column content.
+
                     local title_line, sub_line = dialog_title, nil
                     if dialog_title then
                         local nl = dialog_title:find("\n")
                         if nl then
                             title_line = dialog_title:sub(1, nl - 1)
-                            sub_line   = dialog_title:sub(nl + 1)
+                            sub_line = dialog_title:sub(nl + 1)
                         end
                     end
+
                     if title_line then
                         table.insert(vstack, TextWidget2:new{
-                            text      = title_line,
-                            face      = Font2:getFace("cfont", 20),
-                            bold      = true,
+                            text = title_line,
+                            face = Font2:getFace("cfont", 20),
+                            bold = true,
                             max_width = text_col_w,
                         })
                     end
                     if sub_line then
                         table.insert(vstack, VerticalSpan2:new{ width = Screen:scaleBySize(2) })
                         table.insert(vstack, TextWidget2:new{
-                            text      = sub_line,
-                            face      = Font2:getFace("cfont", 17),
+                            text = sub_line,
+                            face = Font2:getFace("cfont", 17),
                             max_width = text_col_w,
                         })
                     end
                     if pages_str then
                         table.insert(vstack, VerticalSpan2:new{ width = Screen:scaleBySize(3) })
                         table.insert(vstack, TextWidget2:new{
-                            text      = pages_str,
-                            face      = Font2:getFace("cfont", 14),
-                            fgcolor   = Blitbuffer2.COLOR_GRAY_3,
+                            text = pages_str,
+                            face = Font2:getFace("cfont", 14),
+                            fgcolor = Blitbuffer2.COLOR_GRAY_3,
                             max_width = text_col_w,
                         })
                     end
+
                     dialog_cover_widget = LeftContainer2:new{
                         dimen = Geom2:new{ w = avail_w, h = framed_h },
                         HorizontalGroup2:new{
-                            align = "top",
+                            align = "center",
                             ph_frame,
                             HorizontalSpan2:new{ width = gap },
                             vstack,
@@ -1087,19 +973,18 @@ local function apply_context_menu()
                 end
             end
 
-            -- ── Edit submenu ──────────────────────────────────────────────────────────
+            -- Edit submenu (unchanged)
             local function showEditSubmenu()
                 close_dialog()
                 local edit_dialog
 
-                -- Home directory: only Paste is meaningful (can't cut/copy/rename/delete it).
                 if is_home_dir then
                     edit_dialog = ButtonDialog:new{
                         buttons = {
                             {{
-                                text     = "\u{F0192}  " .. C_("File", "Paste"),
-                                align    = "left",
-                                enabled  = file_manager.clipboard and true or false,
+                                text = "\u{F0192}  " .. C_("File", "Paste"),
+                                align = "left",
+                                enabled = file_manager.clipboard and true or false,
                                 callback = function()
                                     UIManager:close(edit_dialog)
                                     file_manager:pasteFileFromClipboard(file)
@@ -1114,8 +999,8 @@ local function apply_context_menu()
                 local edit_buttons = {
                     {
                         {
-                            text     = "\u{F0489}  " .. _("Select"),
-                            align    = "left",
+                            text = "\u{F0489}  " .. _("Select"),
+                            align = "left",
                             callback = function()
                                 UIManager:close(edit_dialog)
                                 file_manager:onToggleSelectMode()
@@ -1129,9 +1014,9 @@ local function apply_context_menu()
                     },
                     {
                         {
-                            text     = "\u{F0190}  " .. _("Cut"),
-                            align    = "left",
-                            enabled  = is_not_parent_folder,
+                            text = "\u{F0190}  " .. _("Cut"),
+                            align = "left",
+                            enabled = is_not_parent_folder,
                             callback = function()
                                 UIManager:close(edit_dialog)
                                 file_manager:cutFile(file)
@@ -1140,9 +1025,9 @@ local function apply_context_menu()
                     },
                     {
                         {
-                            text     = "\u{F018F}  " .. C_("File", "Copy"),
-                            align    = "left",
-                            enabled  = is_not_parent_folder,
+                            text = "\u{F018F}  " .. C_("File", "Copy"),
+                            align = "left",
+                            enabled = is_not_parent_folder,
                             callback = function()
                                 UIManager:close(edit_dialog)
                                 file_manager:copyFile(file)
@@ -1151,9 +1036,9 @@ local function apply_context_menu()
                     },
                     {
                         {
-                            text     = "\u{F0192}  " .. C_("File", "Paste"),
-                            align    = "left",
-                            enabled  = file_manager.clipboard and true or false,
+                            text = "\u{F0192}  " .. C_("File", "Paste"),
+                            align = "left",
+                            enabled = file_manager.clipboard and true or false,
                             callback = function()
                                 UIManager:close(edit_dialog)
                                 file_manager:pasteFileFromClipboard(file)
@@ -1168,9 +1053,9 @@ local function apply_context_menu()
                 if allow_delete then
                     table.insert(edit_buttons, {
                         {
-                            text     = "\u{F0156}  " .. _("Delete"),
-                            align    = "left",
-                            enabled  = is_not_parent_folder,
+                            text = "\u{F0156}  " .. _("Delete"),
+                            align = "left",
+                            enabled = is_not_parent_folder,
                             callback = function()
                                 UIManager:close(edit_dialog)
                                 file_manager:showDeleteFileDialog(file, refresh)
@@ -1185,31 +1070,29 @@ local function apply_context_menu()
                 UIManager:show(edit_dialog)
             end
 
-            -- ── Main dialog ───────────────────────────────────────────────────
+            -- Main dialog buttons
             local buttons = {}
 
-            -- Details: description popup (with Book information button)
             if is_file and is_not_parent_folder then
                 table.insert(buttons, {
                     {
-                        text     = "\u{F02FD}  " .. _("Details"),
-                        align    = "left",
+                        text = "\u{F02FD}  " .. _("Details"),
+                        align = "left",
                         callback = function()
                             close_dialog()
-                            local util       = require("util")
+                            local util = require("util")
                             local TextViewer = require("ui/widget/textviewer")
-                            local desc_text  = book_description
+                            local desc_text = book_description
                                 and util.htmlToPlainTextIfHtml(book_description)
                                 or _("No description.")
                             local tv
                             tv = TextViewer:new{
-                                title     = _("Description"),
-                                text      = desc_text,
+                                title = _("Description"),
+                                text = desc_text,
                                 text_type = "book_info",
-                                -- replace default Find/Top/Bottom/Close with one button
                                 buttons_table = {
                                     {{
-                                        text     = "\u{F02FD} " .. _("Book information"),
+                                        text = "\u{F02FD} " .. _("Book information"),
                                         callback = function()
                                             UIManager:close(tv)
                                             file_manager.bookinfo:show(file)
@@ -1223,12 +1106,11 @@ local function apply_context_menu()
                 })
             end
 
-            -- Rename: folders only (not files, not the go-up row, not home dir)
             if not is_file and is_not_parent_folder and not is_home_dir then
                 table.insert(buttons, {
                     {
-                        text     = "\u{F0CB6}  " .. _("Rename"),
-                        align    = "left",
+                        text = "\u{F0CB6}  " .. _("Rename"),
+                        align = "left",
                         callback = function()
                             close_dialog()
                             file_manager:showRenameFileDialog(file, is_file)
@@ -1237,13 +1119,11 @@ local function apply_context_menu()
                 })
             end
 
-            -- New folder: only when invoked via the blank-space hold on the
-            -- current directory — not from individual file/folder item menus.
             if item._is_current_dir then
                 table.insert(buttons, {
                     {
-                        text     = "\u{F0B9D}  " .. _("New folder"),
-                        align    = "left",
+                        text = "\u{F0B9D}  " .. _("New folder"),
+                        align = "left",
                         callback = function()
                             close_dialog()
                             file_manager:createFolder()
@@ -1253,19 +1133,18 @@ local function apply_context_menu()
             end
 
             if is_file and is_not_parent_folder then
-                -- Move: open a folder picker then immediately execute the move
                 table.insert(buttons, {
                     {
-                        text     = "\u{F01BE}  " .. _("Move"),
-                        align    = "left",
+                        text = "\u{F01BE}  " .. _("Move"),
+                        align = "left",
                         callback = function()
                             close_dialog()
-                            local ffiUtil        = require("ffi/util")
-                            local DocSettings    = require("docsettings")
-                            local ReadHistory    = require("readhistory")
+                            local ffiUtil = require("ffi/util")
+                            local DocSettings = require("docsettings")
+                            local ReadHistory = require("readhistory")
                             local ReadCollection = require("readcollection")
-                            local lfs            = require("libs/libkoreader-lfs")
-                            local src            = ffiUtil.realpath(file)
+                            local lfs = require("libs/libkoreader-lfs")
+                            local src = ffiUtil.realpath(file)
                             if not src then return end
                             local home_dir = paths.getHomeDir()
                                 or file_chooser.path
@@ -1278,14 +1157,14 @@ local function apply_context_menu()
                                 and _zen_cfg.additional_home_dirs or nil
                             local chooser = MoveChooser:new{
                                 select_directory = true,
-                                select_file      = false,
-                                show_files       = false,
-                                title            = _("Move to…"),
-                                path             = home_dir,
-                                src_dir          = src_dir,
-                                extra_roots      = _extra,
-                                onConfirm        = function(dest_dir_real)
-                                    local name      = ffiUtil.basename(src)
+                                select_file = false,
+                                show_files = true,
+                                title = _("Move to…"),
+                                path = home_dir,
+                                src_dir = src_dir,
+                                extra_roots = _extra,
+                                onConfirm = function(dest_dir_real)
+                                    local name = ffiUtil.basename(src)
                                     local dest_file = ffiUtil.joinPath(dest_dir_real, name)
                                     if lfs.attributes(dest_file) then
                                         local InfoMessage = require("ui/widget/infomessage")
@@ -1300,8 +1179,6 @@ local function apply_context_menu()
                                             DocSettings.updateLocation(src, dest_file)
                                             ReadHistory:updateItem(src, dest_file)
                                             ReadCollection:updateItem(src, dest_file)
-                                            -- Migrate cover/metadata DB entry to the new path so
-                                            -- covers and metadata appear immediately without re-extraction.
                                             local ok_bim2, bim2 = pcall(require, "bookinfomanager")
                                             if ok_bim2 and bim2 then
                                                 local new_dir = ffiUtil.realpath(dest_dir_real)
@@ -1314,11 +1191,9 @@ local function apply_context_menu()
                                             ReadHistory:updateItemsByPath(src, dest_file)
                                             ReadCollection:updateItemsByPath(src, dest_file)
                                         end
-                                        -- If the current directory is now empty and we're
-                                        -- in a subfolder, navigate home to avoid a blank screen.
-                                        local real_cur  = ffiUtil.realpath(file_chooser.path)
+                                        local real_cur = ffiUtil.realpath(file_chooser.path)
                                         local real_home = ffiUtil.realpath(home_dir)
-                                        local at_home   = real_cur == real_home
+                                        local at_home = real_cur == real_home
                                         local n = 0
                                         if not at_home then
                                             local ok3, iter3, dir3 = pcall(lfs.dir, file_chooser.path)
@@ -1353,13 +1228,12 @@ local function apply_context_menu()
             if is_file then
                 local ReadCollection = require("readcollection")
 
-                -- Remove from collection (only when inside a named collection view)
                 if item._zen_collection_name then
                     local coll_name = item._zen_collection_name
                     table.insert(buttons, {
                         {
-                            text     = "\u{F04D2}  " .. _("Remove from collection"),
-                            align    = "left",
+                            text = "\u{F04D2}  " .. _("Remove from collection"),
+                            align = "left",
                             callback = function()
                                 close_dialog()
                                 ReadCollection:removeItem(file, coll_name)
@@ -1372,17 +1246,16 @@ local function apply_context_menu()
                     })
                 end
 
-                -- Add to collection: paginated Menu picker (skip when already inside a collection)
                 if not item._zen_collection_name then
                     table.insert(buttons, {
                         {
-                            text     = "\u{F04CE}  " .. _("Add to collection") .. "  \u{25B6}",
-                            align    = "left",
+                            text = "\u{F04CE}  " .. _("Add to collection") .. "  \u{25B6}",
+                            align = "left",
                             callback = function()
                                 close_dialog()
-                                local Menu_cp      = require("ui/widget/menu")
+                                local Menu_cp = require("ui/widget/menu")
                                 local default_coll = ReadCollection.default_collection_name
-                                local all_colls    = {}
+                                local all_colls = {}
                                 for cn, _v in pairs(ReadCollection.coll) do
                                     table.insert(all_colls, cn)
                                 end
@@ -1393,22 +1266,22 @@ local function apply_context_menu()
                                 end)
                                 local items = {}
                                 for _i, cn in ipairs(all_colls) do
-                                    local display    = cn == default_coll and _("Favorites") or cn
+                                    local display = cn == default_coll and _("Favorites") or cn
                                     local already_in = ReadCollection:isFileInCollection(file, cn)
                                     table.insert(items, {
-                                        text      = display .. (already_in and "  \u{2713}" or ""),
+                                        text = display .. (already_in and "  \u{2713}" or ""),
                                         mandatory = already_in and _("added") or nil,
-                                        dim       = already_in,
-                                        _cn       = cn,
+                                        dim = already_in,
+                                        _cn = cn,
                                     })
                                 end
                                 local coll_picker
                                 coll_picker = Menu_cp:new{
-                                    title         = _("Add to collection"),
-                                    item_table    = items,
+                                    title = _("Add to collection"),
+                                    item_table = items,
                                     is_borderless = true,
-                                    is_popout     = false,
-                                    onMenuSelect  = function(self_m, item_m)
+                                    is_popout = false,
+                                    onMenuSelect = function(self_m, item_m)
                                         if item_m.dim then return true end
                                         UIManager:close(coll_picker)
                                         ReadCollection:addItem(file, item_m._cn)
@@ -1427,20 +1300,19 @@ local function apply_context_menu()
             end
 
             if is_file and is_not_parent_folder then
-                -- Read status submenu
                 table.insert(buttons, {
                     {
-                        text     = "\u{F0B64}  " .. _("Read status") .. "  ▶",
-                        align    = "left",
+                        text = "\u{F0B64}  " .. _("Read status") .. "  ▶",
+                        align = "left",
                         callback = function()
                             close_dialog()
                             local filemanagerutil = require("apps/filemanager/filemanagerutil")
-                            local BookList        = require("ui/widget/booklist")
-                            local DocSettings     = require("docsettings")
-                            local doc_settings    = DocSettings:open(file)
-                            local summary         = doc_settings:readSetting("summary") or {}
-                            local current_status  = summary.status
-                            local is_unread       = not current_status or current_status == ""
+                            local BookList = require("ui/widget/booklist")
+                            local DocSettings = require("docsettings")
+                            local doc_settings = DocSettings:open(file)
+                            local summary = doc_settings:readSetting("summary") or {}
+                            local current_status = summary.status
+                            local is_unread = not current_status or current_status == ""
                             local status_dialog
 
                             local function setStatus(to_status)
@@ -1455,9 +1327,6 @@ local function apply_context_menu()
                                 filemanagerutil.saveSummary(doc_settings, summary)
                                 BookList.setBookInfoCacheProperty(file, "status", to_status)
                                 if to_status == nil then
-                                    -- Reset cache to {been_opened=false} so hasBookInfoCache stays
-                                    -- valid and the renderer shows "New" without re-reading the sidecar.
-                                    -- Must be last: this call replaces the whole cache entry.
                                     BookList.setBookInfoCacheProperty(file, "been_opened", false)
                                 end
                                 UIManager:close(status_dialog)
@@ -1468,21 +1337,21 @@ local function apply_context_menu()
                                 local is_cur = (to_status == nil and is_unread)
                                     or (to_status ~= nil and current_status == to_status)
                                 return {{
-                                    text     = icon .. "  " .. label .. (is_cur and "  \u{2713}" or ""),
-                                    align    = "left",
-                                    enabled  = not is_cur,
+                                    text = icon .. "  " .. label .. (is_cur and "  \u{2713}" or ""),
+                                    align = "left",
+                                    enabled = not is_cur,
                                     callback = function() setStatus(to_status) end,
                                 }}
                             end
 
                             status_dialog = ButtonDialog:new{
-                                title       = _("Read status"),
+                                title = _("Read status"),
                                 title_align = "center",
-                                buttons     = {
-                                    statusBtn("\u{F0B64}", _("Unread"),      nil),
-                                    statusBtn("\u{F0B63}", _("Reading"),     "reading"),
-                                    statusBtn("\u{F0150}", _("To Be Read"),  "abandoned"),
-                                    statusBtn("\u{F012C}", _("Finished"),    "complete"),
+                                buttons = {
+                                    statusBtn("\u{F0B64}", _("Unread"), nil),
+                                    statusBtn("\u{F0B63}", _("Reading"), "reading"),
+                                    statusBtn("\u{F0150}", _("To Be Read"), "abandoned"),
+                                    statusBtn("\u{F012C}", _("Finished"), "complete"),
                                 },
                             }
                             UIManager:show(status_dialog)
@@ -1491,12 +1360,11 @@ local function apply_context_menu()
                 })
             end
 
-            -- ── Display mode (current dir only) ──────────────────────────────────────
             if item._is_current_dir then
                 local function showViewSubmenu()
                     close_dialog()
                     local ok_fm, FM = pcall(require, "apps/filemanager/filemanager")
-                    local fm          = ok_fm and FM and FM.instance
+                    local fm = ok_fm and FM and FM.instance
                     local ok_bim, bim = pcall(require, "bookinfomanager")
                     local cur_mode
                     if ok_bim and bim then
@@ -1516,9 +1384,9 @@ local function apply_context_menu()
                     local function viewBtn(label, icon, mode)
                         local active = cur_mode == mode
                         return {{
-                            text     = icon .. "  " .. label .. (active and "  \u{2713}" or ""),
-                            align    = "left",
-                            enabled  = not active,
+                            text = icon .. "  " .. label .. (active and "  \u{2713}" or ""),
+                            align = "left",
+                            enabled = not active,
                             callback = function()
                                 UIManager:close(view_dialog)
                                 apply_mode(mode)
@@ -1526,12 +1394,12 @@ local function apply_context_menu()
                         }}
                     end
                     view_dialog = ButtonDialog:new{
-                        title       = _("Display mode"),
+                        title = _("Display mode"),
                         title_align = "center",
-                        buttons     = {
-                            viewBtn(_("Mosaic"),          "\u{F11D9}", "mosaic_image"),
+                        buttons = {
+                            viewBtn(_("Mosaic"), "\u{F11D9}", "mosaic_image"),
                             viewBtn(_("List (detailed)"), "\u{F148B}", "list_image_meta"),
-                            viewBtn(_("List (basic)"),    "\u{F0279}", "list_image_filename"),
+                            viewBtn(_("List (basic)"), "\u{F0279}", "list_image_filename"),
                         },
                     }
                     UIManager:show(view_dialog)
@@ -1539,64 +1407,56 @@ local function apply_context_menu()
 
                 table.insert(buttons, {
                     {
-                        text     = "\u{F06D0}  " .. _("Display") .. "  ▶",
-                        align    = "left",
+                        text = "\u{F06D0}  " .. _("Display") .. "  ▶",
+                        align = "left",
                         callback = showViewSubmenu,
                     },
                 })
             end
 
-            -- ── Sort (folders only) ───────────────────────────────────────────────────
             if not is_file and is_not_parent_folder then
                 local SORT_OPTIONS = {
-                    { key = "title",   text = "\u{F04BB}  " .. _("Title")         },
-                    { key = "authors", text = "\u{F0013}  " .. _("Authors")       },
-                    { key = "series",  text = "\u{F0436}  " .. _("Series")        },
-                    { key = "access",  text = "\u{F02DA}  " .. _("Recently read") },
+                    { key = "title", text = "\u{F04BB}  " .. _("Title") },
+                    { key = "authors", text = "\u{F0013}  " .. _("Authors") },
+                    { key = "series", text = "\u{F0436}  " .. _("Series") },
+                    { key = "access", text = "\u{F02DA}  " .. _("Recently read") },
                 }
 
                 if is_home_dir then
-                    -- Home dir: controls the KOReader global collate (persists across sessions).
                     local g_sort = rawget(_G, "G_reader_settings")
                     if g_sort then
                         table.insert(buttons, {
                             {
-                                text     = "\u{F04BF}  " .. _("Sort library") .. "  ▶",
-                                align    = "left",
+                                text = "\u{F04BF}  " .. _("Sort library") .. "  ▶",
+                                align = "left",
                                 callback = function()
                                     close_dialog()
                                     local sort_dialog
                                     local sort_buttons = {}
                                     local cur = g_sort:readSetting("collate", "strcoll")
                                     local cur_reverse = g_sort:isTrue("reverse_collate")
-                                    -- "strcoll" is KOReader's default alpha sort; map to "title"
-                                    -- so the Title option shows as active by default.
                                     if cur == "strcoll" then cur = "title" end
                                     for _, opt in ipairs(SORT_OPTIONS) do
                                         local is_active = cur == opt.key
                                         table.insert(sort_buttons, {{
-                                            text     = opt.text .. (is_active and "  \u{2713}" or ""),
-                                            align    = "left",
-                                            enabled  = not is_active,
+                                            text = opt.text .. (is_active and "  \u{2713}" or ""),
+                                            align = "left",
+                                            enabled = not is_active,
                                             callback = function()
-                                                -- "title" collate is valid; "strcoll" is the
-                                                -- KOReader default alias — save whichever the
-                                                -- FileChooser collates table exposes.
                                                 g_sort:saveSetting("collate", opt.key)
                                                 UIManager:close(sort_dialog)
                                                 self_fc:refreshPath()
                                             end,
                                         }})
                                     end
-                                    -- Order submenu
                                     table.insert(sort_buttons, {{
-                                        text     = "\u{F04BF}  " .. _("Order") .. "  ▶",
-                                        align    = "left",
+                                        text = "\u{F04BF}  " .. _("Order") .. "  ▶",
+                                        align = "left",
                                         callback = function()
                                             UIManager:close(sort_dialog)
                                             self_fc:showSortOrderDialog({
                                                 current_reverse = cur_reverse,
-                                                on_select       = function(reverse)
+                                                on_select = function(reverse)
                                                     if reverse then
                                                         g_sort:saveSetting("reverse_collate", true)
                                                     else
@@ -1608,9 +1468,9 @@ local function apply_context_menu()
                                         end,
                                     }})
                                     sort_dialog = ButtonDialog:new{
-                                        title       = _("Sort library by"),
+                                        title = _("Sort library by"),
                                         title_align = "center",
-                                        buttons     = sort_buttons,
+                                        buttons = sort_buttons,
                                     }
                                     UIManager:show(sort_dialog)
                                 end,
@@ -1618,7 +1478,6 @@ local function apply_context_menu()
                         })
                     end
                 else
-                    -- Sub-folder: per-folder zen sort override.
                     local fsd_api = rawget(_G, "__ZEN_FOLDER_SORT")
                     if fsd_api then
                         local ffiUtil_fsd = require("ffi/util")
@@ -1626,8 +1485,8 @@ local function apply_context_menu()
 
                         table.insert(buttons, {
                             {
-                                text     = "\u{F04BF}  " .. _("Sort folder") .. "  ▶",
-                                align    = "left",
+                                text = "\u{F04BF}  " .. _("Sort folder") .. "  ▶",
+                                align = "left",
                                 callback = function()
                                     close_dialog()
                                     local sort_dialog
@@ -1638,9 +1497,9 @@ local function apply_context_menu()
                                     for _, opt in ipairs(SORT_OPTIONS) do
                                         local is_active = cur_collate == opt.key
                                         table.insert(sort_buttons, {{
-                                            text     = opt.text .. (is_active and "  \u{2713}" or ""),
-                                            align    = "left",
-                                            enabled  = not is_active,
+                                            text = opt.text .. (is_active and "  \u{2713}" or ""),
+                                            align = "left",
+                                            enabled = not is_active,
                                             callback = function()
                                                 fsd_api.set(real_folder, opt.key, cur_reverse)
                                                 UIManager:close(sort_dialog)
@@ -1648,15 +1507,14 @@ local function apply_context_menu()
                                             end,
                                         }})
                                     end
-                                    -- Order submenu
                                     table.insert(sort_buttons, {{
-                                        text     = "\u{F04BF}  " .. _("Order") .. "  ▶",
-                                        align    = "left",
+                                        text = "\u{F04BF}  " .. _("Order") .. "  ▶",
+                                        align = "left",
                                         callback = function()
                                             UIManager:close(sort_dialog)
                                             self_fc:showSortOrderDialog({
                                                 current_reverse = cur_reverse,
-                                                on_select       = function(reverse)
+                                                on_select = function(reverse)
                                                     if cur_collate then
                                                         fsd_api.set(real_folder, cur_collate, reverse)
                                                         self_fc:refreshPath()
@@ -1665,12 +1523,11 @@ local function apply_context_menu()
                                             })
                                         end,
                                     }})
-                                    -- "Clear" row — only shown when an override is active
                                     if current_override then
                                         table.insert(sort_buttons, {})
                                         table.insert(sort_buttons, {{
-                                            text     = "\u{F099B}  " .. _("Clear"),
-                                            align    = "left",
+                                            text = "\u{F099B}  " .. _("Clear"),
+                                            align = "left",
                                             callback = function()
                                                 fsd_api.clear(real_folder)
                                                 UIManager:close(sort_dialog)
@@ -1679,9 +1536,9 @@ local function apply_context_menu()
                                         }})
                                     end
                                     sort_dialog = ButtonDialog:new{
-                                        title       = _("Sort folder by"),
+                                        title = _("Sort folder by"),
                                         title_align = "center",
-                                        buttons     = sort_buttons,
+                                        buttons = sort_buttons,
                                     }
                                     UIManager:show(sort_dialog)
                                 end,
@@ -1691,7 +1548,6 @@ local function apply_context_menu()
                 end
             end
 
-            -- ── Filter by read status (current dir only) ─────────────────────────────
             if item._is_current_dir then
                 local function showFilterDialog()
                     local cur_st = FileChooser.show_filter and FileChooser.show_filter.status
@@ -1709,17 +1565,17 @@ local function apply_context_menu()
                     end
 
                     local STATUS_OPTS = {
-                        { key = "new",       icon = icons.status,   label = _("Unread")     },
-                        { key = "reading",   icon = icons.reading,  label = _("Reading")    },
-                        { key = "abandoned", icon = icons.tbr,      label = _("To Be Read") },
-                        { key = "complete",  icon = icons.finished, label = _("Finished")   },
+                        { key = "new", icon = icons.status, label = _("Unread") },
+                        { key = "reading", icon = icons.reading, label = _("Reading") },
+                        { key = "abandoned", icon = icons.tbr, label = _("To Be Read") },
+                        { key = "complete", icon = icons.finished, label = _("Finished") },
                     }
 
                     local fbts = {}
                     table.insert(fbts, {{
-                        text     = _("All") .. (is_all and "  " .. icons.check or ""),
-                        align    = "left",
-                        enabled  = not is_all,
+                        text = _("All") .. (is_all and "  " .. icons.check or ""),
+                        align = "left",
+                        enabled = not is_all,
                         callback = function()
                             UIManager:close(filter_dialog)
                             setFilter(nil)
@@ -1728,8 +1584,8 @@ local function apply_context_menu()
                     for _, st in ipairs(STATUS_OPTS) do
                         local is_active = cur_st and cur_st[st.key] == true
                         table.insert(fbts, {{
-                            text     = st.icon .. "  " .. st.label .. (is_active and "  " .. icons.check or ""),
-                            align    = "left",
+                            text = st.icon .. "  " .. st.label .. (is_active and "  " .. icons.check or ""),
+                            align = "left",
                             callback = function()
                                 UIManager:close(filter_dialog)
                                 local new_st = {}
@@ -1743,7 +1599,6 @@ local function apply_context_menu()
                                 end
                                 local n = 0
                                 for _, v in pairs(new_st) do if v then n = n + 1 end end
-                                -- n==0 or all 4 selected collapses back to nil (All)
                                 if n == 0 or n == 4 then setFilter(nil)
                                 else setFilter(new_st) end
                                 UIManager:nextTick(showFilterDialog)
@@ -1752,9 +1607,9 @@ local function apply_context_menu()
                     end
 
                     filter_dialog = ButtonDialog:new{
-                        title       = _("Filter by status"),
+                        title = _("Filter by status"),
                         title_align = "center",
-                        buttons     = fbts,
+                        buttons = fbts,
                     }
                     UIManager:show(filter_dialog)
                 end
@@ -1767,10 +1622,10 @@ local function apply_context_menu()
                 end
                 table.insert(buttons, {
                     {
-                        text     = icons.filter .. "  " .. _("Filter")
+                        text = icons.filter .. "  " .. _("Filter")
                             .. (n_active > 0 and " (" .. n_active .. ")" or "")
                             .. "  ▶",
-                        align    = "left",
+                        align = "left",
                         callback = function()
                             close_dialog()
                             UIManager:nextTick(showFilterDialog)
@@ -1781,48 +1636,38 @@ local function apply_context_menu()
 
             table.insert(buttons, {
                 {
-                    text     = "\u{F090C}  " .. _("Edit") .. "  ▶",
-                    align    = "left",
+                    text = "\u{F090C}  " .. _("Edit") .. "  ▶",
+                    align = "left",
                     callback = showEditSubmenu,
                 },
             })
 
-            -- Caller-supplied extra buttons (e.g. "Remove from history")
             if item._zen_extra_buttons then
                 for _, row in ipairs(item._zen_extra_buttons) do
                     table.insert(buttons, row)
                 end
             end
 
-            -- NOTE: using an explicit local avoids the Lua `A and nil or B` gotcha
-            -- where `nil` is falsy so the expression always returns B.
             local dlg_title = dialog_cover_widget and "" or dialog_title
             self_fc.file_dialog = ButtonDialog:new{
-                title          = dlg_title ~= "" and dlg_title or nil,
-                title_align    = "center",
-                buttons        = buttons,
+                title = dlg_title ~= "" and dlg_title or nil,
+                title_align = "center",
+                buttons = buttons,
                 _added_widgets = dialog_cover_widget and { dialog_cover_widget } or nil,
             }
             UIManager:show(self_fc.file_dialog)
             return true
         end
 
-        -- ── Blank-space hold → current-folder context menu ────────────────────
-        -- KOReader dispatches "Gesture" events to child widgets FIRST
-        -- (WidgetContainer:handleEvent propagates to children before calling
-        -- the widget's own handler).  MenuItem items handle holds that land on
-        -- an actual item and return true, consuming the event.  Only when the
-        -- hold is on blank space does propagation fall through to file_chooser's
-        -- own onGesture, where the ges_event below fires.
         if Device:isTouchDevice() then
             local GestureRange_bh = require("ui/gesturerange")
-            local Geom_bh         = require("ui/geometry")
+            local Geom_bh = require("ui/geometry")
             if not file_chooser.ges_events then
                 file_chooser.ges_events = {}
             end
             file_chooser.ges_events.ZenBlankHold = {
                 GestureRange_bh:new{
-                    ges   = "hold",
+                    ges = "hold",
                     range = Geom_bh:new{
                         x = 0, y = 0,
                         w = Device.screen:getWidth(),
@@ -1831,23 +1676,19 @@ local function apply_context_menu()
                 },
             }
             function file_chooser:onZenBlankHold(arg, ges)
-                -- Mirror showFileDialog's home-dir boundary guard.
                 local home_dir_bh = paths.getHomeDir()
                 local cur_path_bh = self.path or ""
                 if home_dir_bh then
                     if not paths.isInHomeDir(cur_path_bh) then return false end
                 end
-                -- Synthesize a folder item for the current directory so that
-                -- the patched showFileDialog (rename, new folder, sort, edit)
-                -- works without duplicating any logic.
                 local ffiUtil_bh = require("ffi/util")
-                local cur_real   = ffiUtil_bh.realpath(cur_path_bh) or cur_path_bh
+                local cur_real = ffiUtil_bh.realpath(cur_path_bh) or cur_path_bh
                 self:showFileDialog({
-                    path            = cur_real,
-                    is_file         = false,
-                    is_go_up        = false,
-                    text            = ffiUtil_bh.basename(cur_real),
-                    bidi_wrap_func  = BD.directory,
+                    path = cur_real,
+                    is_file = false,
+                    is_go_up = false,
+                    text = ffiUtil_bh.basename(cur_real),
+                    bidi_wrap_func = BD.directory,
                     _is_current_dir = true,
                 })
                 return true

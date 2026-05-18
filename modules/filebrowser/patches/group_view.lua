@@ -150,6 +150,7 @@ local function patch_mosaic_item()
     _mosaic_item_patched = true
 
     local BookInfoManager = require("bookinfomanager")
+    local CoverUtils      = require("common/cover_utils")
 
     -- Keep underlines hidden on focus (same guard as collections.lua)
     local Blitbuffer_uc = require("ffi/blitbuffer")
@@ -227,8 +228,9 @@ local function patch_mosaic_item()
 
         local files      = self.entry._zen_files
         local book_count = #files
-        local is_gallery = BookInfoManager:getSetting("folder_gallery_mode")
-        local max_covers = is_gallery and 4 or 1
+        local mode, max_covers = CoverUtils.getMode()
+        local is_gallery = mode == "gallery"
+        local is_stack   = mode == "stack"
         local covers     = {}
         for i = 1, math.min(book_count, max_covers) do
             local bi = BookInfoManager:getBookInfo(files[i], true)
@@ -243,11 +245,11 @@ local function patch_mosaic_item()
         end
 
         -- Delegate to browser_folder_cover's method when available.
-        -- Respect gallery_mode: off means single cover or no_image, not a 4-cell grid.
         if self._setFolderCover then
-            local is_gallery = BookInfoManager:getSetting("folder_gallery_mode")
             if is_gallery then
                 self:_setFolderCover{ gallery = covers, book_count = book_count }
+            elseif is_stack then
+                self:_setFolderCover{ stack = covers, book_count = book_count }
             elseif #covers > 0 then
                 self:_setFolderCover{ data = covers[1].data, w = covers[1].w, h = covers[1].h, book_count = book_count }
             else
@@ -308,37 +310,43 @@ local function patch_mosaic_item()
             end
         end
         local dimen = { w = portrait_w + 2 * border, h = portrait_h + 2 * border }
-        local image_widget = FrameContainer:new{
-            padding = 0, bordersize = border,
-            width = dimen.w, height = dimen.h,
-            background = Blitbuffer.COLOR_LIGHT_GRAY,
-            CenterContainer:new{
-                dimen = { w = portrait_w, h = portrait_h },
-                VerticalGroup:new{
-                    HorizontalGroup:new{
-                        cells[1],
+        local image_widget
+        if is_stack then
+            local CoverUtils = require("common/cover_utils")
+            image_widget = CoverUtils.drawStack(covers, portrait_w, portrait_h, border)
+        else
+            image_widget = FrameContainer:new{
+                padding = 0, bordersize = border,
+                width = dimen.w, height = dimen.h,
+                background = Blitbuffer.COLOR_LIGHT_GRAY,
+                CenterContainer:new{
+                    dimen = { w = portrait_w, h = portrait_h },
+                    VerticalGroup:new{
+                        HorizontalGroup:new{
+                            cells[1],
+                            LineWidget:new{
+                                background = Blitbuffer.COLOR_WHITE,
+                                dimen = { w = sep, h = half_h },
+                            },
+                            cells[2],
+                        },
                         LineWidget:new{
                             background = Blitbuffer.COLOR_WHITE,
-                            dimen = { w = sep, h = half_h },
+                            dimen = { w = portrait_w, h = sep },
                         },
-                        cells[2],
-                    },
-                    LineWidget:new{
-                        background = Blitbuffer.COLOR_WHITE,
-                        dimen = { w = portrait_w, h = sep },
-                    },
-                    HorizontalGroup:new{
-                        cells[3],
-                        LineWidget:new{
-                            background = Blitbuffer.COLOR_WHITE,
-                            dimen = { w = sep, h = half_h2 },
+                        HorizontalGroup:new{
+                            cells[3],
+                            LineWidget:new{
+                                background = Blitbuffer.COLOR_WHITE,
+                                dimen = { w = sep, h = half_h2 },
+                            },
+                            cells[4],
                         },
-                        cells[4],
                     },
                 },
-            },
-            overlap_align = "center",
-        }
+                overlap_align = "center",
+            }
+        end
         local centered_top = math.floor((self.height - dimen.h) / 2)
         local widget = OverlapGroup:new{
             dimen = { w = self.width, h = self.height },
@@ -372,6 +380,7 @@ local function patch_list_item()
     local BD              = require("ui/bidi")
     local Blitbuffer      = require("ffi/blitbuffer")
     local BookInfoManager = require("bookinfomanager")
+    local CoverUtils      = require("common/cover_utils")
     local CenterContainer = require("ui/widget/container/centercontainer")
     local Device          = require("device")
     local Font            = require("ui/font")
@@ -427,8 +436,9 @@ local function patch_list_item()
 
         local wleft
         if self.do_cover_image then
-            local gallery_mode = BookInfoManager:getSetting("folder_gallery_mode")
-            local max_covers   = gallery_mode and 4 or 1
+            local mode, max_covers = CoverUtils.getMode()
+            local gallery_mode = mode == "gallery"
+            local stack_mode   = mode == "stack"
             local covers       = {}
             for i = 1, #files do
                 local bi = BookInfoManager:getBookInfo(files[i], true)
@@ -515,6 +525,13 @@ local function patch_list_item()
                             VerticalSpan:new{ width = 1 },
                         },
                     }
+                end
+            elseif stack_mode then
+                local CoverUtils = require("common/cover_utils")
+                cover_frame = CoverUtils.drawStack(covers, cover_w, max_img, border_size)
+                if #covers > 0 then
+                    self.menu._has_cover_images = true
+                    self._has_cover_image = true
                 end
             elseif #covers > 0 then
                 local bb       = covers[1].data
