@@ -14,6 +14,7 @@ local PATCH_MODULES = {
     page_browser = "modules/reader/patches/page_browser",
     highlight_menu = "modules/reader/patches/highlight_menu",
     dict_quick_lookup = "modules/reader/patches/dict_quick_lookup",
+    status_on_open = "modules/reader/patches/status_on_open",
 }
 
 local function is_feature_enabled(plugin, key)

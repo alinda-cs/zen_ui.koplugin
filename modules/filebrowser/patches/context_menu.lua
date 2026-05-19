@@ -1066,6 +1066,26 @@ local function apply_context_menu()
                         },
                     },
                 }
+                if is_file then
+                    table.insert(edit_buttons, {
+                        {
+                            text = icons.refresh .. "  " .. _("Refresh cached book information"),
+                            align = "left",
+                            callback = function()
+                                UIManager:close(edit_dialog)
+                                local ok_bim, BookInfoManager = pcall(require, "bookinfomanager")
+                                if ok_bim then
+                                    BookInfoManager:deleteBookInfo(file)
+                                    if self_fc.filemanager_menu then
+                                        self_fc.filemanager_menu.files_updated = true
+                                    end
+                                    refresh()
+                                end
+                            end,
+                        },
+                    })
+                end
+
                 local allow_delete = zen_plugin
                     and type(zen_plugin.config) == "table"
                     and type(zen_plugin.config.context_menu) == "table"

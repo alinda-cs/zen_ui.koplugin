@@ -1374,7 +1374,9 @@ local function showDetailView(group_item, injectNavbar, tab_id)
                 return
             end
             if item.path then
-                ReaderUI:showReader(item.path)
+                local filemanagerutil = require("apps/filemanager/filemanagerutil")
+                local FileManager = require("apps/filemanager/filemanager")
+                filemanagerutil.openFile(FileManager.instance, item.path)
             end
         end,
         onMenuHold         = function(menu_self, item)
@@ -1854,7 +1856,9 @@ function M.showTBRView(injectNavbar)
                 return
             end
             if item.path then
-                ReaderUI:showReader(item.path)
+                local filemanagerutil = require("apps/filemanager/filemanagerutil")
+                local FileManager = require("apps/filemanager/filemanager")
+                filemanagerutil.openFile(FileManager.instance, item.path)
             end
         end,
         onMenuHold         = function(menu_self, item)
