@@ -334,8 +334,11 @@ local function apply_opening_banner()
     function OpeningBanner:paintTo(bb, x, y)
         self.dimen.x = x
         self.dimen.y = y
-        local bg = self.dark_banner and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE
-        local fg = self.dark_banner and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_BLACK
+        -- XOR dark_banner with night mode so colors are always visually correct.
+        local night_mode = G_reader_settings and G_reader_settings:isTrue("night_mode") or false
+        local use_dark = self.dark_banner ~= night_mode
+        local bg = use_dark and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE
+        local fg = use_dark and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_BLACK
         local w, h = self.dimen.w, self.dimen.h
         local r    = self.round_bottom_corners and Screen:scaleBySize(8) or 0
 
@@ -345,10 +348,8 @@ local function apply_opening_banner()
         if r > 0 then
             _mask_bottom_corners(bb, x, y, w, h, r)
         end
-        -- 3. Border (after masking so it is never erased)
-        -- The banner border must match the cover's border (always COLOR_BLACK).
-        -- In night mode, KOReader inverts COLOR_BLACK to white automatically.
-        _draw_border(bb, x, y, w, h, r, Blitbuffer.COLOR_BLACK)
+        -- 3. Border contrasts with bg (fg color), consistent with night mode.
+        _draw_border(bb, x, y, w, h, r, fg)
 
         local tw = TextWidget:new{
             text      = self.label or _("Opening"),

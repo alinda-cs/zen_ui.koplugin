@@ -827,7 +827,7 @@ local function apply_opds()
         local default_url = G_reader_settings:readSetting("opds_default_url")
         if default_url then
             self._zen_default_navigated = true
-            -- Pre-load credentials from the canonical servers list.
+            -- Pre-load credentials so fetchFeed can auth on the first request.
             for _i, server in ipairs(self.servers or {}) do
                 if server.url == default_url then
                     self.root_catalog_title     = server.title
@@ -992,6 +992,20 @@ local function apply_opds()
     end
 
     -- Hold on a root-list catalog entry: vertical single-column menu.
+    -- Keep opds_default_url in sync when a server's URL is changed via Edit.
+    local orig_editCatalogFromInput = OPDSBrowser.editCatalogFromInput
+    function OPDSBrowser:editCatalogFromInput(fields, item, no_refresh)
+        local old_url = item and item.url
+        orig_editCatalogFromInput(self, fields, item, no_refresh)
+        if old_url then
+            local saved_default = G_reader_settings:readSetting("opds_default_url")
+            if saved_default == old_url then
+                local new_url = fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2]
+                G_reader_settings:saveSetting("opds_default_url", new_url)
+            end
+        end
+    end
+
     function OPDSBrowser:onMenuHold(item)
         if #self.paths > 0 or item.idx == 1 then return true end
         local ButtonDialog   = require("ui/widget/buttondialog")
