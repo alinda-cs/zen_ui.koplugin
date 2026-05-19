@@ -145,7 +145,7 @@ local function apply_browser_folder_cover()
     local _item_table_cache = nil
 
     function FileChooser:getListItem(dirpath, f, fullpath, attributes, collate)
-        if self.name ~= "filemanager" then
+        if self._dummy or self.name ~= "filemanager" then
             return orig_FileChooser_getListItem(self, dirpath, f, fullpath, attributes, collate)
         end
         local _t0_gli = os.clock()
@@ -183,8 +183,14 @@ local function apply_browser_folder_cover()
             return item
         end
         local key = toKey(dirpath, f, fullpath, attributes, collate, self.show_filter.status)
-        cached_list[key] = cached_list[key] or orig_FileChooser_getListItem(self, dirpath, f, fullpath, attributes, collate)
-        _perf.getlistitem_time = _perf.getlistitem_time + (os.clock() - _t0_gli)
+        if not cached_list[key] then
+            cached_list[key] = orig_FileChooser_getListItem(self, dirpath, f, fullpath, attributes, collate)
+        end
+        local elapsed = os.clock() - _t0_gli
+        if elapsed > 0.05 then
+            require("logger").dbg("[zen-perf] SLOW getListItem:", f, string.format("%.1fms", elapsed * 1000))
+        end
+        _perf.getlistitem_time = _perf.getlistitem_time + elapsed
         return cached_list[key]
     end
 
@@ -216,7 +222,11 @@ local function apply_browser_folder_cover()
             cached_list = {}
             local _t0_gen = os.clock()
             local result = orig_FileChooser_genItemTableFromPath(self, path)
-            _perf.gen_item_time = _perf.gen_item_time + (os.clock() - _t0_gen)
+            local elapsed = os.clock() - _t0_gen
+            if elapsed > 0.1 then
+                require("logger").dbg("[zen-perf] SLOW genItemTableFromPath:", path, string.format("%.1fms", elapsed * 1000))
+            end
+            _perf.gen_item_time = _perf.gen_item_time + elapsed
             if use_cache then
                 _item_table_cache = { key = key, table = result }
             else
@@ -361,14 +371,28 @@ local function apply_browser_folder_cover()
 
             local count_str  = tostring(count)
             local font_size  = math.max(7, math.floor(eff_size * 0.24))
-            _perf.paint_tw_calls = _perf.paint_tw_calls + 1
-            local tw = _TW:new{
-                text    = count_str,
-                face    = _FontBadge:getFace("cfont", font_size),
-                bold    = true,
-                fgcolor = _BlitBadge.COLOR_BLACK,
-                padding = 0,
-            }
+
+            local tw = rawget(self, "_zen_badge_tw")
+            if tw then
+                if rawget(self, "_zen_badge_str") ~= count_str or rawget(self, "_zen_badge_fs") ~= font_size then
+                    if tw.free then tw:free() end
+                    tw = nil
+                end
+            end
+            if not tw then
+                _perf.paint_tw_calls = _perf.paint_tw_calls + 1
+                tw = _TW:new{
+                    text    = count_str,
+                    face    = _FontBadge:getFace("cfont", font_size),
+                    bold    = true,
+                    fgcolor = _BlitBadge.COLOR_BLACK,
+                    padding = 0,
+                }
+                rawset(self, "_zen_badge_tw", tw)
+                rawset(self, "_zen_badge_str", count_str)
+                rawset(self, "_zen_badge_fs", font_size)
+            end
+
             local tw_sz = tw:getSize()
             local diam  = math.max(tw_sz.w, tw_sz.h) + math.floor(eff_size * 0.3)
             local r     = math.floor(diam / 2)
@@ -382,7 +406,6 @@ local function apply_browser_folder_cover()
                 cx - math.floor(tw_sz.w / 2),
                 cy - math.floor(tw_sz.h / 2)
             )
-            if tw.free then tw:free() end
         end
 
         local zen_migrated_paths = {}
@@ -777,9 +800,16 @@ local function apply_browser_folder_cover()
 
         function MosaicMenuItem:update(...)
             local _t0 = os.clock()
+            local _t0_orig_before = _perf.orig_update_time
             _zen_update_impl(self, ...)
+            local elapsed = os.clock() - _t0
+            local orig_elapsed = _perf.orig_update_time - _t0_orig_before
             _perf.update_calls = _perf.update_calls + 1
-            _perf.update_time  = _perf.update_time + (os.clock() - _t0)
+            _perf.update_time  = _perf.update_time + elapsed
+            if elapsed > 0.05 then
+                local title = self.text or (self.entry and self.entry.text) or "unknown"
+                require("logger").dbg("[zen-perf] SLOW update:", title, string.format("%.1fms", elapsed * 1000), "orig:", string.format("%.1fms", orig_elapsed * 1000))
+            end
         end
 
         function MosaicMenuItem:_setFolderCover(img)

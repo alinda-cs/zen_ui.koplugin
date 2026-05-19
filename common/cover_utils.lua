@@ -287,9 +287,48 @@ function CoverUtils.collect(dir_path, chooser, max_covers, need_copy, entries)
 
     if not entries then
         if not chooser then return covers end
-        chooser._dummy = true
-        entries = chooser:genItemTableFromPath(dir_path)
-        chooser._dummy = false
+        local lfs = require("libs/libkoreader-lfs")
+        local G = rawget(_G, "G_reader_settings")
+        local collate = G and G:readSetting("collate") or "strcoll"
+        local ok, iter, dir_obj = pcall(lfs.dir, dir_path)
+        if ok then
+            local doc_exts = { epub=1, pdf=1, djvu=1, cbz=1, cbr=1, mobi=1, azw3=1, fb2=1, txt=1, rtf=1, html=1, chm=1, zip=1, kpub=1, epub3=1 }
+            local files = {}
+            for f in iter, dir_obj do
+                if f:sub(1,1) ~= "." then
+                    local ext = (f:match("%.([^%.]+)$") or ""):lower()
+                    if doc_exts[ext] then
+                        table.insert(files, { name = f, path = dir_path .. "/" .. f })
+                    end
+                end
+            end
+
+            if collate == "access" or collate == "modification" or collate == "creation" then
+                local time_field = collate
+                if time_field == "creation" then time_field = "modification" end -- lfs doesn't have creation, fallback to mod
+                for _i, item in ipairs(files) do
+                    local fattr = lfs.attributes(item.path)
+                    item.time = fattr and fattr[time_field] or 0
+                end
+                local rev = G:isTrue("reverse_collate")
+                table.sort(files, function(a, b)
+                    if a.time == b.time then return a.name:lower() < b.name:lower() end
+                    if rev then return a.time < b.time else return a.time > b.time end
+                end)
+            else
+                local rev = G:isTrue("reverse_collate")
+                table.sort(files, function(a, b)
+                    if rev then return a.name:lower() > b.name:lower() else return a.name:lower() < b.name:lower() end
+                end)
+            end
+
+            entries = {}
+            for i = 1, math.min(#files, max_covers * 2) do
+                table.insert(entries, { is_file = true, file = files[i].path })
+            end
+        else
+            entries = {}
+        end
     end
 
     if not entries then return covers end

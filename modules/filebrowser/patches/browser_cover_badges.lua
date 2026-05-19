@@ -77,6 +77,8 @@ local function apply_browser_cover_badges()
         end
     end
 
+    local _banner_cache = {}
+
     -- Diagonal ribbon banner across the top-right corner.
     -- Renders a narrow band at 45 degrees with label text rotated inside it.
     -- Uses destination-driven inverse-map blitting from a temp buffer.
@@ -90,40 +92,50 @@ local function apply_browser_cover_badges()
         local th = band_thick
         if tw <= 0 or th <= 0 then return end
 
-        local tmp = Blitbuffer.new(tw, th, bb:getType())
-        if not tmp then return end
+        local bb_type = bb:getType()
+        -- Color structs are cdata; .getColor8().a extracts the gray byte as a plain number.
+        local cache_key = string.format("%d|%d|%d|%s|%d|%d|%d",
+            tw, th, bb_type, label, font_sz, fill_color:getColor8().a, border_color:getColor8().a)
+        local tmp = _banner_cache[cache_key]
 
-        -- 1px border on long edges, fill_color interior
-        tmp:fill(border_color)
-        local bw = 1
-        if bw * 2 < th then
-            tmp:paintRect(0, bw, tw, th - 2 * bw, fill_color)
+        if not tmp then
+            tmp = Blitbuffer.new(tw, th, bb_type)
+            if not tmp then return end
+
+            -- 1px border on long edges, fill_color interior
+            tmp:fill(border_color)
+            local bw = 1
+            if bw * 2 < th then
+                tmp:paintRect(0, bw, tw, th - 2 * bw, fill_color)
+            end
+
+            -- Render text; step font down 1pt at a time until it fits, min 6pt
+            local inner_h = math.max(1, th - bw * 2)
+            local max_w   = math.floor(tw * 0.82)
+            local lbl, lsz
+            local fs = font_sz
+            repeat
+                if lbl and lbl.free then lbl:free() end
+                lbl = TextWidget:new{
+                    text    = label,
+                    face    = Font:getFace("cfont", fs),
+                    bold    = true,
+                    fgcolor = border_color,
+                    padding = 0,
+                }
+                lsz = lbl:getSize()
+                if lsz.w <= max_w and lsz.h <= inner_h then break end
+                fs = fs - 1
+            until fs < 6
+            -- If still too large at minimum size, let it clip rather than disappear
+            -- Clamp offsets: glyph metrics may exceed font_sz (line spacing etc.)
+            local lx = math.max(0, math.floor((tw - lsz.w) / 2))
+            local ly = math.max(0, math.floor((th - lsz.h) / 2))
+            lbl:paintTo(tmp, lx, ly)
+            if lbl.free then lbl:free() end
+
+            _banner_cache[cache_key] = tmp
         end
-
-        -- Render text; step font down 1pt at a time until it fits, min 6pt
-        local inner_h = math.max(1, th - bw * 2)
-        local max_w   = math.floor(tw * 0.82)
-        local lbl, lsz
-        local fs = font_sz
-        repeat
-            if lbl and lbl.free then lbl:free() end
-            lbl = TextWidget:new{
-                text    = label,
-                face    = Font:getFace("cfont", fs),
-                bold    = true,
-                fgcolor = border_color,
-                padding = 0,
-            }
-            lsz = lbl:getSize()
-            if lsz.w <= max_w and lsz.h <= inner_h then break end
-            fs = fs - 1
-        until fs < 6
-        -- If still too large at minimum size, let it clip rather than disappear
-        -- Clamp offsets: glyph metrics may exceed font_sz (line spacing etc.)
-        local lx = math.max(0, math.floor((tw - lsz.w) / 2))
-        local ly = math.max(0, math.floor((th - lsz.h) / 2))
-        lbl:paintTo(tmp, lx, ly)
-        if lbl.free then lbl:free() end
 
         -- Destination-driven inverse-map: for each screen pixel in the ribbon's
         -- bounding box, reverse-rotate to find the source pixel in tmp.
@@ -150,8 +162,6 @@ local function apply_browser_cover_badges()
                 end
             end
         end
-
-        tmp:free()
     end
 
 
@@ -172,6 +182,25 @@ local function apply_browser_cover_badges()
 
         local orig_paintTo = MosaicMenuItem.paintTo
         if not orig_paintTo then return end
+
+        local orig_update = MosaicMenuItem.update
+        if orig_update then
+            function MosaicMenuItem:update(...)
+                orig_update(self, ...)
+                if self.is_go_up or (not self.filepath) then return end
+
+                local show_fav_badge = _plugin
+                    and _plugin.config
+                    and type(_plugin.config.browser_cover_badges) == "table"
+                    and _plugin.config.browser_cover_badges.show_favorite_badge == true
+
+                if show_fav_badge and self.menu and self.menu.name ~= "collections" then
+                    self._zen_is_fav = ReadCollection:isFileInCollections(self.filepath, true)
+                else
+                    self._zen_is_fav = false
+                end
+            end
+        end
 
         -- Walk the orig_paintTo upvalue chain to find the function that owns
         -- corner_mark_size (KOReader's real paintTo), skipping any Zen UI wrappers.
@@ -331,7 +360,7 @@ local function apply_browser_cover_badges()
             if show_fav_badge
                 and self.filepath
                 and self.menu.name ~= "collections"
-                and ReadCollection:isFileInCollections(self.filepath, true)
+                and self._zen_is_fav
             then
                 local eff_corner = math.floor(math.max(corner_mark_size, math.floor((target.dimen.w or 0) * 0.14)) * _badge_scale)
                 local r      = math.floor(eff_corner / 2)
@@ -431,35 +460,52 @@ local function apply_browser_cover_badges()
                         paintCheck(bb, sq_x, sq_y, sq, sq, Blitbuffer.COLOR_BLACK)
                     elseif do_pause then
                         local font_sz = math.max(7, math.floor(eff_size * 0.40))
-                        local tw = TextWidget:new{
-                            text    = "\u{F0150}",  -- nf-md-clock_outline
-                            face    = Font:getFace("cfont", font_sz),
-                            fgcolor = Blitbuffer.COLOR_BLACK,
-                            padding = 0,
-                        }
+                        local tw = rawget(self, "_zen_read_tw")
+                        if tw and rawget(self, "_zen_read_fs") ~= font_sz then
+                            if tw.free then tw:free() end
+                            tw = nil
+                        end
+                        if not tw then
+                            tw = TextWidget:new{
+                                text    = "\u{F0150}",  -- nf-md-clock_outline
+                                face    = Font:getFace("cfont", font_sz),
+                                fgcolor = Blitbuffer.COLOR_BLACK,
+                                padding = 0,
+                            }
+                            rawset(self, "_zen_read_tw", tw)
+                            rawset(self, "_zen_read_fs", font_sz)
+                        end
                         local tw_sz = tw:getSize()
                         tw:paintTo(bb,
                             bdg_x + math.floor((bw     - tw_sz.w) / 2),
                             bdg_y + math.floor((rect_h - tw_sz.h) / 2)
                         )
-                        if tw.free then tw:free() end
                     else
                         local pct     = math.floor(100 * self.percent_finished)
                         local pct_str = pct .. "%"
                         local font_sz = math.max(7, math.floor(eff_size * 0.24))
-                        local tw = TextWidget:new{
-                            text    = pct_str,
-                            face    = Font:getFace("cfont", font_sz),
-                            bold    = true,
-                            fgcolor = Blitbuffer.COLOR_BLACK,
-                            padding = 0,
-                        }
+                        local tw = rawget(self, "_zen_read_tw")
+                        if tw and (rawget(self, "_zen_read_str") ~= pct_str or rawget(self, "_zen_read_fs") ~= font_sz) then
+                            if tw.free then tw:free() end
+                            tw = nil
+                        end
+                        if not tw then
+                            tw = TextWidget:new{
+                                text    = pct_str,
+                                face    = Font:getFace("cfont", font_sz),
+                                bold    = true,
+                                fgcolor = Blitbuffer.COLOR_BLACK,
+                                padding = 0,
+                            }
+                            rawset(self, "_zen_read_tw", tw)
+                            rawset(self, "_zen_read_str", pct_str)
+                            rawset(self, "_zen_read_fs", font_sz)
+                        end
                         local tw_sz = tw:getSize()
                         tw:paintTo(bb,
                             bdg_x + math.floor((bw    - tw_sz.w) / 2),
                             bdg_y + math.floor((rect_h - tw_sz.h) / 2)
                         )
-                        if tw.free then tw:free() end
                     end
                 end
             end

@@ -153,48 +153,61 @@ local function apply_browser_series_badge()
             local inner_w  = math.floor(r * 1.30)
             local font_size = math.max(7, math.floor(eff_size * 0.26))
 
-            local function make_tw(label, sz)
-                return TextWidget:new{
-                    text    = label,
-                    face    = Font:getFace("cfont", sz),
-                    bold    = true,
-                    fgcolor = Blitbuffer.COLOR_BLACK,
-                    padding = 0,
-                }
-            end
+            local tw = rawget(self, "_zen_series_tw")
+            local tw_fs = rawget(self, "_zen_series_fs")
+            local tw_idx = rawget(self, "_zen_series_idx")
 
-            -- Shrink font until label fits within inner_w (down to size 7).
-            local function shrink_to_fit(label)
-                local sz = font_size
-                while sz > 7 do
-                    local tw = make_tw(label, sz)
-                    if tw:getSize().w <= inner_w then return tw end
-                    if tw.free then tw:free() end
-                    sz = sz - 1
+            if not tw or tw_fs ~= font_size or tw_idx ~= series_idx then
+                if tw and tw.free then tw:free() end
+
+                local function make_tw(label, sz)
+                    return TextWidget:new{
+                        text    = label,
+                        face    = Font:getFace("cfont", sz),
+                        bold    = true,
+                        fgcolor = Blitbuffer.COLOR_BLACK,
+                        padding = 0,
+                    }
                 end
-                return make_tw(label, 7)
-            end
 
-            -- Single-digit whole numbers (#1-#9) always keep the "#".
-            local is_single_digit = (series_idx == math.floor(series_idx) and series_idx >= 1 and series_idx <= 9)
-
-            local tw = make_tw(idx_str, font_size)
-            if tw:getSize().w > inner_w then
-                if tw.free then tw:free() end
-                -- Only drop "#" for labels that won't fit and are not single-digit whole numbers.
-                local no_hash = (not is_single_digit and idx_str:sub(1, 1) == "#") and idx_str:sub(2) or idx_str
-                if no_hash ~= idx_str then
-                    local tw2 = make_tw(no_hash, font_size)
-                    if tw2:getSize().w <= inner_w then
-                        tw = tw2
-                    else
-                        if tw2.free then tw2:free() end
-                        tw = shrink_to_fit(no_hash)
+                -- Shrink font until label fits within inner_w (down to size 7).
+                local function shrink_to_fit(label)
+                    local sz = font_size
+                    while sz > 7 do
+                        local mtw = make_tw(label, sz)
+                        if mtw:getSize().w <= inner_w then return mtw end
+                        if mtw.free then mtw:free() end
+                        sz = sz - 1
                     end
-                else
-                    tw = shrink_to_fit(idx_str)
+                    return make_tw(label, 7)
                 end
+
+                -- Single-digit whole numbers (#1-#9) always keep the "#".
+                local is_single_digit = (series_idx == math.floor(series_idx) and series_idx >= 1 and series_idx <= 9)
+
+                tw = make_tw(idx_str, font_size)
+                if tw:getSize().w > inner_w then
+                    if tw.free then tw:free() end
+                    -- Only drop "#" for labels that won't fit and are not single-digit whole numbers.
+                    local no_hash = (not is_single_digit and idx_str:sub(1, 1) == "#") and idx_str:sub(2) or idx_str
+                    if no_hash ~= idx_str then
+                        local tw2 = make_tw(no_hash, font_size)
+                        if tw2:getSize().w <= inner_w then
+                            tw = tw2
+                        else
+                            if tw2.free then tw2:free() end
+                            tw = shrink_to_fit(no_hash)
+                        end
+                    else
+                        tw = shrink_to_fit(idx_str)
+                    end
+                end
+
+                rawset(self, "_zen_series_tw", tw)
+                rawset(self, "_zen_series_fs", font_size)
+                rawset(self, "_zen_series_idx", series_idx)
             end
+
             local tw_sz = tw:getSize()
 
             -- 7. Paint circle: 2-px border ring then fill.
@@ -206,7 +219,6 @@ local function apply_browser_series_badge()
                 cx - math.floor(tw_sz.w / 2),
                 cy - math.floor(tw_sz.h / 2)
             )
-            if tw.free then tw:free() end
         end
     end
 

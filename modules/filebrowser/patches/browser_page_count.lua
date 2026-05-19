@@ -168,13 +168,25 @@ local function apply_browser_page_count()
             --    matching the cover badge proportions exactly.
             local font_size = math.max(7, math.floor(eff_size * 0.24))
             local page_str  = utils.formatPageCount(pages)
-            local tw = TextWidget:new{
-                text    = page_str,
-                face    = Font:getFace("cfont", font_size),
-                bold    = true,
-                fgcolor = Blitbuffer.COLOR_BLACK,
-                padding = 0,
-            }
+
+            local tw = rawget(self, "_zen_pages_tw")
+            local tw_fs = rawget(self, "_zen_pages_fs")
+            local tw_str = rawget(self, "_zen_pages_str")
+
+            if not tw or tw_fs ~= font_size or tw_str ~= page_str then
+                if tw and tw.free then tw:free() end
+                tw = TextWidget:new{
+                    text    = page_str,
+                    face    = Font:getFace("cfont", font_size),
+                    bold    = true,
+                    fgcolor = Blitbuffer.COLOR_BLACK,
+                    padding = 0,
+                }
+                rawset(self, "_zen_pages_tw", tw)
+                rawset(self, "_zen_pages_fs", font_size)
+                rawset(self, "_zen_pages_str", page_str)
+            end
+
             local tw_sz  = tw:getSize()
             -- Height fixed by eff_size (same scale as cover badge bh).
             local bh     = math.floor(eff_size * 0.85)
@@ -194,7 +206,6 @@ local function apply_browser_page_count()
                 bx + math.floor((bw - tw_sz.w) / 2),
                 by + math.floor((bh - tw_sz.h) / 2)
             )
-            if tw.free then tw:free() end
         end
     end
 
