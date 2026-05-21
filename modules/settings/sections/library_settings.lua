@@ -367,9 +367,10 @@ function M.build(ctx)
                         presets = {
                             { text = _("Black"), r = 0,    g = 0,    b = 0    },
                             { text = _("White"), r = 255,  g = 255,  b = 255  },
-                            { text = _("Blue"),  r = 0x33, g = 0x99, b = 0xFF },
-                            { text = _("Green"), r = 0x33, g = 0xAA, b = 0x55 },
-                            { text = _("Amber"), r = 0xFF, g = 0xAA, b = 0x00 },
+                            { text = _("Blue"),  r = 0x99, g = 0xBB, b = 0xF0 },
+                            { text = _("Green"), r = 0x99, g = 0xCC, b = 0x99 },
+                            { text = _("Amber"), r = 0xF0, g = 0xD0, b = 0x80 },
+                            { text = _("Red"),   r = 0xDD, g = 0x99, b = 0x99 },
                         },
                     }),
                     {

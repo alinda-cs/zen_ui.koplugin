@@ -51,7 +51,7 @@ local function apply_browser_page_count()
         return bookinfo and bookinfo.pages and bookinfo.pages > 0 and bookinfo.pages or nil
     end
 
-    -- Pill drawing helper: draws a horizontal capsule shape row-by-row using paintRect.
+    -- Pill drawing helper: draws a horizontal capsule shape row-by-row using scanline fill.
     -- bx, by: top-left corner;  bw, bh: total bounding box;  color: fill color.
     local function paintPill(bb, bx, by, bw, bh, color)
         local r = bh / 2
@@ -61,7 +61,7 @@ local function apply_browser_page_count()
             local x0 = math.ceil(bx + r - dx)
             local x1 = math.floor(bx + bw - r + dx)
             local w  = x1 - x0
-            if w > 0 then bb:paintRect(x0, by + row, w, 1, color) end
+            if w > 0 then bb:paintRectRGB32(x0, by + row, w, 1, color) end
         end
     end
 

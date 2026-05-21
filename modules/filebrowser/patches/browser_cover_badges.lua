@@ -31,12 +31,12 @@ local function apply_browser_cover_badges()
     local function paintPentagon(bb, bx, by, bw, bh, color)
         local rect_h = math.floor(bh * 30 / 42)
         local tip_h  = bh - rect_h
-        bb:paintRect(bx, by, bw, rect_h, color)
+        bb:paintRectRGB32(bx, by, bw, rect_h, color)
         for row = 0, tip_h - 1 do
-            local frac = (row + 1) / tip_h          -- 0 → 1 as we approach the tip
+            local frac = (row + 1) / tip_h          -- 0 -> 1 as we approach the tip
             local rw   = math.max(2, math.floor(bw * (1 - frac)))
             local rx   = bx + math.floor((bw - rw) / 2)
-            bb:paintRect(rx, by + rect_h + row, rw, 1, color)
+            bb:paintRectRGB32(rx, by + rect_h + row, rw, 1, color)
         end
     end
 
@@ -49,7 +49,7 @@ local function apply_browser_cover_badges()
             if steps == 0 then steps = 1 end
             for i = 0, steps do
                 local t = i / steps
-                bb:paintRect(
+                bb:paintRectRGB32(
                     math.floor(x0 + t * (x1 - x0)),
                     math.floor(y0 + t * (y1 - y0)),
                     tk, tk, color)
@@ -67,12 +67,12 @@ local function apply_browser_cover_badges()
         drawLine(lx1, ly1, rx1, ry1)
     end
 
-    -- Draw a filled circle using scanline paintRect.
+    -- Draw a filled circle using scanline fill.
     local function paintCircle(bb, cx, cy, r, color)
         for row = -r, r do
             local half_w = math.floor(math.sqrt(math.max(0, r * r - row * row)))
             if half_w > 0 then
-                bb:paintRect(cx - half_w, cy + row, 2 * half_w, 1, color)
+                bb:paintRectRGB32(cx - half_w, cy + row, 2 * half_w, 1, color)
             end
         end
     end
@@ -93,9 +93,11 @@ local function apply_browser_cover_badges()
         if tw <= 0 or th <= 0 then return end
 
         local bb_type = bb:getType()
-        -- Color structs are cdata; .getColor8().a extracts the gray byte as a plain number.
-        local cache_key = string.format("%d|%d|%d|%s|%d|%d|%d",
-            tw, th, bb_type, label, font_sz, fill_color:getColor8().a, border_color:getColor8().a)
+        -- Use actual RGB bytes so distinct colors don't collide in the cache.
+        local _fc = fill_color:getColorRGB32()
+        local cache_key = string.format("%d|%d|%d|%s|%d|%d|%d|%d|%d",
+            tw, th, bb_type, label, font_sz,
+            _fc.r, _fc.g, _fc.b, border_color:getColor8().a)
         local tmp = _banner_cache[cache_key]
 
         if not tmp then
@@ -103,10 +105,10 @@ local function apply_browser_cover_badges()
             if not tmp then return end
 
             -- 1px border on long edges, fill_color interior
-            tmp:fill(border_color)
+            tmp:paintRectRGB32(0, 0, tw, th, border_color)
             local bw = 1
             if bw * 2 < th then
-                tmp:paintRect(0, bw, tw, th - 2 * bw, fill_color)
+                tmp:paintRectRGB32(0, bw, tw, th - 2 * bw, fill_color)
             end
 
             -- Render text; step font down 1pt at a time until it fits, min 6pt

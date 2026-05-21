@@ -330,7 +330,7 @@ function CoverUtils.collect(dir_path, chooser, max_covers, need_copy, entries)
             -- lfs.dir failed (e.g. virtual path like a collection name);
             -- try the chooser's item table as a fallback.
             if chooser and type(chooser.genItemTableFromPath) == "function" then
-                local t = chooser.genItemTableFromPath()
+                local t = chooser:genItemTableFromPath(dir_path)
                 entries = type(t) == "table" and t or {}
             else
                 entries = {}

@@ -1052,6 +1052,8 @@ local function apply_quick_settings()
         self.page_info_text:setText("")
         self.page_info_left_chev:showHide(false)
         self.page_info_right_chev:showHide(false)
+        self.page_info_left_chev:enableDisable(false)
+        self.page_info_right_chev:enableDisable(false)
 
         -- Schedule 60-second status row refresh (status_bar component owns the clock)
         local _shared = zen_plugin._zen_shared

@@ -43,13 +43,13 @@ local function apply_browser_series_badge()
     end
 
     -- ── Circle drawing helper ──────────────────────────────────────────────────
-    -- Draws a filled circle row-by-row using paintRect.
+    -- Draws a filled circle row-by-row using scanline fill.
     -- cx, cy: centre;  r: radius;  color: fill color.
     local function paintCircle(bb, cx, cy, r, color)
         for row = -r, r do
             local half_w = math.floor(math.sqrt(math.max(0, r * r - row * row)))
             if half_w > 0 then
-                bb:paintRect(cx - half_w, cy + row, 2 * half_w, 1, color)
+                bb:paintRectRGB32(cx - half_w, cy + row, 2 * half_w, 1, color)
             end
         end
     end

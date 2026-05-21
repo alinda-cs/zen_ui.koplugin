@@ -1561,7 +1561,15 @@ local function apply_context_menu()
                                 filemanagerutil.saveSummary(doc_settings, summary)
                                 BookList.setBookInfoCacheProperty(file, "status", to_status)
                                 if to_status == nil then
+                                    -- Snapshot pages before reset: setBookInfoCacheProperty("been_opened", false)
+                                    -- replaces the whole cache entry with {been_opened=false}, losing pages.
+                                    local saved_pages = BookList.book_info_cache
+                                        and BookList.book_info_cache[file]
+                                        and BookList.book_info_cache[file].pages
                                     BookList.setBookInfoCacheProperty(file, "been_opened", false)
+                                    if saved_pages then
+                                        BookList.book_info_cache[file].pages = saved_pages
+                                    end
                                 end
                                 UIManager:close(status_dialog)
                                 refresh()
