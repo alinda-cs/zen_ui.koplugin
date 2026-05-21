@@ -150,6 +150,7 @@ Zen UI is currently translated into:
 | `fr` | French |
 | `nl` | Dutch |
 | `bg` | Bulgarian |
+| `cs` | Czech |
 | `pt_BR` | Brazilian Portuguese |
 | `pt_PT` | European Portuguese |
 | `ro` | Romanian |
