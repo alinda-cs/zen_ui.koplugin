@@ -970,28 +970,31 @@ local function apply_quick_settings()
         end
         -- Register a screen-wide hold gesture for panel button hold_callbacks
         if is_enabled() then
+            -- screen_size may be nil on some devices (e.g. KindleBasic5)
+            local sw = (self.screen_size and self.screen_size.w) or Screen:getWidth()
+            local sh = (self.screen_size and self.screen_size.h) or Screen:getHeight()
             self.ges_events.HoldCloseAllMenus = {
                 GestureRange:new{
                     ges = "hold",
-                    range = Geom:new{ x = 0, y = 0, w = self.screen_size.w, h = self.screen_size.h },
+                    range = Geom:new{ x = 0, y = 0, w = sw, h = sh },
                 }
             }
             self.ges_events.PanCloseAllMenus = {
                 GestureRange:new{
                     ges = "pan",
-                    range = Geom:new{ x = 0, y = 0, w = self.screen_size.w, h = self.screen_size.h },
+                    range = Geom:new{ x = 0, y = 0, w = sw, h = sh },
                 }
             }
             self.ges_events.PanReleaseCloseAllMenus = {
                 GestureRange:new{
                     ges = "pan_release",
-                    range = Geom:new{ x = 0, y = 0, w = self.screen_size.w, h = self.screen_size.h },
+                    range = Geom:new{ x = 0, y = 0, w = sw, h = sh },
                 }
             }
             self.ges_events.MultiSwipe = {
                 GestureRange:new{
                     ges = "multiswipe",
-                    range = Geom:new{ x = 0, y = 0, w = self.screen_size.w, h = self.screen_size.h },
+                    range = Geom:new{ x = 0, y = 0, w = sw, h = sh },
                 }
             }
         end
