@@ -13,6 +13,7 @@ local function apply_context_menu()
     local UIManager    = require("ui/uimanager")
     local _            = require("gettext")
     local C_           = _.pgettext
+    local book_status  = require("common/book_status")
     local paths        = require("common/paths")
     local icons        = require("common/inline_icon_map")
     local zen_plugin   = rawget(_G, "__ZEN_UI_PLUGIN")
@@ -205,6 +206,33 @@ local function apply_context_menu()
     end
 
     local orig_setupLayout = FileManager.setupLayout
+
+    if type(FileChooser.show_file) == "function" and not FileChooser._zen_status_filter_patched then
+        local orig_show_file = FileChooser.show_file
+        FileChooser._zen_status_filter_patched = true
+
+        function FileChooser:show_file(filename, fullpath)
+            if self.name ~= "filemanager" then
+                return orig_show_file(self, filename, fullpath)
+            end
+
+            local status_filter = FileChooser.show_filter and FileChooser.show_filter.status
+            if not status_filter or fullpath == nil then
+                return orig_show_file(self, filename, fullpath)
+            end
+
+            local saved_status_filter = FileChooser.show_filter.status
+            FileChooser.show_filter.status = nil
+            local ok_show, should_show = pcall(orig_show_file, self, filename, fullpath)
+            FileChooser.show_filter.status = saved_status_filter
+            if not ok_show or not should_show then
+                return false
+            end
+
+            local effective_status = book_status.getEffectiveStatusFromFile(fullpath)
+            return status_filter[effective_status] and true or false
+        end
+    end
 
     FileManager.setupLayout = function(self)
         orig_setupLayout(self)

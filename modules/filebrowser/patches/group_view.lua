@@ -1,5 +1,6 @@
 local logger = require("logger")
 local ConfigManager = require("config/manager")
+local book_status = require("common/book_status")
 
 local M = {}
 
@@ -1188,11 +1189,10 @@ local function apply_status_filter(files)
     if not ok_fc then return files end
     local status_filter = FileChooser.show_filter and FileChooser.show_filter.status
     if not status_filter then return files end
-    local ok_bl, BookList = pcall(require, "ui/widget/booklist")
-    if not ok_bl then return files end
     local filtered = {}
-    for _, fpath in ipairs(files) do
-        if status_filter[BookList.getBookStatus(fpath)] then
+    for _i, fpath in ipairs(files) do
+        local effective_status = book_status.getEffectiveStatusFromFile(fpath)
+        if status_filter[effective_status] then
             table.insert(filtered, fpath)
         end
     end

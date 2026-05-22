@@ -21,6 +21,7 @@ local function apply_browser_cover_badges()
     local ReadCollection = require("readcollection")
     local Screen         = require("device").screen
     local TextWidget     = require("ui/widget/textwidget")
+    local book_status    = require("common/book_status")
     local utils          = require("common/utils")
     local _              = require("gettext")
 
@@ -566,9 +567,7 @@ local function apply_browser_cover_badges()
                 and type(_plugin.config.browser_cover_badges) == "table"
                 and _plugin.config.browser_cover_badges.show_new_banner == true
             if show_new_banner and self.filepath and not self.is_go_up and not self.is_directory then
-                local is_new = self.percent_finished == nil
-                    and self.status ~= "complete"
-                    and self.status ~= "abandoned"
+                local is_new = book_status.isNewStatus(self.status, self.percent_finished)
                 if is_new then
                     local eff_size   = math.floor(math.max(corner_mark_size, math.floor((target.dimen.w or 0) * 0.14)) * _badge_scale)
                     local span       = math.floor(eff_size * 2.5)

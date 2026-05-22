@@ -22,6 +22,7 @@ local function apply_browser_list_item_layout()
     local VerticalGroup = require("ui/widget/verticalgroup")
     local VerticalSpan = require("ui/widget/verticalspan")
     local filemanagerutil = require("apps/filemanager/filemanagerutil")
+    local book_status = require("common/book_status")
     local library_font = require("common/library_font")
     local util = require("util")
     local zen_utils = require("common/utils")
@@ -447,6 +448,7 @@ local function apply_browser_list_item_layout()
             local percent_finished = book_info.percent_finished
             local status = book_info.status
             local pages = book_info.pages or bookinfo.pages
+            local is_new = book_status.isNewStatus(status, percent_finished)
 
             local status_label, progress_str
             if status == "complete" then
@@ -455,12 +457,13 @@ local function apply_browser_list_item_layout()
             elseif status == "abandoned" then
                 status_label = _("To Be Read")
                 progress_str = "\u{F0150}"  -- MD Clock icon
+            elseif is_new then
+                status_label = _("New")
             elseif percent_finished then
                 -- has recorded progress
                 status_label = string.format(_("%d%% Read"), math.floor(100 * percent_finished))
             else
-                -- no progress: treat as New (matches mosaic badge logic)
-                status_label = _("New")
+                status_label = _("Reading")
             end
 
             -- ── Book tags (Calibre keywords field from bookinfo DB) ──────────
