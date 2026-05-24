@@ -160,7 +160,7 @@ Zen UI is currently translated into:
 
 If you find any issues or corrections to the translations, please feel free to contribute.
 
-To contribute a translation or fix an existing one, see [locales/README.md](locales/README.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
+To contribute a translation or fix an existing one, see [locales/README.md](locales/README.html) and [CONTRIBUTING.md](CONTRIBUTING.html).
 
 ## Credits
 
