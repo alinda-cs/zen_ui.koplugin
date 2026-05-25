@@ -86,6 +86,7 @@ return {
         "Add Japanese translation",
         "Add Vietnamese translation",
         "Update quick lookup for next KOReader release",
+        "Fix rare crash on background update check",
         "Bug fixes and performance improvements",
     },
 }
