@@ -96,13 +96,16 @@ local function parse_release_list(body)
     end
     local stable_tag, stable_url, beta_tag, beta_url
     for _i, release in ipairs(releases) do
-        if not stable_tag and not release.prerelease then
-            stable_tag = release.tag_name
-            stable_url = get_asset_url(release)
-        end
-        if not beta_tag and release.prerelease then
-            beta_tag = release.tag_name
-            beta_url = get_asset_url(release)
+        local asset_url = get_asset_url(release)
+        if asset_url then
+            if not stable_tag and not release.prerelease then
+                stable_tag = release.tag_name
+                stable_url = asset_url
+            end
+            if not beta_tag and release.prerelease then
+                beta_tag = release.tag_name
+                beta_url = asset_url
+            end
         end
         if stable_tag and beta_tag then break end
     end
@@ -161,7 +164,7 @@ local function https_download(url, dest_path, depth)
 
     -- Resolve any redirect chain via HEAD requests (avoids writing partial data).
     local resolved_url = url
-    for _ = 1, 5 do
+    for _attempt = 1, 5 do
         local _, r_code, r_headers = https.request{
             url     = resolved_url,
             method  = "HEAD",
@@ -210,6 +213,7 @@ local GS_KEY_AVAIL   = "zen_ui_update_available"
 local GS_KEY_VER     = "zen_ui_latest_version"
 local GS_KEY_URL     = "zen_ui_update_dl_url"
 local GS_KEY_CHANNEL = "zen_ui_update_channel"
+local GS_KEY_AUTO    = "zen_ui_update_auto_check"
 
 --- Load or write persisted update state via G_reader_settings.
 local function get_gs()
@@ -236,6 +240,12 @@ local function get_channel()
         if ch == "beta" then return "beta" end
     end
     return "stable"
+end
+
+local function is_auto_check_enabled()
+    local gs = get_gs()
+    if not gs then return true end
+    return gs:readSetting(GS_KEY_AUTO) ~= false
 end
 
 local function persist_state(now)
@@ -284,7 +294,7 @@ local function do_network_check()
     local current = get_current_version()
     logger.dbg("ZenUpdater: do_network_check channel=", channel, "current=", current)
 
-    local body = https_get(GITHUB_RELEASES_URL .. "?per_page=10")
+    local body = https_get(GITHUB_RELEASES_URL .. "?per_page=100")
     if not body then
         logger.warn("ZenUpdater: no response from releases API")
         return false
@@ -294,9 +304,12 @@ local function do_network_check()
     logger.dbg("ZenUpdater: stable=", stable_tag, "beta=", beta_tag)
 
     local tag, dl_url
-    -- On beta channel: use beta only when its base version (M.m.p) is strictly newer
-    -- than stable's. If stable has the same or newer base, prefer stable (graduation path).
-    if channel == "beta" and beta_tag and semver_base_gt(beta_tag, stable_tag or "0.0.0") then
+    if channel == "stable" then
+        -- Stable channel is strict: never fall back to prereleases.
+        tag    = stable_tag
+        dl_url = stable_url
+    elseif beta_tag and semver_base_gt(beta_tag, stable_tag or "0.0.0") then
+        -- Beta channel surfaces prereleases, but prefers stable when bases match.
         tag    = beta_tag
         dl_url = beta_url
     elseif stable_tag then
@@ -308,8 +321,11 @@ local function do_network_check()
     end
 
     if not tag then
-        logger.warn("ZenUpdater: no tag found in API response")
-        return false
+        logger.warn("ZenUpdater: no eligible tag for channel", channel)
+        M._has_update = false
+        M._latest_ver = nil
+        M._dl_url     = nil
+        return true
     end
     M._latest_ver = tag:match("^v?(.+)$") or tag
     M._dl_url     = dl_url
@@ -375,6 +391,10 @@ end
 function M.schedule_wakeup_check()
     logger.info("ZenUpdater: schedule_wakeup_check called")
     M.cancel_wakeup_check()  -- reset on every resume
+    if not is_auto_check_enabled() then
+        logger.info("ZenUpdater: background check disabled in settings")
+        return
+    end
     M._check_cancelled = false
     if not is_check_due() then
         logger.info("ZenUpdater: background check skipped, within 24h window")
@@ -760,6 +780,25 @@ function M.get_channel()
     return get_channel()
 end
 
+--- Returns true when background update checks are enabled.
+function M.is_auto_check_enabled()
+    return is_auto_check_enabled()
+end
+
+--- Enable or disable automatic background update checks.
+function M.set_auto_check_enabled(enabled)
+    local gs = get_gs()
+    if not gs then return end
+    local on = enabled ~= false
+    gs:saveSetting(GS_KEY_AUTO, on)
+    pcall(gs.flush, gs)
+    if on then
+        M.schedule_wakeup_check()
+    else
+        M.cancel_wakeup_check()
+    end
+end
+
 --- Set the update channel and reset cached state so the next check uses it.
 function M.set_channel(ch)
     local gs = get_gs()
@@ -791,6 +830,20 @@ function M.build_channel_item()
                 callback = function() M.set_channel("beta") end,
             },
         },
+    }
+end
+
+--- Returns a checkbox item to toggle automatic background checks.
+function M.build_auto_check_item()
+    return {
+        text = _("Check for updates automatically"),
+        checked_func = function()
+            return is_auto_check_enabled()
+        end,
+        callback = function()
+            M.set_auto_check_enabled(not is_auto_check_enabled())
+        end,
+        keep_menu_open = true,
     }
 end
 

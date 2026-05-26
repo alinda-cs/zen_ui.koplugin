@@ -30,6 +30,9 @@ local function apply_reader_top_status_bar()
     local _ReaderView_paintTo_orig = ReaderView.paintTo
     local zen_plugin = rawget(_G, "__ZEN_UI_PLUGIN")
 
+    local logger = require("logger")
+    local DBG = function(...) logger.dbg("ZenHeader:", ...) end
+
     local function is_enabled()
         local plugin = zen_plugin or rawget(_G, "__ZEN_UI_PLUGIN")
         local features = plugin and plugin.config and plugin.config.features
@@ -275,6 +278,8 @@ local function apply_reader_top_status_bar()
         for _i, w in ipairs(right_ws)  do table.insert(all_widgets, w) end
 
         if not left_grp and not center_grp and not right_grp then
+            DBG("buildHeader: all groups nil, doc_ctx=", doc_ctx and "present" or "nil",
+                "left_order=", #left_order, "center_order=", #(center_order or {}), "right_order=", #right_order)
             return nil, {}, 0, screen_width
         end
 
@@ -327,9 +332,19 @@ local function apply_reader_top_status_bar()
     -- ReaderView:paintTo (full page repaint) on every clock tick -- critical on
     -- color e-ink devices (e.g. Kobo Libre Color).
     local function repaintHeader(view)
-        if not view._zen_header_dimen then return end
+        if not view._zen_header_dimen then
+            DBG("repaintHeader SKIP: no _zen_header_dimen (paintTo never ran?)")
+            return
+        end
+        if not view.ui then
+            DBG("repaintHeader SKIP: view.ui is nil")
+            return
+        end
         local header, all_widgets, header_h, screen_width = buildHeader(view)
-        if not header then return end
+        if not header then
+            DBG("repaintHeader SKIP: buildHeader returned nil")
+            return
+        end
         local dimen = view._zen_header_dimen
         dimen.h = header_h
         dimen.w = screen_width
@@ -359,7 +374,10 @@ local function apply_reader_top_status_bar()
         end
 
         local header, all_widgets, header_h, screen_width = buildHeader(self)
-        if not header then return end
+        if not header then
+            DBG("paintTo: buildHeader returned nil, skipping header paint")
+            return
+        end
 
         header:paintTo(bb, x, y)
         -- Store geometry so repaintHeader can flush only this strip on clock ticks.
@@ -414,6 +432,9 @@ local function apply_reader_top_status_bar()
             local orig_onResume = ReaderUI.onResume
             ReaderUI.onResume = function(rui, ...)
                 if orig_onResume then orig_onResume(rui, ...) end
+                DBG("onResume fired, _autoRefresh=", _autoRefresh and "armed" or "nil",
+                    "view._zen_header_dimen=", view._zen_header_dimen and "present" or "nil",
+                    "view.ui=", view.ui and "present" or "nil")
                 if _autoRefresh then
                     UIManager:unschedule(_autoRefresh)
                     -- Repaint immediately so header is visible on wakeup

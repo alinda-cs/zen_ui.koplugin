@@ -87,6 +87,7 @@ function M.build(ctx)
         separator = true,
         sub_item_table = {
             updater.build_update_now_item(plugin),
+            updater.build_auto_check_item(),
             updater.build_channel_item(),
         },
     })
