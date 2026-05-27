@@ -34,10 +34,10 @@ runs:
         luacheck_exit=${PIPESTATUS[0]}
         set -e
 
-        totals_line=$(grep -E '^Total: [0-9]+ warnings / [0-9]+ errors' /tmp/luacheck.out | tail -n 1 || true)
-        errors=$(awk '/^Total: [0-9]+ warnings \/ [0-9]+ errors/{e=$5} END{print e}' /tmp/luacheck.out)
+        totals_line=$(grep -E '^Total: [0-9]+ warning(s)? / [0-9]+ error(s)?' /tmp/luacheck.out | tail -n 1 || true)
+        read -r warnings errors <<< "$(awk '/^Total:/ {w=$2; e=$5} END {if (w ~ /^[0-9]+$/ && e ~ /^[0-9]+$/) print w, e}' /tmp/luacheck.out)"
 
-        if [[ -z "$errors" || -z "$totals_line" ]]; then
+        if [[ -z "$warnings" || -z "$errors" || -z "$totals_line" ]]; then
           if [[ "$luacheck_exit" -ne 0 ]]; then
             echo "Luacheck failed before reporting totals (exit: $luacheck_exit)."
             exit "$luacheck_exit"
@@ -51,7 +51,7 @@ runs:
           exit 1
         fi
 
-        if [[ "$luacheck_exit" -eq 1 ]]; then
+        if [[ "$luacheck_exit" -eq 1 || "$warnings" -gt 0 ]]; then
           echo "Luacheck reported warnings only; continuing."
         else
           echo "Luacheck passed with no warnings."
