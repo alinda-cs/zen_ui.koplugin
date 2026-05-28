@@ -559,7 +559,8 @@ local function apply_browser_cover_badges()
                 and _plugin.config
                 and type(_plugin.config.browser_cover_badges) == "table"
                 and _plugin.config.browser_cover_badges.show_new_banner == true
-            if show_new_banner and self.filepath and not self.is_go_up and not self.is_directory then
+            if show_new_banner and self.filepath and not self.is_go_up and not self.is_directory
+                    and self.bookinfo_found then
                 local is_new = book_status.isNewStatus(self.status, self.percent_finished)
                 if is_new then
                     local eff_size   = math.floor(math.max(corner_mark_size, math.floor((target.dimen.w or 0) * 0.14)) * _badge_scale)

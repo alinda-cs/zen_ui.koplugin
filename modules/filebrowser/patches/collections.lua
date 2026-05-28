@@ -36,6 +36,20 @@ local function apply_collections()
         return hide == true or hide == nil
     end
 
+    local function get_coll_display_mode()
+        local gv = type(zen_plugin.config.group_view) == "table" and zen_plugin.config.group_view or {}
+        local dm = type(gv.display_mode) == "table" and gv.display_mode or {}
+        return dm.collections
+    end
+
+    local function set_coll_display_mode(mode)
+        if type(zen_plugin.config.group_view) ~= "table" then zen_plugin.config.group_view = {} end
+        local gv = zen_plugin.config.group_view
+        if type(gv.display_mode) ~= "table" then gv.display_mode = {} end
+        gv.display_mode.collections = mode
+        if type(zen_plugin.saveConfig) == "function" then zen_plugin:saveConfig() end
+    end
+
     local function apply_button_group_font(button_rows, nominal_size)
         if type(button_rows) ~= "table" then return button_rows end
         local size = library_font.scaleValue(nominal_size or 20)
@@ -65,7 +79,7 @@ local function apply_collections()
     local function setup_display_mode(menu)
         local BookInfoManager = require("bookinfomanager")
         local display_mode = _coll_display_mode_override
-            or BookInfoManager:getSetting("collection_display_mode")
+            or get_coll_display_mode()
         menu._zen_coll_list = true
 
         if not display_mode then
@@ -601,19 +615,9 @@ local function apply_collections()
         end
 
         local function showDisplaySubmenu()
-            local ok_bim, bim = pcall(require, "bookinfomanager")
-            local cur_mode
-            if ok_bim and bim then
-                local ok3, m = pcall(bim.getSetting, bim, "collection_display_mode")
-                if ok3 then cur_mode = m end
-            end
+            local cur_mode = get_coll_display_mode()
             local function apply_mode(mode)
-                local cb = fm_coll.ui and fm_coll.ui.coverbrowser
-                if cb and type(cb.setupWidgetDisplayMode) == "function" then
-                    pcall(cb.setupWidgetDisplayMode, "collections", mode)
-                elseif ok_bim and bim then
-                    pcall(bim.saveSetting, bim, "collection_display_mode", mode)
-                end
+                set_coll_display_mode(mode)
             end
             local view_dialog
             local function viewBtn(label, icon, mode)
@@ -700,21 +704,9 @@ local function apply_collections()
 
         local function showDisplaySubmenu()
             UIManager_bm:close(button_dialog)
-            local ok_bim, bim = pcall(require, "bookinfomanager")
-            local cur_mode
-            if ok_bim and bim then
-                local ok3, m = pcall(function()
-                    return bim:getSetting("collection_display_mode")
-                end)
-                if ok3 then cur_mode = m end
-            end
+            local cur_mode = get_coll_display_mode()
             local function apply_mode(mode)
-                local cb = fm_coll.ui and fm_coll.ui.coverbrowser
-                if cb and type(cb.setupWidgetDisplayMode) == "function" then
-                    pcall(cb.setupWidgetDisplayMode, "collections", mode)
-                elseif ok_bim and bim then
-                    pcall(bim.saveSetting, bim, "collection_display_mode", mode)
-                end
+                set_coll_display_mode(mode)
             end
             local view_dialog
             local function viewBtn(label, icon, mode)
@@ -1060,10 +1052,7 @@ local function apply_collections()
             or (ok and resolved_name == ReadCollection.default_collection_name)
 
         if is_enabled() then
-            local ok_bim, bim = pcall(require, "bookinfomanager")
-            if ok_bim then
-                _coll_display_mode_override = bim:getSetting("collection_display_mode")
-            end
+            _coll_display_mode_override = get_coll_display_mode()
             _patching_named_coll = true
         end
         orig_onShowColl(self, collection_name)

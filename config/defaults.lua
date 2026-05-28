@@ -7,6 +7,7 @@ local defaults = {
         footer_backup_created = false,
         quickstart_shown_for_version = false,
         sort_defaults_applied = false,
+        bim_fbc_migrated = false,
     },
     updater = {
         just_updated_version = "",
@@ -149,6 +150,15 @@ local defaults = {
     },
     browser_page_count = {
         show_page_count = false,
+    },
+    browser_folder_cover = {
+        cover_mode = "gallery",   -- "gallery" | "stack" | "normal" | "none"
+        show_folder_name = true,
+        name_centered = false,    -- false = bottom placement
+        name_opaque = false,      -- false = transparent bg
+        show_spine_lines = true,
+        show_item_count = true,
+        crop_to_fit = true,
     },
     browser_series_badge = {
         show_series_badge = false,

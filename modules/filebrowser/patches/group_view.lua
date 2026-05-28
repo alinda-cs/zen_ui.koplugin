@@ -990,7 +990,7 @@ local function build_group_item_table(groups, data_type)
                 table.insert(files, item.file)
             end
         end
-        local display = group.author or group.series or group.tag or "?"
+        local display = (group.author or group.series or group.tag or "?"):gsub("\n", ", ")
         table.insert(items, {
             text        = display,
             _zen_files  = files,

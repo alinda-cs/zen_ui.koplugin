@@ -205,15 +205,10 @@ function ZenUI:init()
         self:saveConfig()
     end
 
-    -- First-run: default gallery view ON, folder name bottom + transparent bg.
+    -- First-run: defaults for folder covers (gallery, bottom name, transparent bg)
+    -- are now in config/defaults.lua under browser_folder_cover; no explicit init needed.
+    -- Guard flag kept so this block doesn't run on every startup for existing installs.
     if not self.config._meta.gallery_mode_defaulted then
-        local ok_bim2, BookInfoManager2 = pcall(require, "bookinfomanager")
-        if ok_bim2 then
-            BookInfoManager2:saveSetting("folder_gallery_mode", true)
-            -- Storing true makes BooleanSetting(default=true).get() return false = off.
-            BookInfoManager2:saveSetting("folder_name_centered", true) -- bottom placement
-            BookInfoManager2:saveSetting("folder_name_opaque", true)   -- transparent bg
-        end
         self.config._meta.gallery_mode_defaulted = true
         self:saveConfig()
     end

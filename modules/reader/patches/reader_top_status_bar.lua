@@ -12,7 +12,7 @@ local function apply_reader_top_status_bar()
     local CenterContainer = require("ui/widget/container/centercontainer")
     local LeftContainer   = require("ui/widget/container/leftcontainer")
     local RightContainer  = require("ui/widget/container/rightcontainer")
-    local OverlapGroup  = require("ui/widget/overlapgroup")
+
     local VerticalGroup = require("ui/widget/verticalgroup")
     local VerticalSpan  = require("ui/widget/verticalspan")
     local HorizontalGroup = require("ui/widget/horizontalgroup")
@@ -55,16 +55,16 @@ local function apply_reader_top_status_bar()
     -- Stable reference so suspend/resume can cancel/restart the timer.
     local _autoRefresh
 
-    -- === Separator lookup ===
+    -- === Separator value map (bar-specific spacing; labels live in common/constants.lua) ===
 
-    local separator_presets = {
-        { key = "dot",         value = "  \xC2\xB7  " }, -- middle dot (UTF-8)
-        { key = "bar",         value = "  |  "  },
-        { key = "dash",        value = "  -  "  },
-        { key = "bullet",      value = "  \xE2\x80\xA2  " }, -- bullet (UTF-8)
-        { key = "space",       value = "   "    },
-        { key = "small-space", value = " "      },
-        { key = "none",        value = ""       },
+    local SEP_VALUES = {
+        dot             = " \xC2\xB7 ", -- middle dot
+        bar             = " | ",
+        dash            = " - ",
+        bullet          = " \xE2\x80\xA2 ", -- bullet
+        space           = "  ",
+        ["small-space"] = " ",
+        none            = "",
     }
 
     -- === Caches for slow item fetchers ===
@@ -201,11 +201,13 @@ local function apply_reader_top_status_bar()
     }
 
     -- Builds a HorizontalGroup from an ordered item list.
+    -- If max_width is set and content overflows, rebuilds as a single ellipsis-truncated TextWidget.
     -- Returns (group_or_nil, widgets_list) where widgets_list holds all TextWidgets for free().
-    local function buildGroup(order, face, sep, doc_ctx)
+    local function buildGroup(order, face, sep, doc_ctx, max_width)
         if type(order) ~= "table" or #order == 0 then return nil, {} end
         local group   = HorizontalGroup:new{}
         local widgets = {}
+        local texts   = {}
         local first   = true
         for _i, key in ipairs(order) do
             local fn = item_fetchers[key]
@@ -218,6 +220,7 @@ local function apply_reader_top_status_bar()
                         table.insert(widgets, sep_w)
                     end
                     local text = label and (icon .. label) or icon
+                    table.insert(texts, text)
                     local tw = TextWidget:new{
                         text    = text,
                         face    = face,
@@ -231,6 +234,20 @@ local function apply_reader_top_status_bar()
             end
         end
         if #group == 0 then return nil, {} end
+        -- If overflow, free and rebuild as a single ellipsis-truncated TextWidget
+        if max_width and group:getSize().w > max_width then
+            for _i, w in ipairs(widgets) do if w.free then w:free() end end
+            local joined = texts[1] or ""
+            for i = 2, #texts do joined = joined .. sep .. texts[i] end
+            local tw = TextWidget:new{
+                text      = joined,
+                face      = face,
+                fgcolor   = Blitbuffer.COLOR_BLACK,
+                padding   = 0,
+                max_width = max_width,
+            }
+            return HorizontalGroup:new{ tw }, { tw }
+        end
         return group, widgets
     end
 
@@ -271,21 +288,28 @@ local function apply_reader_top_status_bar()
         end
 
         local sep_key = (type(cfg) == "table" and cfg.separator_key) or "small-space"
-        local sep_val = " "
-        for _i, preset in ipairs(separator_presets) do
-            if preset.key == sep_key then
-                sep_val = preset.value
-                break
+        local sep_val = sep_key == "custom"
+            and ((type(cfg) == "table" and cfg.custom_separator) or "  ")
+            or (SEP_VALUES[sep_key] or " ")
+
+        -- Per-slot separator: only active when *_show_separator == true (default off).
+        local function slot_sep(slot)
+            if type(cfg) == "table" and cfg[slot .. "_show_separator"] == true then
+                return sep_val
             end
-        end
-        if sep_key == "custom" then
-            sep_val = (type(cfg) == "table" and cfg.custom_separator) or "  "
+            return SEP_VALUES["small-space"]
         end
 
+        local third_w      = math.floor(screen_width / 3)
+        local right_zone_w = screen_width - 2 * third_w
+        local half_w       = math.floor(screen_width / 2)
         local all_widgets = {}
-        local left_grp,   left_ws   = buildGroup(left_order,   face, sep_val, doc_ctx)
-        local center_grp, center_ws = buildGroup(center_order, face, sep_val, doc_ctx)
-        local right_grp,  right_ws  = buildGroup(right_order,  face, sep_val, doc_ctx)
+        -- Build center first to decide whether left/right get 1/3 or 1/2.
+        local center_grp, center_ws = buildGroup(center_order, face, slot_sep("center"), doc_ctx, third_w)
+        local left_w  = center_grp and third_w      or half_w
+        local right_w = center_grp and right_zone_w or (screen_width - half_w)
+        local left_grp,  left_ws  = buildGroup(left_order,  face, slot_sep("left"),  doc_ctx, math.max(0, left_w  - h_pad))
+        local right_grp, right_ws = buildGroup(right_order, face, slot_sep("right"), doc_ctx, math.max(0, right_w - h_pad))
         for _i, w in ipairs(left_ws)   do table.insert(all_widgets, w) end
         for _i, w in ipairs(center_ws) do table.insert(all_widgets, w) end
         for _i, w in ipairs(right_ws)  do table.insert(all_widgets, w) end
@@ -311,30 +335,60 @@ local function apply_reader_top_status_bar()
             return vg
         end
 
-        local header = OverlapGroup:new{ dimen = Geom:new{ w = screen_width, h = header_h } }
-        if left_grp then
-            table.insert(header, LeftContainer:new{
-                dimen = Geom:new{ w = screen_width, h = header_h },
-                HorizontalGroup:new{
-                    HorizontalSpan:new{ width = h_pad },
-                    padded(left_grp),
-                },
-            })
-        end
+        local header = HorizontalGroup:new{}
+
         if center_grp then
+            -- 3-zone layout: left | center | right
+            if left_grp then
+                table.insert(header, LeftContainer:new{
+                    dimen = Geom:new{ w = left_w, h = header_h },
+                    HorizontalGroup:new{
+                        HorizontalSpan:new{ width = h_pad },
+                        padded(left_grp),
+                    },
+                })
+            else
+                table.insert(header, HorizontalSpan:new{ width = left_w })
+            end
             table.insert(header, CenterContainer:new{
-                dimen = Geom:new{ w = screen_width, h = header_h },
+                dimen = Geom:new{ w = third_w, h = header_h },
                 padded(center_grp),
             })
-        end
-        if right_grp then
-            table.insert(header, RightContainer:new{
-                dimen = Geom:new{ w = screen_width, h = header_h },
-                HorizontalGroup:new{
-                    padded(right_grp),
-                    HorizontalSpan:new{ width = h_pad },
-                },
-            })
+            if right_grp then
+                table.insert(header, RightContainer:new{
+                    dimen = Geom:new{ w = right_w, h = header_h },
+                    HorizontalGroup:new{
+                        padded(right_grp),
+                        HorizontalSpan:new{ width = h_pad },
+                    },
+                })
+            else
+                table.insert(header, HorizontalSpan:new{ width = right_w })
+            end
+        else
+            -- 2-zone layout: left | right (each half width)
+            if left_grp then
+                table.insert(header, LeftContainer:new{
+                    dimen = Geom:new{ w = left_w, h = header_h },
+                    HorizontalGroup:new{
+                        HorizontalSpan:new{ width = h_pad },
+                        padded(left_grp),
+                    },
+                })
+            else
+                table.insert(header, HorizontalSpan:new{ width = left_w })
+            end
+            if right_grp then
+                table.insert(header, RightContainer:new{
+                    dimen = Geom:new{ w = right_w, h = header_h },
+                    HorizontalGroup:new{
+                        padded(right_grp),
+                        HorizontalSpan:new{ width = h_pad },
+                    },
+                })
+            else
+                table.insert(header, HorizontalSpan:new{ width = right_w })
+            end
         end
 
         return header, all_widgets, header_h, screen_width
@@ -345,6 +399,17 @@ local function apply_reader_top_status_bar()
     -- ReaderView:paintTo (full page repaint) on every clock tick -- critical on
     -- color e-ink devices (e.g. Kobo Libre Color).
     local function repaintHeader(view)
+        -- Strict guard: only repaint if the reader itself is the top window.
+        -- is_view_active_top() allows child overlays (e.g. quick settings), which
+        -- would cause repaintHeader to paint over them. Check the stack directly.
+        do
+            local stack = UIManager._window_stack
+            local top = stack and stack[#stack]
+            local top_widget = top and top.widget
+            if not (top_widget == view.ui or top_widget == (view.ui and view.ui.show_parent)) then
+                return
+            end
+        end
         if not view._zen_header_dimen then
             DBG("repaintHeader SKIP: no _zen_header_dimen (paintTo never ran?)")
             return
@@ -452,9 +517,10 @@ local function apply_reader_top_status_bar()
                     "view.ui=", view.ui and "present" or "nil")
                 if _autoRefresh then
                     UIManager:unschedule(_autoRefresh)
-                    -- Repaint immediately so header is visible on wakeup
-                    -- without waiting for the next minute tick or page turn.
-                    repaintHeader(view)
+                    -- Repaint immediately on wakeup only if no overlay is active.
+                    if is_view_active_top(view) then
+                        repaintHeader(view)
+                    end
                     -- Retry after wake overlays settle; first repaint can race
                     -- with screensaver/AutoDim transitions.
                     if _resume_refresh_timer_1 then UIManager:unschedule(_resume_refresh_timer_1) end

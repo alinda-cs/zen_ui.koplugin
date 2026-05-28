@@ -6,6 +6,7 @@ local _ = require("gettext")
 local UIManager = require("ui/uimanager")
 local Event = require("ui/event")
 local utils = require("modules/settings/zen_settings_utils")
+local constants = require("common/constants")
 
 local M = {}
 
@@ -57,6 +58,21 @@ function M.build(ctx)
         end
 
         local t = {
+            {
+                text = _("Show separator"),
+                keep_menu_open = true,
+                checked_func = function()
+                    if type(config.reader_top_status_bar) ~= "table" then return false end
+                    return config.reader_top_status_bar[slot_name .. "_show_separator"] == true
+                end,
+                callback = function(touchmenu_instance)
+                    if type(config.reader_top_status_bar) ~= "table" then config.reader_top_status_bar = {} end
+                    local key = slot_name .. "_show_separator"
+                    config.reader_top_status_bar[key] = not (config.reader_top_status_bar[key] == true)
+                    save_clock()
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+            },
             {
                 text = _("Arrange"),
                 keep_menu_open = true,
@@ -291,6 +307,41 @@ function M.build(ctx)
                     },
                 },
             },
+            (function()
+                local function cur_sep_key()
+                    return type(config.reader_top_status_bar) == "table"
+                        and config.reader_top_status_bar.separator_key or "small-space"
+                end
+                local function cur_sep_label()
+                    local key = cur_sep_key()
+                    for _i, s in ipairs(constants.SEPARATOR_PRESETS) do
+                        if s.key == key then return _(s.label) end
+                    end
+                    return key
+                end
+                local sub = {}
+                for _i, sep in ipairs(constants.SEPARATOR_PRESETS) do
+                    if sep.key ~= "custom" then  -- custom not yet wired to reader top bar
+                        local key = sep.key
+                        table.insert(sub, {
+                            text = _(sep.label),
+                            checked_func = function() return cur_sep_key() == key end,
+                            callback = function(touchmenu_instance)
+                                if type(config.reader_top_status_bar) ~= "table" then config.reader_top_status_bar = {} end
+                                config.reader_top_status_bar.separator_key = key
+                                save_clock()
+                                if touchmenu_instance then touchmenu_instance:updateItems() end
+                            end,
+                        })
+                    end
+                end
+                return {
+                    text_func = function()
+                        return string.format("%s: %s", _("Separator"), cur_sep_label())
+                    end,
+                    sub_item_table = sub,
+                }
+            end)(),
         },
     })
 

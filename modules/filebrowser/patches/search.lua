@@ -17,7 +17,7 @@ local function apply_search()
     end
 
     local function is_substring_enabled()
-        return G_reader_settings:isTrue("substring_search")
+        return G_reader_settings:readSetting("substring_search") ~= false  -- default: substring (whole-word off)
     end
 
     local orig_onShowFileSearch = FileManagerFileSearcher.onShowFileSearch

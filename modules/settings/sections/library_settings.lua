@@ -46,6 +46,22 @@ function M.build(ctx)
     local plugin        = ctx.plugin
     local save_and_apply = ctx.save_and_apply
 
+    local function fbc()
+        if type(config.browser_folder_cover) ~= "table" then
+            config.browser_folder_cover = {}
+        end
+        return config.browser_folder_cover
+    end
+    local function save_fbc()
+        plugin:saveConfig()
+        UIManager:setDirty(nil, "full")
+    end
+    local function save_fbc_and_update()
+        plugin:saveConfig()
+        local ui = require("apps/filemanager/filemanager").instance
+        if ui and ui.file_chooser then ui.file_chooser:updateItems() end
+    end
+
     local items = {}
 
     table.insert(items, status_bar_section.build(ctx))
@@ -151,75 +167,53 @@ function M.build(ctx)
                     {
                         text = _("Gallery"),
                         radio = true,
-                        checked_func = function()
-                            return G_reader_settings:isTrue("folder_gallery_mode")
-                        end,
+                        checked_func = function() return fbc().cover_mode == "gallery" end,
                         callback = function()
-                            G_reader_settings:saveSetting("folder_gallery_mode", true)
-                            G_reader_settings:saveSetting("folder_stack_mode", false)
-                            local ui = require("apps/filemanager/filemanager").instance
-                            if ui and ui.file_chooser then
-                                ui.file_chooser:updateItems()
-                            end
+                            fbc().cover_mode = "gallery"
+                            save_fbc_and_update()
                         end,
                     },
                     {
                         text = _("First cover image"),
                         radio = true,
-                        checked_func = function()
-                            return not G_reader_settings:isTrue("folder_gallery_mode")
-                                and not G_reader_settings:isTrue("folder_stack_mode")
-                        end,
+                        checked_func = function() return fbc().cover_mode == "normal" end,
                         callback = function()
-                            G_reader_settings:saveSetting("folder_gallery_mode", false)
-                            G_reader_settings:saveSetting("folder_stack_mode", false)
-                            local ui = require("apps/filemanager/filemanager").instance
-                            if ui and ui.file_chooser then
-                                ui.file_chooser:updateItems()
-                            end
+                            fbc().cover_mode = "normal"
+                            save_fbc_and_update()
                         end,
                     },
                     {
                         text = _("Stack"),
                         radio = true,
-                        checked_func = function()
-                            return G_reader_settings:isTrue("folder_stack_mode")
-                        end,
+                        checked_func = function() return fbc().cover_mode == "stack" end,
                         callback = function()
-                            G_reader_settings:saveSetting("folder_stack_mode", true)
-                            G_reader_settings:saveSetting("folder_gallery_mode", false)
-                            local ui = require("apps/filemanager/filemanager").instance
-                            if ui and ui.file_chooser then
-                                ui.file_chooser:updateItems()
-                            end
+                            fbc().cover_mode = "stack"
+                            save_fbc_and_update()
+                        end,
+                    },
+                    {
+                        text = _("None (folder name only)"),
+                        radio = true,
+                        checked_func = function() return fbc().cover_mode == "none" end,
+                        callback = function()
+                            fbc().cover_mode = "none"
+                            save_fbc_and_update()
                         end,
                     },
                     {
                         text = _("Show spine lines"),
-                        checked_func = function()
-                            local ok, bim = pcall(require, "bookinfomanager")
-                            if not ok then return true end
-                            return not bim:getSetting("folder_spine_lines_show")
-                        end,
+                        checked_func = function() return fbc().show_spine_lines ~= false end,
                         callback = function()
-                            local ok, bim = pcall(require, "bookinfomanager")
-                            if not ok then return end
-                            bim:toggleSetting("folder_spine_lines_show")
-                            UIManager:setDirty(nil, "full")
+                            fbc().show_spine_lines = fbc().show_spine_lines == false
+                            save_fbc()
                         end,
                     },
                     {
                         text = _("Show item count"),
-                        checked_func = function()
-                            local ok, bim = pcall(require, "bookinfomanager")
-                            if not ok then return true end
-                            return not bim:getSetting("folder_item_count_show")
-                        end,
+                        checked_func = function() return fbc().show_item_count ~= false end,
                         callback = function()
-                            local ok, bim = pcall(require, "bookinfomanager")
-                            if not ok then return end
-                            bim:toggleSetting("folder_item_count_show")
-                            UIManager:setDirty(nil, "full")
+                            fbc().show_item_count = fbc().show_item_count == false
+                            save_fbc()
                         end,
                     },
                 },
@@ -230,16 +224,10 @@ function M.build(ctx)
                 sub_item_table = {
                     {
                         text = _("Opaque background"),
-                        checked_func = function()
-                            local ok, bim = pcall(require, "bookinfomanager")
-                            if not ok then return true end
-                            return not bim:getSetting("folder_name_opaque")
-                        end,
+                        checked_func = function() return fbc().name_opaque == true end,
                         callback = function()
-                            local ok, bim = pcall(require, "bookinfomanager")
-                            if not ok then return end
-                            bim:toggleSetting("folder_name_opaque")
-                            UIManager:setDirty(nil, "full")
+                            fbc().name_opaque = fbc().name_opaque ~= true
+                            save_fbc()
                         end,
                     },
                     {
@@ -248,51 +236,29 @@ function M.build(ctx)
                             {
                                 text = _("Center"),
                                 radio = true,
-                                checked_func = function()
-                                    local ok, bim = pcall(require, "bookinfomanager")
-                                    if not ok then return true end
-                                    return not bim:getSetting("folder_name_centered")
-                                end,
+                                checked_func = function() return fbc().name_centered == true end,
                                 callback = function()
-                                    local ok, bim = pcall(require, "bookinfomanager")
-                                    if not ok then return end
-                                    if bim:getSetting("folder_name_centered") then
-                                        bim:toggleSetting("folder_name_centered")
-                                    end
-                                    UIManager:setDirty(nil, "full")
+                                    fbc().name_centered = true
+                                    save_fbc()
                                 end,
                             },
                             {
                                 text = _("Bottom"),
                                 radio = true,
-                                checked_func = function()
-                                    local ok, bim = pcall(require, "bookinfomanager")
-                                    if not ok then return false end
-                                    return bim:getSetting("folder_name_centered") ~= nil
-                                end,
+                                checked_func = function() return fbc().name_centered ~= true end,
                                 callback = function()
-                                    local ok, bim = pcall(require, "bookinfomanager")
-                                    if not ok then return end
-                                    if not bim:getSetting("folder_name_centered") then
-                                        bim:toggleSetting("folder_name_centered")
-                                    end
-                                    UIManager:setDirty(nil, "full")
+                                    fbc().name_centered = false
+                                    save_fbc()
                                 end,
                             },
                         },
                     },
                     {
                         text = _("Show folder name"),
-                        checked_func = function()
-                            local ok, bim = pcall(require, "bookinfomanager")
-                            if not ok then return true end
-                            return not bim:getSetting("folder_name_show")
-                        end,
+                        checked_func = function() return fbc().show_folder_name ~= false end,
                         callback = function()
-                            local ok, bim = pcall(require, "bookinfomanager")
-                            if not ok then return end
-                            bim:toggleSetting("folder_name_show")
-                            UIManager:setDirty(nil, "full")
+                            fbc().show_folder_name = fbc().show_folder_name == false
+                            save_fbc()
                         end,
                     },
                 },

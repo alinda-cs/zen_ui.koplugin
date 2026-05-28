@@ -609,7 +609,7 @@ local function apply_browser_list_item_layout()
             local wauthors
             if authors then
                 wauthors = TextWidget:new{
-                    text      = authors:gsub("\n", " "),
+                    text      = authors:gsub("\n", ", "),
                     face      = library_font.getFace(fs_meta),
                     max_width = main_w,
                     fgcolor   = fgcolor,

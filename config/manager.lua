@@ -377,15 +377,116 @@ local function migrate_legacy_updater_keys(cfg)
     return cfg, changed
 end
 
+local function migrate_folder_cover_keys(cfg)
+    local g = rawget(_G, "G_reader_settings")
+    if not g or type(cfg) ~= "table" then return cfg, false end
+
+    if type(cfg.browser_folder_cover) ~= "table" then
+        cfg.browser_folder_cover = {}
+    end
+    local fbc = cfg.browser_folder_cover
+    local changed = false
+    local removed_legacy = false
+
+    -- Read legacy keys before deleting them.
+    local gallery_val = g:readSetting("folder_gallery_mode")
+    local stack_val   = g:isTrue("folder_stack_mode")
+    local none_val    = g:isTrue("folder_none_mode")
+    local has_legacy  = gallery_val ~= nil or stack_val or none_val
+
+    if has_legacy then
+        -- Existing user: override cover_mode from their legacy selection.
+        -- merged_with_defaults already ran so fbc.cover_mode is "gallery"; we must overwrite.
+        -- New installs never have these keys so defaults.lua applies cleanly.
+        if none_val then
+            fbc.cover_mode = "none"
+        elseif stack_val then
+            fbc.cover_mode = "stack"
+        elseif gallery_val == false then
+            fbc.cover_mode = "normal"
+        else
+            fbc.cover_mode = "gallery"
+        end
+        changed = true
+    end
+
+    for _i, key in ipairs({ "folder_gallery_mode", "folder_stack_mode", "folder_none_mode" }) do
+        if g:readSetting(key) ~= nil then
+            g:delSetting(key)
+            removed_legacy = true
+        end
+    end
+
+    if removed_legacy then pcall(g.flush, g) end
+    return cfg, (changed or removed_legacy)
+end
+
+local function migrate_bim_folder_cover_keys(cfg)
+    if type(cfg._meta) == "table" and cfg._meta.bim_fbc_migrated then
+        return cfg, false
+    end
+
+    local ok, bim = pcall(require, "bookinfomanager")
+    if not ok or not bim then return cfg, false end
+
+    if type(cfg.browser_folder_cover) ~= "table" then
+        cfg.browser_folder_cover = {}
+    end
+    local fbc = cfg.browser_folder_cover
+    -- All BIM folder cover keys used BooleanSetting(default=true): get() = not BIM_value.
+    -- Zen config stores the direct value, so: zen_value = BIM_value ~= true.
+    local mappings = {
+        { bim = "folder_crop_custom_image", cfg = "crop_to_fit"      },
+        { bim = "folder_name_centered",     cfg = "name_centered"     },
+        { bim = "folder_name_show",         cfg = "show_folder_name"  },
+        { bim = "folder_item_count_show",   cfg = "show_item_count"   },
+        { bim = "folder_name_opaque",       cfg = "name_opaque"       },
+        { bim = "folder_spine_lines_show",  cfg = "show_spine_lines"  },
+    }
+    for _i, m in ipairs(mappings) do
+        local bim_val = bim:getSetting(m.bim)
+        if bim_val ~= nil then
+            fbc[m.cfg] = bim_val ~= true
+            pcall(bim.saveSetting, bim, m.bim, nil)
+        end
+    end
+
+    -- Migrate display modes (plain strings, no inversion)
+    if type(cfg.group_view) ~= "table" then cfg.group_view = {} end
+    local gv = cfg.group_view
+    if type(gv.display_mode) ~= "table" then gv.display_mode = {} end
+    local dm = gv.display_mode
+    local dm_mappings = {
+        { bim = "collection_display_mode", key = "collections" },
+        { bim = "history_display_mode",    key = "history"     },
+    }
+    for _i, m in ipairs(dm_mappings) do
+        local bim_val = bim:getSetting(m.bim)
+        if bim_val ~= nil then
+            dm[m.key] = bim_val
+            pcall(bim.saveSetting, bim, m.bim, nil)
+        end
+    end
+
+    if type(cfg._meta) == "table" then
+        cfg._meta.bim_fbc_migrated = true
+    end
+    return cfg, true  -- always save: marks migration as attempted
+end
+
 function M.load()
     local stored = G_reader_settings:readSetting(KEY, {})
     local cfg = merged_with_defaults(stored)
     cfg = normalize_renamed_keys(cfg)
     local migrated_group
     local migrated_updater
-    cfg, migrated_group = migrate_legacy_group_view_keys(cfg)
+    local migrated_fbc
+    cfg, migrated_group   = migrate_legacy_group_view_keys(cfg)
     cfg, migrated_updater = migrate_legacy_updater_keys(cfg)
-    if migrated_group or migrated_updater then
+    cfg, migrated_fbc     = migrate_folder_cover_keys(cfg)
+    local migrated_bim
+    cfg, migrated_bim     = migrate_bim_folder_cover_keys(cfg)
+    if migrated_group or migrated_updater or migrated_fbc or migrated_bim then
         M.save(cfg)
     end
     return cfg

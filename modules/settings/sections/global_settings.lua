@@ -332,10 +332,14 @@ function M.build(ctx)
                 text = _("Match whole words"),
                 help_text = _("When enabled, search matches whole words only. When disabled, substring matching is used (e.g., 'fish' matches 'fishing')."),
                 checked_func = function()
-                    return not G_reader_settings:isTrue("substring_search")
+                    return G_reader_settings:readSetting("substring_search") == false
                 end,
                 callback = function()
-                    G_reader_settings:flipNilOrFalse("substring_search")
+                    if G_reader_settings:readSetting("substring_search") == false then
+                        G_reader_settings:delSetting("substring_search")
+                    else
+                        G_reader_settings:saveSetting("substring_search", false)
+                    end
                 end,
             },
         },

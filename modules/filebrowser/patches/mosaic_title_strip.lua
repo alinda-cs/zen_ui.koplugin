@@ -198,6 +198,12 @@ local function apply_mosaic_title_strip()
                 if authors and authors:find("\n") then
                     authors = authors:match("^([^\n]+)")
                 end
+                -- Filename fallback for title once metadata is confirmed loaded.
+                if not title and self.filepath then
+                    local fname = self.filepath:match("([^/]+)$") or ""
+                    fname = fname:gsub("%.[^%.]+$", "")
+                    if fname ~= "" then title = fname end
+                end
                 if title or authors then
                     self._zen_strip_data = { title = title, authors = authors }
                     logger.dbg("zen-ui:mosaic_title_strip:paintTo: cached title=",

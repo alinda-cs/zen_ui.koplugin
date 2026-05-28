@@ -884,7 +884,7 @@ local function apply_context_menu()
                             if not bookinfo.ignore_meta then
                                 if bookinfo.title then
                                     title_str = BD.auto(bookinfo.title)
-                                    authors_str = bookinfo.authors and BD.auto(bookinfo.authors) or nil
+                                    authors_str = bookinfo.authors and BD.auto(bookinfo.authors:gsub("\n", ", ")) or nil
                                 end
                                 if bookinfo.series then
                                     local s = BD.auto(bookinfo.series)

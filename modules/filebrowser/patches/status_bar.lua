@@ -36,21 +36,21 @@ local function apply_status_bar()
 
     -- === Persistent config ===
 
-    local separator_presets = {
-        { key = "dot",    label = "Middle dot",    value = "  ·  " },
-        { key = "bar",    label = "Vertical bar",  value = "  |  " },
-        { key = "dash",   label = "Dash",          value = "  -  " },
-        { key = "bullet", label = "Bullet",        value = "  •  " },
-        { key = "space",  label = "Space only",    value = "   " },
-        { key = "small-space",  label = "Space only (small)",    value = " " },
-        { key = "none",   label = "No separator",  value = "" },
-        { key = "custom", label = "Custom",        value = nil }, -- uses custom_separator
+    -- Separator values (bar-specific spacing; labels live in common/constants.lua)
+    local SEP_VALUES = {
+        dot             = "  \xC2\xB7  ",
+        bar             = "  |  ",
+        dash            = "  -  ",
+        bullet          = "  \xE2\x80\xA2  ",
+        space           = "   ",
+        ["small-space"] = " ",
+        none            = "",
     }
 
     -- Known item keys; determines what can be placed on either side
     local known_item_keys = { "wifi", "disk", "ram", "frontlight", "battery", "time", "custom_text" }
     local known_item_set = {}
-    for _, k in ipairs(known_item_keys) do known_item_set[k] = true end
+    for _i, k in ipairs(known_item_keys) do known_item_set[k] = true end
 
     local config_default = {
         custom_text = "",  -- shown by the "custom_text" item; empty = device model name
@@ -154,12 +154,10 @@ local function apply_status_bar()
     local config = loadConfig()
 
     local function getSeparator()
-        for _, preset in ipairs(separator_presets) do
-            if preset.key == config.separator_key then
-                return preset.value or config.custom_separator
-            end
+        if config.separator_key == "custom" then
+            return config.custom_separator or "  "
         end
-        return "  ·  "
+        return SEP_VALUES[config.separator_key] or "  \xC2\xB7  "
     end
 
     -- === Layout constants ===
