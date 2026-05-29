@@ -200,42 +200,77 @@ local function apply_reader_top_status_bar()
         chapter     = getChapterItem,
     }
 
-    -- Builds a HorizontalGroup from an ordered item list.
-    -- If max_width is set and content overflows, rebuilds as a single ellipsis-truncated TextWidget.
-    -- Returns (group_or_nil, widgets_list) where widgets_list holds all TextWidgets for free().
-    local function buildGroup(order, face, sep, doc_ctx, max_width)
-        if type(order) ~= "table" or #order == 0 then return nil, {} end
-        local group   = HorizontalGroup:new{}
-        local widgets = {}
-        local texts   = {}
-        local first   = true
+    local function collectItemTexts(order, doc_ctx)
+        if type(order) ~= "table" or #order == 0 then return {} end
+        local texts = {}
         for _i, key in ipairs(order) do
             local fn = item_fetchers[key]
             if fn then
                 local icon, label = fn(doc_ctx)
                 if icon ~= nil then
-                    if not first and sep ~= "" then
-                        local sep_w = TextWidget:new{ text = sep, face = face, padding = 0 }
-                        table.insert(group, sep_w)
-                        table.insert(widgets, sep_w)
-                    end
                     local text = label and (icon .. label) or icon
                     table.insert(texts, text)
-                    local tw = TextWidget:new{
-                        text    = text,
-                        face    = face,
-                        fgcolor = Blitbuffer.COLOR_BLACK,
-                        padding = 0,
-                    }
-                    table.insert(group, tw)
-                    table.insert(widgets, tw)
-                    first = false
                 end
             end
         end
-        if #group == 0 then return nil, {} end
-        -- If overflow, free and rebuild as a single ellipsis-truncated TextWidget
-        if max_width and group:getSize().w > max_width then
+        return texts
+    end
+
+    local function measureTextsWidth(texts, face, sep)
+        if type(texts) ~= "table" or #texts == 0 then return 0 end
+        local total = 0
+        for i = 1, #texts do
+            if i > 1 and sep ~= "" then
+                local sep_w = TextWidget:new{
+                    text = sep,
+                    face = face,
+                    padding = 0,
+                }
+                total = total + sep_w:getSize().w
+                sep_w:free()
+            end
+            local tw = TextWidget:new{
+                text = texts[i],
+                face = face,
+                fgcolor = Blitbuffer.COLOR_BLACK,
+                padding = 0,
+            }
+            total = total + tw:getSize().w
+            tw:free()
+        end
+        return total
+    end
+
+    -- Builds a HorizontalGroup from pre-collected texts.
+    -- If max_width is set and content overflows, rebuilds as a single ellipsis-truncated TextWidget.
+    -- Returns (group_or_nil, widgets_list, natural_width).
+    local function buildGroupFromTexts(texts, face, sep, max_width)
+        if type(texts) ~= "table" or #texts == 0 then return nil, {}, 0 end
+        if max_width and max_width <= 0 then return nil, {}, measureTextsWidth(texts, face, sep) end
+        local group = HorizontalGroup:new{}
+        local widgets = {}
+        local natural_w = measureTextsWidth(texts, face, sep)
+        for i = 1, #texts do
+            if i > 1 and sep ~= "" then
+                local sep_w = TextWidget:new{
+                    text = sep,
+                    face = face,
+                    padding = 0,
+                }
+                table.insert(group, sep_w)
+                table.insert(widgets, sep_w)
+            end
+            local tw = TextWidget:new{
+                text = texts[i],
+                face = face,
+                fgcolor = Blitbuffer.COLOR_BLACK,
+                padding = 0,
+            }
+            table.insert(group, tw)
+            table.insert(widgets, tw)
+        end
+
+        if max_width and natural_w > max_width then
             for _i, w in ipairs(widgets) do if w.free then w:free() end end
             local joined = texts[1] or ""
             for i = 2, #texts do joined = joined .. sep .. texts[i] end
@@ -246,9 +281,9 @@ local function apply_reader_top_status_bar()
                 padding   = 0,
                 max_width = max_width,
             }
-            return HorizontalGroup:new{ tw }, { tw }
+            return HorizontalGroup:new{ tw }, { tw }, natural_w
         end
-        return group, widgets
+        return group, widgets, natural_w
     end
 
     -- Builds the header widget from current config.
@@ -300,16 +335,72 @@ local function apply_reader_top_status_bar()
             return SEP_VALUES["small-space"]
         end
 
-        local third_w      = math.floor(screen_width / 3)
-        local right_zone_w = screen_width - 2 * third_w
-        local half_w       = math.floor(screen_width / 2)
         local all_widgets = {}
-        -- Build center first to decide whether left/right get 1/3 or 1/2.
-        local center_grp, center_ws = buildGroup(center_order, face, slot_sep("center"), doc_ctx, third_w)
-        local left_w  = center_grp and third_w      or half_w
-        local right_w = center_grp and right_zone_w or (screen_width - half_w)
-        local left_grp,  left_ws  = buildGroup(left_order,  face, slot_sep("left"),  doc_ctx, math.max(0, left_w  - h_pad))
-        local right_grp, right_ws = buildGroup(right_order, face, slot_sep("right"), doc_ctx, math.max(0, right_w - h_pad))
+
+        local left_sep = slot_sep("left")
+        local center_sep = slot_sep("center")
+        local right_sep = slot_sep("right")
+
+        local left_texts = collectItemTexts(left_order, doc_ctx)
+        local center_texts = collectItemTexts(center_order, doc_ctx)
+        local right_texts = collectItemTexts(right_order, doc_ctx)
+
+        local left_has = #left_texts > 0
+        local center_has = #center_texts > 0
+        local right_has = #right_texts > 0
+
+        local left_nat = measureTextsWidth(left_texts, face, left_sep)
+        local center_nat = measureTextsWidth(center_texts, face, center_sep)
+        local right_nat = measureTextsWidth(right_texts, face, right_sep)
+
+        local left_pad = left_has and h_pad or 0
+        local right_pad = right_has and h_pad or 0
+
+        local left_cap = 0
+        local center_cap = 0
+        local right_cap = 0
+        local left_w = 0
+        local center_w = 0
+        local right_w = 0
+        local middle_w = 0
+
+        if center_has then
+            local max_center = math.max(0, screen_width - left_pad - right_pad)
+            center_cap = math.min(center_nat, max_center)
+            center_w = center_cap
+
+            local side_total = screen_width - center_w
+            left_w = math.floor(side_total / 2)
+            right_w = side_total - left_w
+
+            left_cap = left_has and math.max(0, left_w - left_pad) or 0
+            right_cap = right_has and math.max(0, right_w - right_pad) or 0
+        else
+            local side_content_space = math.max(0, screen_width - left_pad - right_pad)
+            if left_has and right_has then
+                if left_nat + right_nat <= side_content_space then
+                    left_cap = left_nat
+                    right_cap = right_nat
+                else
+                    left_cap = math.floor(side_content_space / 2)
+                    right_cap = side_content_space - left_cap
+                end
+                left_w = left_pad + left_cap
+                right_w = right_pad + right_cap
+                middle_w = math.max(0, screen_width - left_w - right_w)
+            elseif left_has then
+                left_cap = math.max(0, screen_width - left_pad)
+                left_w = screen_width
+            elseif right_has then
+                right_cap = math.max(0, screen_width - right_pad)
+                right_w = screen_width
+            end
+        end
+
+        local left_grp, left_ws = buildGroupFromTexts(left_texts, face, left_sep, left_cap)
+        local center_grp, center_ws = buildGroupFromTexts(center_texts, face, center_sep, center_cap)
+        local right_grp, right_ws = buildGroupFromTexts(right_texts, face, right_sep, right_cap)
+
         for _i, w in ipairs(left_ws)   do table.insert(all_widgets, w) end
         for _i, w in ipairs(center_ws) do table.insert(all_widgets, w) end
         for _i, w in ipairs(right_ws)  do table.insert(all_widgets, w) end
@@ -351,7 +442,7 @@ local function apply_reader_top_status_bar()
                 table.insert(header, HorizontalSpan:new{ width = left_w })
             end
             table.insert(header, CenterContainer:new{
-                dimen = Geom:new{ w = third_w, h = header_h },
+                dimen = Geom:new{ w = center_w, h = header_h },
                 padded(center_grp),
             })
             if right_grp then
@@ -366,7 +457,7 @@ local function apply_reader_top_status_bar()
                 table.insert(header, HorizontalSpan:new{ width = right_w })
             end
         else
-            -- 2-zone layout: left | right (each half width)
+            -- 2-zone layout: left | right with adaptive middle gap.
             if left_grp then
                 table.insert(header, LeftContainer:new{
                     dimen = Geom:new{ w = left_w, h = header_h },
@@ -377,6 +468,9 @@ local function apply_reader_top_status_bar()
                 })
             else
                 table.insert(header, HorizontalSpan:new{ width = left_w })
+            end
+            if middle_w > 0 then
+                table.insert(header, HorizontalSpan:new{ width = middle_w })
             end
             if right_grp then
                 table.insert(header, RightContainer:new{
