@@ -462,9 +462,13 @@ local function apply_opening_banner()
             and plug.config.features.browser_cover_rounded_corners == true
 
         local _nm = G_reader_settings and G_reader_settings:isTrue("night_mode") or false
+        local dark_banner = not _nm
+        if cover and cover.dark_banner ~= nil then
+            dark_banner = cover.dark_banner
+        end
         local banner = OpeningBanner:new{
             dimen                = Geom:new{ x = bx, y = by, w = bw, h = banner_h },
-            dark_banner          = (cover == nil) and not _nm or cover.dark_banner,
+            dark_banner          = dark_banner,
             round_bottom_corners = round_bottom and true or false,
         }
 
