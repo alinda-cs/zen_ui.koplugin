@@ -250,7 +250,7 @@ local function apply_navbar()
 
     -- === Active tab tracking ===
 
-    local active_tab = "books"
+    local active_tab
     local _navbar_focused_idx = nil  -- keyboard-focused tab index (nil = file list has focus)
     local _last_menu_item = nil  -- tracks last long-held item for the menu tab
 
@@ -1847,20 +1847,20 @@ local function apply_navbar()
     -- covers_fullscreen) and never paints the FM books view at all -- no flash, no artifacts.
     local orig_showFiles = FileManager.showFiles
     local function maybe_open_startup_default_tab(fm)
-        if not fm or fm._zen_default_tab_bootstrapped then return end
+        if not fm or fm._zen_default_tab_bootstrapped then return false end
         local stack = UIManager._window_stack
         local top = stack and stack[#stack]
         local top_widget = top and top.widget
         if top_widget ~= fm and top_widget ~= fm.show_parent then
-            return
+            return false
         end
         fm._zen_default_tab_bootstrapped = true
-        if resolve_default_tab() == "books" then return end
-        UIManager:nextTick(function()
-            if FileManager.instance == fm then
-                open_default_tab()
-            end
-        end)
+        if resolve_default_tab() == "books" then return false end
+        if FileManager.instance == fm then
+            open_default_tab()
+            return true
+        end
+        return false
     end
 
     function FileManager:showFiles(path, focused_file, selected_files)
@@ -2083,14 +2083,18 @@ local function apply_navbar()
 
     -- setupLayout fires before this plugin loads on first start, so the initial
     -- FM paint has no navbar. Reinject on the first event loop tick to fix it.
-    UIManager:nextTick(function()
+    local function reinject_initial_filemanager()
         local fm = FileManager.instance
         if fm then
             injectNavbar(fm)
-            UIManager:setDirty(fm, "ui")
-            maybe_open_startup_default_tab(fm)
+            if not maybe_open_startup_default_tab(fm) then
+                UIManager:setDirty(fm, "ui")
+            end
         end
-    end)
+    end
+
+    reinject_initial_filemanager()
+    UIManager:nextTick(reinject_initial_filemanager)
 
     -- Expose a reinject function for external callers (e.g. quickstart on_close).
     -- Allows main.lua to rebuild the navbar after quickstart changes tab config.
