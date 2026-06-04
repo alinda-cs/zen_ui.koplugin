@@ -868,33 +868,6 @@ local function patch_list_item()
     end
 end
 
--------------------------------------------------------------------------------
--- install_gesture_passthrough: delegate swipe/multiswipe to FileManager so
--- user-configured KOReader dispatcher gestures fire from within group views.
--- Always returns true to prevent Menu's default swipe-to-close / pagination.
--------------------------------------------------------------------------------
-local function install_gesture_passthrough(menu)
-    local function forward(ges)
-        local ok_fm, FM = pcall(require, "apps/filemanager/filemanager")
-        if ok_fm and FM and FM.instance then
-            FM.instance:onGesture(ges)
-        end
-    end
-
-    -- Override onGesture: let Menu handle its own gestures first (item taps via
-    -- children, swipe pagination, top-swipe menu). For anything Menu doesn't
-    -- consume, forward to FileManager's gesture dispatcher so user-configured
-    -- Dispatcher gestures (corner taps, etc.) still fire.
-    local _orig_onGesture = menu.onGesture
-    function menu:onGesture(ges)
-        local consumed = _orig_onGesture and _orig_onGesture(self, ges)
-        if not consumed then
-            forward(ges)
-        end
-        return true
-    end
-end
-
 -- clean_nav: suppress back arrow, inject status bar row, set display mode
 -- back_callback: optional function for the status bar back chevron
 -------------------------------------------------------------------------------
@@ -1174,7 +1147,7 @@ local function sortDetailFiles(files, collate, reverse)
 
     -- Build sortable array with metadata
     local items = {}
-    for _, fpath in ipairs(files) do
+    for _i, fpath in ipairs(files) do
         local bookinfo = BookInfoManager:getBookInfo(fpath, true)
         local sort_key
 
@@ -1217,7 +1190,7 @@ local function sortDetailFiles(files, collate, reverse)
 
     -- Extract sorted paths
     local sorted = {}
-    for _, item in ipairs(items) do
+    for _i, item in ipairs(items) do
         table.insert(sorted, item.path)
     end
 
@@ -1278,7 +1251,7 @@ local function showDetailSortDialog(group_name, tab_id, menu, files)
         sorted_files = apply_status_filter(sorted_files)
 
         local book_items = {}
-        for _, fpath in ipairs(sorted_files) do
+        for _i, fpath in ipairs(sorted_files) do
             local fname = fpath:match("([^/]+)$") or fpath
             local display = fname:gsub("%.[^%.]+$", "")
 
@@ -1379,7 +1352,7 @@ local function show_file_dialog_with_refresh(fc, menu_self, item)
             -- Fallback for older KOReader: scan window stack directly
             is_shown = false
             if type(UIManager2._window_stack) == "table" then
-                for _, entry in ipairs(UIManager2._window_stack) do
+                for _i, entry in ipairs(UIManager2._window_stack) do
                     if entry.widget == menu_self then is_shown = true; break end
                 end
             end
@@ -1671,8 +1644,6 @@ showGroupView = function(tab_id, injectNavbar, groups)
         menu.updateItems = Menu_class.updateItems
     end
 
-    install_gesture_passthrough(menu)
-
     menu.close_callback = function()
         UIManager:close(menu)
         if tab_id == "authors" then
@@ -1778,12 +1749,12 @@ showGroupView = function(tab_id, injectNavbar, groups)
         if restore_detail then
             local detail_name = state.detail_group
             local already_open = false
-            for _, dm in ipairs(_detail_menus) do
+            for _i, dm in ipairs(_detail_menus) do
                 if dm._zen_group_name == detail_name then already_open = true; break end
             end
             if not already_open then
                 UIManager:nextTick(function()
-                    for _, item in ipairs(item_table) do
+                    for _i, item in ipairs(item_table) do
                         if item.text == detail_name and item._zen_files then
                             showDetailView(item, injectNavbar, tab_id)
                             break
@@ -1921,8 +1892,6 @@ function M.showTBRView(injectNavbar)
         menu.updateItems = Menu_class.updateItems
     end
 
-    install_gesture_passthrough(menu)
-
     menu.close_callback = function()
         UIManager:close(menu)
         _tbr_menu = nil
@@ -2000,7 +1969,7 @@ end
 function M.restoreDetail(group_name, tab_id, injectNavbar_fn)
     local menu = tab_id == "authors" and _authors_menu or _series_menu
     if not menu or not menu.item_table then return end
-    for _, item in ipairs(menu.item_table) do
+    for _i, item in ipairs(menu.item_table) do
         if item.text == group_name and item._zen_files then
             showDetailView(item, injectNavbar_fn, tab_id)
             return
@@ -2032,7 +2001,7 @@ end
 -- Close all open group/detail menus to prevent UIManager stack pollution
 function M.closeAll()
     local UIManager2 = require("ui/uimanager")
-    for _, m in ipairs(_detail_menus) do
+    for _i, m in ipairs(_detail_menus) do
         UIManager2:close(m)
     end
     _detail_menus = {}

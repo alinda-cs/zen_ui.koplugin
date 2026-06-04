@@ -5,6 +5,23 @@ local ClockTimer = require("common/clock_timer")
 
 local M = {}
 
+local SKIP_FM_DISPATCH = {
+    onBatchedUpdate = true,
+    onBatchedUpdateDone = true,
+    onCloseWidget = true,
+    onFlushSettings = true,
+    onGesture = true,
+    onSetDimensions = true,
+    onShow = true,
+}
+
+local function get_filemanager_instance()
+    local ok, FileManager = pcall(require, "apps/filemanager/filemanager")
+    if ok and FileManager then
+        return FileManager.instance
+    end
+end
+
 local function refresh_bound_status_row(target)
     if not target or not target._zen_status_refresh then return end
     local UIManager = require("ui/uimanager")
@@ -21,6 +38,37 @@ local function remove_from_overlap(group, widget)
             table.remove(group, i)
             return
         end
+    end
+end
+
+function M.enable_filemanager_dispatch(menu)
+    if not menu or menu._zen_fm_dispatch_enabled then return end
+    menu._zen_fm_dispatch_enabled = true
+
+    local orig_handleEvent = menu.handleEvent
+    function menu:handleEvent(event)
+        local consumed = orig_handleEvent and orig_handleEvent(self, event)
+        if consumed or not event or SKIP_FM_DISPATCH[event.handler] then
+            return consumed
+        end
+
+        local fm = get_filemanager_instance()
+        if fm and fm ~= self and type(fm.handleEvent) == "function" then
+            return fm:handleEvent(event)
+        end
+        return consumed
+    end
+
+    local orig_onGesture = menu.onGesture
+    function menu:onGesture(ges)
+        local consumed = orig_onGesture and orig_onGesture(self, ges)
+        if consumed then return consumed end
+
+        local fm = get_filemanager_instance()
+        if fm and fm ~= self and type(fm.onGesture) == "function" then
+            return fm:onGesture(ges)
+        end
+        return consumed
     end
 end
 
@@ -62,6 +110,10 @@ function M.create_menu(opts)
     TitleBar.new = orig_tb_new
     if not ok_menu then
         error(menu_or_err)
+    end
+
+    if opts.filemanager_dispatch ~= false then
+        M.enable_filemanager_dispatch(menu_or_err)
     end
 
     return menu_or_err

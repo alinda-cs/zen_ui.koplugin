@@ -535,7 +535,21 @@ function ZenUI:onSuspend()
     zen_updater.cancel_wakeup_check()
 end
 
+local function close_zen_standalone_views(shared)
+    if type(shared) ~= "table" then return end
+    for _i, key in ipairs({ "group_view", "dashboard" }) do
+        local view = shared[key]
+        if view and type(view.closeAll) == "function" then
+            local ok, err = pcall(view.closeAll)
+            if not ok then
+                logger.warn("zen-ui: failed to close standalone view", key, err)
+            end
+        end
+    end
+end
+
 function ZenUI:onCloseWidget()
+    close_zen_standalone_views(self._zen_shared)
     i18n.uninstall()
 end
 

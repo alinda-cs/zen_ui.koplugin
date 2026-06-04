@@ -1105,6 +1105,19 @@ function M.showDashboardView(injectNavbar)
         _dashboard_menu = nil
     end
 
+    local orig_onCloseWidget = menu.onCloseWidget
+    function menu:onCloseWidget(...)
+        if rawequal(_dashboard_menu, self) then
+            _dashboard_menu = nil
+        end
+        pcall(function()
+            require("common/clock_timer").unbind(self)
+        end)
+        if orig_onCloseWidget then
+            return orig_onCloseWidget(self, ...)
+        end
+    end
+
     _dashboard_menu = menu
 
     if injectNavbar then
