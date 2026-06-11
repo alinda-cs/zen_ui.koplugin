@@ -17,6 +17,7 @@ local function apply_reader_top_status_bar()
     local VerticalSpan  = require("ui/widget/verticalspan")
     local HorizontalGroup = require("ui/widget/horizontalgroup")
     local HorizontalSpan  = require("ui/widget/horizontalspan")
+    local LineWidget    = require("ui/widget/linewidget")
     local BD       = require("ui/bidi")
     local Size     = require("ui/size")
     local Geom     = require("ui/geometry")
@@ -517,14 +518,25 @@ local function apply_reader_top_status_bar()
             DBG("repaintHeader SKIP: buildHeader returned nil")
             return
         end
+        local cfg2 = zen_plugin and zen_plugin.config and zen_plugin.config.reader_top_status_bar
+        local show_border = type(cfg2) == "table" and cfg2.show_bottom_border
+        local total_h = header_h + (show_border and Size.line.medium or 0)
+
         local dimen = view._zen_header_dimen
-        dimen.h = header_h
+        dimen.h = total_h
         dimen.w = screen_width
         local bb = Screen.bb
         if bb then
             bb:paintRect(dimen.x, dimen.y, dimen.w, dimen.h, Blitbuffer.COLOR_WHITE)
         end
         UIManager:widgetRepaint(header, dimen.x, dimen.y)
+        if show_border then
+            local h_margin = Screen:scaleBySize(10)
+            local border = LineWidget:new{
+                dimen = Geom:new{ w = screen_width - 2 * h_margin, h = Size.line.medium },
+            }
+            UIManager:widgetRepaint(border, dimen.x + h_margin, dimen.y + header_h)
+        end
         UIManager:setDirty(nil, "ui", dimen)
         for _i, w in ipairs(all_widgets) do
             if w.free then w:free() end
@@ -549,6 +561,17 @@ local function apply_reader_top_status_bar()
         end
 
         header:paintTo(bb, x, y)
+
+        local cfg2 = zen_plugin and zen_plugin.config and zen_plugin.config.reader_top_status_bar
+        if type(cfg2) == "table" and cfg2.show_bottom_border then
+            local h_margin = Screen:scaleBySize(10)
+            local border = LineWidget:new{
+                dimen = Geom:new{ w = screen_width - 2 * h_margin, h = Size.line.medium },
+            }
+            border:paintTo(bb, x + h_margin, y + header_h)
+            header_h = header_h + Size.line.medium
+        end
+
         -- Store geometry so repaintHeader can flush only this strip on clock ticks.
         self._zen_header_dimen = Geom:new{ x = x, y = y, w = screen_width, h = header_h }
 

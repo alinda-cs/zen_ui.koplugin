@@ -192,6 +192,7 @@ local defaults = {
         separator_key    = "small-space",
         custom_separator = "  ",
         custom_text      = "",
+        show_bottom_border = false,
     },
     reader_footer = {
         verbose_chapter_time = false,

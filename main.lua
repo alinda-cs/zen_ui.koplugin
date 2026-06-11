@@ -409,6 +409,18 @@ function ZenUI:init()
         return nil
     end
 
+    local function get_last_book_location()
+        local file = G_reader_settings and G_reader_settings:readSetting("lastfile")
+        if type(file) ~= "string" or file == "" then return nil end
+        local dir = file:match("^(.*)/[^/]+$")
+        if not dir or dir == "" then return nil end
+        local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+        if ok_lfs and lfs.attributes(dir, "mode") ~= "directory" then
+            return nil
+        end
+        return dir, file
+    end
+
     -- Last tab is pushed to far-right by TouchMenuBar's stretch spacer.
     local function inject_zen_tab(menu_class)
         if not menu_class or menu_class.__zen_ui_tab_patched then return end
@@ -455,17 +467,31 @@ function ZenUI:init()
                     local restore = type(_feat) == "table" and _feat.restore_library_view == true
                     if ui.document then
                         local file = ui.document.file
+                        local outside_home = file and not paths.isInHomeDir(file)
                         ui:handleEvent(require("ui/event"):new("CloseConfigMenu"))
                         ui:onClose()
                         if type(ui.showFileManager) == "function" then
-                            _G.__ZEN_UI_FORCE_DEFAULT_LIBRARY_TAB = true
+                            if not restore and not outside_home then
+                                _G.__ZEN_UI_FORCE_DEFAULT_LIBRARY_TAB = true
+                            end
+                            if outside_home then
+                                _G.__ZEN_UI_KEEP_BOOK_LOCATION = true
+                            end
                             ui:showFileManager(file)
                         end
                     else
                         local fm = require("apps/filemanager/filemanager").instance
                         if fm then require("common/utils").closeWidgetsAbove(fm) end
                         local open_default = rawget(_G, "__ZEN_UI_NAVBAR_OPEN_DEFAULT_TAB")
-                        if type(open_default) == "function" then
+                        local current_path = fm and fm.file_chooser and fm.file_chooser.path
+                        if current_path and not paths.isInHomeDir(current_path) then
+                            local last_dir, last_file = get_last_book_location()
+                            if last_dir and fm and fm.file_chooser then
+                                fm.file_chooser:changeToPath(last_dir, last_file)
+                                return
+                            end
+                        end
+                        if type(open_default) == "function" and not restore then
                             open_default()
                         elseif not restore then
                             -- Go to library root (page 1), ignoring current folder depth.

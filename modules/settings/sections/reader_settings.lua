@@ -343,6 +343,18 @@ function M.build(ctx)
                     sub_item_table = sub,
                 }
             end)(),
+            {
+                text = _("Show bottom border"),
+                checked_func = function()
+                    return type(config.reader_top_status_bar) == "table"
+                        and config.reader_top_status_bar.show_bottom_border == true
+                end,
+                callback = function()
+                    if type(config.reader_top_status_bar) ~= "table" then config.reader_top_status_bar = {} end
+                    config.reader_top_status_bar.show_bottom_border = not config.reader_top_status_bar.show_bottom_border
+                    save_clock()
+                end,
+            },
         },
     })
 

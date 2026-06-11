@@ -1887,9 +1887,12 @@ local function apply_navbar()
     end
 
     function FileManager:showFiles(path, focused_file, selected_files)
+        local keep_book_location = rawget(_G, "__ZEN_UI_KEEP_BOOK_LOCATION") == true
+        _G.__ZEN_UI_KEEP_BOOK_LOCATION = nil
+        local restore_enabled = is_restore_enabled()
         -- When restore is disabled, open at library root immediately (no double render).
-        local effective_focused = is_restore_enabled() and focused_file or nil
-        if not is_restore_enabled() then
+        local effective_focused = (restore_enabled or keep_book_location) and focused_file or nil
+        if not restore_enabled and not keep_book_location then
             local home_dir = require("common/paths").getHomeDir()
             if home_dir then
                 path = home_dir
@@ -1907,13 +1910,17 @@ local function apply_navbar()
             return
         end
         local state = rawget(_G, "__ZEN_UI_LIBRARY_STATE")
-        if not is_restore_enabled() then
+        if not restore_enabled then
             _G.__ZEN_UI_LIBRARY_STATE = nil
-            maybe_open_startup_default_tab(self)
+            if not keep_book_location then
+                maybe_open_startup_default_tab(self)
+            end
             return
         end
         if not state or not state.tab or not tab_callbacks[state.tab] then
-            maybe_open_startup_default_tab(self)
+            if not focused_file and not keep_book_location then
+                maybe_open_startup_default_tab(self)
+            end
             return
         end
         local gv = zen_plugin._zen_shared and zen_plugin._zen_shared.group_view
