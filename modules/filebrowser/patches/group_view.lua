@@ -1986,9 +1986,16 @@ function M.showTBRView(injectNavbar)
 end
 
 -- Open a detail view synchronously by group name (used by navbar.showFiles post-hook).
--- Called after showGroupView so _authors_menu/_series_menu is already set.
+-- Called after showGroupView so the root group menu is already set.
 function M.restoreDetail(group_name, tab_id, injectNavbar_fn)
-    local menu = tab_id == "authors" and _authors_menu or _series_menu
+    local menu
+    if tab_id == "authors" then
+        menu = _authors_menu
+    elseif tab_id == "tags" then
+        menu = _tags_menu
+    else
+        menu = _series_menu
+    end
     if not menu or not menu.item_table then return end
     for _i, item in ipairs(menu.item_table) do
         if item.text == group_name and item._zen_files then
