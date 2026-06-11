@@ -217,9 +217,15 @@ function M.build(ctx, source_key)
     probe:free()
     local title_h = title_line_h * (title_needs_2_lines and 2 or 1)
 
-    local author_text = book.authors or ""
+    local author_text = (book.authors or ""):gsub("%s*\n%s*", ", "):gsub("%s+", " ")
     local has_author = author_text ~= ""
-    local author_h = has_author and author_line_h or 0
+    local author_h = 0
+    if has_author then
+        local author_probe = TextWidget:new{ text = author_text, face = meta_face }
+        local lines = author_probe:getSize().w > text_w and 2 or 1
+        author_probe:free()
+        author_h = author_line_h * lines
+    end
     local title_author_gap = has_author and math.max(1, Screen:scaleBySize(1)) or 0
 
     -- Build top block widgets first so we can measure actual heights
@@ -238,11 +244,18 @@ function M.build(ctx, source_key)
 
     -- Clamp title/author to remaining budget
     if title_h + title_author_gap + author_h > top_budget then
-        local a_budget = has_author and math.min(author_h, math.floor(top_budget * 0.35)) or 0
-        title_h = math.min(title_h, math.max(0, top_budget - title_author_gap - a_budget))
-        author_h = has_author and math.max(0, top_budget - title_author_gap - title_h) or 0
-        if author_h <= 0 then title_author_gap = 0 end
+        if has_author and top_budget >= author_line_h then
+            if top_budget < title_h + title_author_gap + author_h then
+                author_h = author_line_h
+            end
+            title_h = math.min(title_h, math.max(0, top_budget - title_author_gap - author_h))
+        else
+            author_h = 0
+            title_author_gap = 0
+            title_h = math.min(title_h, math.max(0, top_budget))
+        end
     end
+    if title_h <= 0 then title_author_gap = 0 end
 
     if title_h > 0 then
         table.insert(top_items, TextBoxWidget:new{
@@ -272,7 +285,7 @@ function M.build(ctx, source_key)
 
     -- Measure actual rendered top height (TextBoxWidget snaps to line boundaries)
     local actual_top_h = 0
-    for _, w in ipairs(top_items) do
+    for _i, w in ipairs(top_items) do
         actual_top_h = actual_top_h + w:getSize().h
     end
     local actual_bottom_h = progress_row and progress_row:getSize().h or 0
@@ -296,7 +309,7 @@ function M.build(ctx, source_key)
 
     -- Assemble right column: title/author top, desc middle, progress bottom
     local detail_children = { align = "left" }
-    for _, w in ipairs(top_items) do
+    for _i, w in ipairs(top_items) do
         table.insert(detail_children, w)
     end
 

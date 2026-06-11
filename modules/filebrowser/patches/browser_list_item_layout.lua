@@ -426,9 +426,7 @@ local function apply_browser_list_item_layout()
             local series_index = (not bookinfo.ignore_meta and bookinfo.series_index)
 
             title   = title   and BD.auto(title)   or BD.filename(filename_without_suffix)
-            if title and #title > 60 then
-                title = title:sub(1, 60) .. "…"
-            end
+            title = zen_utils.truncateUtf8(title, 61, "…")
             authors = authors and BD.auto(authors)
 
             local series_str

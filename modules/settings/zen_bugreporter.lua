@@ -8,6 +8,7 @@ local JSON = require("json")
 local _ = require("gettext")
 local logger = require("logger")
 local UIManager = require("ui/uimanager")
+local zen_utils = require("common/utils")
 
 local PROXY_URL       = "https://zen-reporter.misty-mud-afb2.workers.dev/"
 local UPLOAD_URL = PROXY_URL .. "upload"
@@ -303,16 +304,16 @@ function M._do_submit(ctx, bug_title, description, github_username)
         if not log_url and crash_log_full then
             if #crash_log_full > MAX_CRASH_LOG then
                 crash_log_inline = "[truncated - showing last " .. MAX_CRASH_LOG .. " chars of " .. #crash_log_full .. " total]\n"
-                                 .. crash_log_full:sub(-MAX_CRASH_LOG)
+                                 .. zen_utils.utf8SafeSuffix(crash_log_full, MAX_CRASH_LOG)
             else
                 crash_log_inline = crash_log_full
             end
         end
 
-        local issue_title = ("[BUG] " .. bug_title):sub(1, MAX_TITLE + 6)
+        local issue_title = zen_utils.truncateUtf8Bytes("[BUG] " .. bug_title, MAX_TITLE + 6)
         local issue_body  = build_issue_body(description, system_info, crash_log_inline, github_username, log_url)
         if #issue_body > MAX_BODY then
-            issue_body = issue_body:sub(1, MAX_BODY - 16) .. "\n...[truncated]"
+            issue_body = zen_utils.truncateUtf8Bytes(issue_body, MAX_BODY, "\n...[truncated]")
         end
 
         local issue_url, err = submit_issue(issue_title, issue_body)

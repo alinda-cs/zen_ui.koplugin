@@ -545,6 +545,15 @@ local function apply_browser_folder_cover()
             },
         }
 
+        local function getEffectiveMosaicHeight(item)
+            local h = item.height
+            local strip_h = rawget(MosaicMenuItem, "_zen_strip_h") or 0
+            if not h or strip_h <= 0 then return h end
+            local full_h = item.dimen and item.dimen.h
+            if full_h and h <= full_h - strip_h then return h end
+            return math.max(1, h - strip_h)
+        end
+
         -- Main update implementation
         local function _zen_update_impl(self, ...)
 
@@ -616,7 +625,7 @@ local function apply_browser_folder_cover()
                         local cover_bb_copy = ancestor_bi.cover_bb:copy()
                         local border = Folder.face.border_size
                         local max_w = self.width - 2 * border
-                        local eff_h = self.height
+                        local eff_h = getEffectiveMosaicHeight(self)
                         local bh = eff_h - 2 * border
                         local portrait_w, portrait_h = Cover.calcDims(max_w, bh)
                         local cover_frame = FrameContainer:new {
@@ -658,7 +667,7 @@ local function apply_browser_folder_cover()
                         and (bookinfo.ignore_cover or not bookinfo.has_cover)) then
                     local border = Folder.face.border_size
                     local max_w = self.width - 2 * border
-                    local eff_h = self.height
+                    local eff_h = getEffectiveMosaicHeight(self)
                     local bh = eff_h - 2 * border
                     local portrait_w, portrait_h = Cover.calcDims(max_w, bh)
                     local dimen = { w = portrait_w + 2 * border, h = portrait_h + 2 * border }
@@ -729,7 +738,7 @@ local function apply_browser_folder_cover()
                 self._zen_render_night = Device.screen.night_mode
                 local border = Folder.face.border_size
                 local max_w = self.width - 2 * border
-                local eff_h = self.height
+                local eff_h = getEffectiveMosaicHeight(self)
                 local bh = eff_h - 2 * border
                 local portrait_w, portrait_h = Cover.calcDims(max_w, bh)
                 local dimen = { w = portrait_w + 2 * border, h = portrait_h + 2 * border }
@@ -795,7 +804,7 @@ local function apply_browser_folder_cover()
                 or (self.menu.genItemTableFromPath and self.menu)
 
             -- Use unified makeCover - auto-detects cover files and collects book covers
-            local eff_h = self.height
+            local eff_h = getEffectiveMosaicHeight(self)
             local border = Folder.face.border_size
             local max_w = self.width - 2 * border
             local bh = eff_h - 2 * border
@@ -836,7 +845,7 @@ local function apply_browser_folder_cover()
         function MosaicMenuItem:_setFolderCover(img)
             local border = Folder.face.border_size
             local max_w = self.width - 2 * border
-            local eff_h = self.height
+            local eff_h = getEffectiveMosaicHeight(self)
             local bh = eff_h - 2 * border
             local portrait_w, portrait_h = Cover.calcDims(max_w, bh)
             local dimen = { w = portrait_w + 2 * border, h = portrait_h + 2 * border }

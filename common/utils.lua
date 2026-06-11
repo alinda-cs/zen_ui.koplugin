@@ -1,5 +1,71 @@
 local M = {}
 
+local function utf8_char_count(text)
+    local count = 0
+    for _pos in tostring(text):gmatch("()[%z\1-\127\194-\244][\128-\191]*") do
+        count = count + 1
+    end
+    return count
+end
+
+local function utf8_prefix(text, max_chars)
+    if max_chars <= 0 then return "" end
+    local count = 0
+    for pos in tostring(text):gmatch("()[%z\1-\127\194-\244][\128-\191]*") do
+        count = count + 1
+        if count > max_chars then
+            return text:sub(1, pos - 1)
+        end
+    end
+    return text
+end
+
+--- Truncate by UTF-8 codepoint count without splitting a multibyte character.
+--- max_chars includes the ellipsis length.
+function M.truncateUtf8(text, max_chars, ellipsis)
+    if type(text) ~= "string" then return text end
+    max_chars = math.floor(tonumber(max_chars) or 0)
+    if max_chars <= 0 then return "" end
+    ellipsis = ellipsis or "..."
+    if utf8_char_count(text) <= max_chars then return text end
+    local keep = max_chars - utf8_char_count(ellipsis)
+    if keep <= 0 then return utf8_prefix(ellipsis, max_chars) end
+    return utf8_prefix(text, keep) .. ellipsis
+end
+
+local function is_utf8_continuation(byte)
+    return byte and byte >= 0x80 and byte <= 0xBF
+end
+
+--- Truncate to a byte budget while keeping valid UTF-8 boundaries.
+--- suffix is included in max_bytes.
+function M.truncateUtf8Bytes(text, max_bytes, suffix)
+    if type(text) ~= "string" then return text end
+    max_bytes = math.floor(tonumber(max_bytes) or 0)
+    if max_bytes <= 0 then return "" end
+    suffix = suffix or ""
+    if #text <= max_bytes then return text end
+    local keep = max_bytes - #suffix
+    if keep <= 0 then return suffix:sub(1, max_bytes) end
+    while keep > 0 and is_utf8_continuation(text:byte(keep + 1)) do
+        keep = keep - 1
+    end
+    return text:sub(1, keep) .. suffix
+end
+
+--- Return a suffix within max_bytes without starting inside a UTF-8 sequence.
+function M.utf8SafeSuffix(text, max_bytes)
+    if type(text) ~= "string" then return text end
+    max_bytes = math.floor(tonumber(max_bytes) or 0)
+    if max_bytes <= 0 then return "" end
+    if #text <= max_bytes then return text end
+    local start = #text - max_bytes + 1
+    while start <= #text and is_utf8_continuation(text:byte(start)) do
+        start = start + 1
+    end
+    return text:sub(start)
+end
+
 function M.deepcopy(value)
     if type(value) ~= "table" then
         return value
@@ -15,7 +81,7 @@ end
 -- Returns true when t is a sequential array (no holes, integer keys from 1).
 local function _is_array(t)
     local n = 0
-    for _ in pairs(t) do n = n + 1 end
+    for _k in pairs(t) do n = n + 1 end
     return n == #t
 end
 
