@@ -96,6 +96,12 @@ local function apply_filemanager_reinit()
     local fm = ok and FileManager and FileManager.instance
     if fm and fm.reinit then
         fm:reinit()
+        UIManager:setDirty(FileManager.instance or fm, "full")
+        UIManager:scheduleIn(0, function()
+            local current = FileManager.instance or fm
+            UIManager:setDirty(current, "full")
+            UIManager:forceRePaint()
+        end)
     end
 end
 
@@ -154,6 +160,16 @@ local function run_apply_mode_now(mode)
     end
 end
 
+local function flush_deferred_now()
+    deferred_poll_active = false
+    deferred_poll_retries = 0
+    local pending = deferred_applies
+    deferred_applies = {}
+    for mode, _mode in pairs(pending) do
+        run_apply_mode_now(mode)
+    end
+end
+
 -- Polls at 0.25 s intervals until the menu closes, then applies deferred modes.
 local function flush_deferred()
     deferred_poll_active = false
@@ -163,13 +179,22 @@ local function flush_deferred()
         UIManager:scheduleIn(0.25, flush_deferred)
         return
     end
-    deferred_poll_retries = 0
-    local pending = deferred_applies
-    deferred_applies = {}
-    for mode, _ in pairs(pending) do
-        run_apply_mode_now(mode)
+    flush_deferred_now()
+end
+
+local function install_touchmenu_close_flush()
+    local ok, TouchMenu = pcall(require, "ui/widget/touchmenu")
+    if not ok or not TouchMenu or TouchMenu._zen_settings_apply_close_flush then return end
+    TouchMenu._zen_settings_apply_close_flush = true
+    local orig_onCloseWidget = TouchMenu.onCloseWidget
+    function TouchMenu:onCloseWidget(...)
+        if orig_onCloseWidget then orig_onCloseWidget(self, ...) end
+        if next(deferred_applies) == nil then return end
+        UIManager:scheduleIn(0, flush_deferred_now)
     end
 end
+
+install_touchmenu_close_flush()
 
 local function run_apply_mode(mode)
     if DISRUPTIVE_MODES[mode] and is_filemanager_menu_open() then
@@ -207,6 +232,12 @@ M.prompt_restart = prompt_restart
 -- Use this when a setting changes the footer height (e.g. scroll bar style).
 function M.reinit_filemanager()
     run_apply_mode("filemanager_reinit")
+end
+
+-- Queue a file manager reinit for the next TouchMenu close.
+-- Use this from TouchMenu callbacks that change footer/navbar height.
+function M.reinit_filemanager_on_menu_close()
+    deferred_applies.filemanager_reinit = true
 end
 
 return M

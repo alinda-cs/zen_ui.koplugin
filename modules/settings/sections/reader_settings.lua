@@ -649,7 +649,7 @@ function M.build(ctx)
         end,
     })
     table.insert(items, {
-        text = _("Restore library view on return"),
+        text = _("Restore library location on exit"),
         checked_func = function()
             return config.features["restore_library_view"] == true
         end,

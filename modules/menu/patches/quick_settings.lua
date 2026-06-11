@@ -45,6 +45,17 @@ local function apply_quick_settings()
         return type(features) == "table" and features.quick_settings == true
     end
 
+    local function getQuickSettingsTabIndex(touch_menu)
+        local tab_table = touch_menu and touch_menu.tab_item_table
+        if type(tab_table) ~= "table" then return 1 end
+        for i, tab in ipairs(tab_table) do
+            if tab.id == "quicksettings" then
+                return i
+            end
+        end
+        return 1
+    end
+
     -- ============================================================
     -- Configuration
     -- ============================================================
@@ -974,12 +985,12 @@ local function apply_quick_settings()
     local TouchMenu = require("ui/widget/touchmenu")
     local FocusManager = require("ui/widget/focusmanager")
 
-    -- Always open to tab 1 (quick settings) regardless of last-used tab.
+    -- Always open to the quick settings tab regardless of last-used tab.
     local GestureRange = require("ui/gesturerange")
     local orig_init = TouchMenu.init
     function TouchMenu:init()
         if is_enabled() then
-            self.last_index = 1
+            self.last_index = getQuickSettingsTabIndex(self)
         end
         orig_init(self)
         -- Pre-set image.dimen on bar icon buttons so widgetInvert doesn't crash
@@ -1222,7 +1233,7 @@ local function apply_quick_settings()
             return
         end
         -- Always reset last_index so next open returns to quick settings tab.
-        self.last_index = 1
+        self.last_index = getQuickSettingsTabIndex(self)
     end
 
     -- Cancel status bar refresh timer when the menu is closed
@@ -1267,7 +1278,7 @@ local function apply_quick_settings()
     local quick_settings_tab = {
         id = "quicksettings",
         icon = "quicksettings",
-        remember = false,
+        remember = true,
         panel = createQuickSettingsPanel,
     }
 

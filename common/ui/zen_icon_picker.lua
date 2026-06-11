@@ -144,6 +144,14 @@ local function showIconPickerDialog(icons_list, current_icon, on_select)
 
     -- forward ref so gesture handlers can close the dialog before it's assigned.
     local dialog
+    local closed = false
+
+    local function closeDialog()
+        if closed then return end
+        closed = true
+        UIManager:close(dialog, "ui")
+        UIManager:forceRePaint()
+    end
 
     local function goToPage(p)
         if p < 1 or p > total_pages then return end
@@ -164,14 +172,14 @@ local function showIconPickerDialog(icons_list, current_icon, on_select)
                 handler     = function(ges)
                     local fd = inner_frame.dimen
                     if not fd or not ges.pos:intersectWith(fd) then
-                        UIManager:close(dialog)
+                        closeDialog()
                         return true
                     end
                     local gx, gy = ges.pos.x, ges.pos.y
                     -- Close button (top-left of content area).
                     if gx >= content_x and gx < content_x + close_sz
                        and gy >= content_y and gy < content_y + title_h then
-                        UIManager:close(dialog)
+                        closeDialog()
                         return true
                     end
                     -- Page-number chevron taps.
@@ -193,8 +201,16 @@ local function showIconPickerDialog(icons_list, current_icon, on_select)
                         local row_i = math.floor((gy - grid_y) / cell_h)
                         local idx   = (cur_page - 1) * per_page + row_i * cols + col_i + 1
                         if idx >= 1 and idx <= #icons_list then
-                            UIManager:close(dialog)
-                            on_select(icons_list[idx].name)
+                            local selected_name = icons_list[idx].name
+                            closeDialog()
+                            UIManager:nextTick(function()
+                                local ok_select, err = xpcall(function()
+                                    on_select(selected_name)
+                                end, debug.traceback)
+                                if not ok_select then
+                                    require("logger").warn("zen-ui icon picker select failed:", err)
+                                end
+                            end)
                         end
                     end
                     return true
@@ -211,7 +227,7 @@ local function showIconPickerDialog(icons_list, current_icon, on_select)
                     elseif dir == "east" then
                         goToPage(cur_page - 1)
                     else
-                        UIManager:close(dialog)
+                        closeDialog()
                     end
                     return true
                 end,

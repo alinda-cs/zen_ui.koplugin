@@ -1,7 +1,7 @@
 -- settings/sections/library/navbar.lua
 -- Navbar settings item for Zen UI.
 -- Returns a single menu-item table: { text = _("Navbar"), sub_item_table = {...} }
--- Receives ctx: { config, save_and_apply, apply_feature }
+-- Receives ctx: { config, save_and_apply, apply_feature, settings_apply }
 
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -15,6 +15,7 @@ function M.build(ctx)
     local config        = ctx.config
     local save_and_apply = ctx.save_and_apply
     local apply_feature  = ctx.apply_feature
+    local settings_apply = ctx.settings_apply
 
     -- Defer reinject to next event loop tick so the menu's post-callback
     -- redraws complete first, then the navbar repaints correctly.
@@ -61,6 +62,17 @@ function M.build(ctx)
         if not pending_navbar_poll_active then
             pending_navbar_poll_active = true
             UIManager:scheduleIn(0.25, refresh_navbar_after_menu_close)
+        end
+    end
+
+    local function save_and_reinit_navbar()
+        ctx.plugin:saveConfig()
+        if settings_apply and settings_apply.reinit_filemanager_on_menu_close then
+            settings_apply.reinit_filemanager_on_menu_close()
+        elseif settings_apply and settings_apply.reinit_filemanager then
+            settings_apply.reinit_filemanager()
+        else
+            save_and_apply("navbar")
         end
     end
 
@@ -783,7 +795,7 @@ function M.build(ctx)
                         checked_func = function() return config.navbar.show_top_border == true end,
                         callback = function()
                             config.navbar.show_top_border = config.navbar.show_top_border ~= true
-                            save_and_apply("navbar")
+                            save_and_reinit_navbar()
                         end,
                     },
                     {
@@ -874,7 +886,7 @@ function M.build(ctx)
                         return
                     end
                     config.navbar.show_labels = config.navbar.show_labels ~= true
-                    save_and_defer_navbar_refresh()
+                    save_and_reinit_navbar()
                 end,
             },
             {
@@ -890,7 +902,7 @@ function M.build(ctx)
                         return
                     end
                     config.navbar.show_icons = config.navbar.show_icons == false
-                    save_and_defer_navbar_refresh()
+                    save_and_reinit_navbar()
                 end,
             },
         },

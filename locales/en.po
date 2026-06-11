@@ -1428,8 +1428,8 @@ msgstr "Restart Book"
 msgid "Restart now"
 msgstr "Restart now"
 
-msgid "Restore library view on return"
-msgstr "Restore library view on return"
+msgid "Restore library location on exit"
+msgstr "Restore library location on exit"
 
 msgid "Resume from page"
 msgstr "Resume from page"

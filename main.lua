@@ -392,7 +392,7 @@ function ZenUI:init()
         end
     end
 
-    -- Inject Zen UI tab after QuickSettings and a Home tab at the far right.
+    -- Inject Zen UI and Library tabs around Quick Settings.
     -- Patches setUpdateItemTable once per class so it persists across menu rebuilds.
     local function find_quicksettings_pos(tab_table)
         for i, tab in ipairs(tab_table) do
@@ -409,19 +409,90 @@ function ZenUI:init()
         return nil
     end
 
-    local function get_last_book_location()
-        local file = G_reader_settings and G_reader_settings:readSetting("lastfile")
-        if type(file) ~= "string" or file == "" then return nil end
-        local dir = file:match("^(.*)/[^/]+$")
-        if not dir or dir == "" then return nil end
-        local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
-        if ok_lfs and lfs.attributes(dir, "mode") ~= "directory" then
-            return nil
-        end
-        return dir, file
+    local function take_quicksettings_tab(tab_table)
+        local qs_pos = find_quicksettings_pos(tab_table)
+        if not qs_pos then return nil, nil end
+        return qs_pos, table.remove(tab_table, qs_pos)
     end
 
-    -- Last tab is pushed to far-right by TouchMenuBar's stretch spacer.
+    local function zen_panel_hidden()
+        local _cfg = _zen_plugin_ref and _zen_plugin_ref.config
+        local _lc = _cfg and _cfg.lockdown
+        local _ft = _cfg and _cfg.features
+        return type(_lc) == "table" and _lc.disable_settings_panel == true
+            and type(_ft) == "table" and _ft.lockdown_mode == true
+    end
+
+    local function flip_lh_rh_icons()
+        local _cfg = _zen_plugin_ref and _zen_plugin_ref.config
+        local _qs = _cfg and _cfg.quick_settings
+        if type(_qs) == "table" and _qs.flip_lh_rh_icon ~= nil then
+            return _qs.flip_lh_rh_icon == true
+        end
+        local _menu = _cfg and _cfg.menu
+        return type(_menu) == "table" and _menu.flip_lh_rh_icons == true
+    end
+
+    local function library_home_icon()
+        local _cfg = _zen_plugin_ref and _zen_plugin_ref.config
+        local _menu = _cfg and _cfg.menu
+        local icon = type(_menu) == "table" and _menu.library_home_icon
+        return (type(icon) == "string" and icon ~= "") and icon or "library"
+    end
+
+    local function remove_zen_menu_tabs(m_self)
+        for i = #m_self.tab_item_table, 1, -1 do
+            local tab = m_self.tab_item_table[i]
+            if tab == m_self._zen_tab_item or tab == m_self._zen_home_tab_item then
+                table.remove(m_self.tab_item_table, i)
+            end
+        end
+    end
+
+    local function insert_zen_menu_tabs(m_self, panel_hidden)
+        local qs_pos, qs_tab = take_quicksettings_tab(m_self.tab_item_table)
+        if qs_pos and not m_self._zen_qs_insert_pos then
+            m_self._zen_qs_insert_pos = qs_pos
+        end
+        local insert_pos = m_self._zen_qs_insert_pos or qs_pos or 1
+        insert_pos = math.min(insert_pos, #m_self.tab_item_table + 1)
+        if flip_lh_rh_icons() then
+            table.insert(m_self.tab_item_table, insert_pos, m_self._zen_home_tab_item)
+            if not panel_hidden then
+                table.insert(m_self.tab_item_table, insert_pos + 1, m_self._zen_tab_item)
+            end
+            if qs_tab then
+                -- Last tab is pushed to far-right by TouchMenuBar's stretch spacer.
+                table.insert(m_self.tab_item_table, qs_tab)
+            end
+        else
+            if qs_tab then
+                table.insert(m_self.tab_item_table, insert_pos, qs_tab)
+            end
+            if not panel_hidden then
+                table.insert(m_self.tab_item_table,
+                    qs_tab and (insert_pos + 1) or insert_pos, m_self._zen_tab_item)
+            end
+            -- Last tab is pushed to far-right by TouchMenuBar's stretch spacer.
+            table.insert(m_self.tab_item_table, m_self._zen_home_tab_item)
+        end
+    end
+
+    local function refresh_zen_menu_tabs(m_self)
+        if type(m_self.tab_item_table) ~= "table" or not m_self._zen_home_tab_item then return end
+        local panel_hidden = zen_panel_hidden()
+        m_self._zen_home_tab_item.icon = library_home_icon()
+        if not panel_hidden then
+            if not m_self._zen_tab_item then
+                m_self._zen_tab_item = zen_settings.build(_zen_plugin_ref).sub_item_table
+                m_self._zen_tab_item.id = "zen_ui"
+            end
+            m_self._zen_tab_item.icon = zen_updater.has_update() and "zen_ui_update" or "zen_settings"
+        end
+        remove_zen_menu_tabs(m_self)
+        insert_zen_menu_tabs(m_self, panel_hidden)
+    end
+
     local function inject_zen_tab(menu_class)
         if not menu_class or menu_class.__zen_ui_tab_patched then return end
         menu_class.__zen_ui_tab_patched = true
@@ -437,23 +508,12 @@ function ZenUI:init()
                 end
             end
             _zen_menu_instances[m_self] = true
-            -- Insert Zen UI tab right after quicksettings.
-            local zen_items = zen_settings.build(_zen_plugin_ref).sub_item_table
-            -- Hide the zen tab if lockdown hides the settings panel.
-            local _lc = _zen_plugin_ref.config and _zen_plugin_ref.config.lockdown
-            local _ft = _zen_plugin_ref.config and _zen_plugin_ref.config.features
-            local _panel_hidden = type(_lc) == "table" and _lc.disable_settings_panel == true
-                and type(_ft) == "table" and _ft.lockdown_mode == true
+            local _panel_hidden = zen_panel_hidden()
             if not _panel_hidden then
-                zen_items.icon = zen_updater.has_update() and "zen_ui_update" or "zen_settings"
-                -- store so onShowMenu can refresh the icon on every open
-                m_self._zen_tab_item = zen_items
-                local qs_pos = find_quicksettings_pos(m_self.tab_item_table)
-                local insert_pos = qs_pos and (qs_pos + 1) or 1
-                table.insert(m_self.tab_item_table, insert_pos, zen_items)
+                m_self._zen_tab_item = zen_settings.build(_zen_plugin_ref).sub_item_table
+                m_self._zen_tab_item.id = "zen_ui"
             end
-            -- Append Home tab at the far right (stretched position).
-            local home_tab = { icon = "library", remember = false }
+            local home_tab = { id = "zen_library_home", icon = library_home_icon(), remember = false }
             home_tab.callback = function()
                 require("ui/uimanager"):scheduleIn(0, function()
                     local UIManager = require("ui/uimanager")
@@ -483,39 +543,27 @@ function ZenUI:init()
                         local fm = require("apps/filemanager/filemanager").instance
                         if fm then require("common/utils").closeWidgetsAbove(fm) end
                         local open_default = rawget(_G, "__ZEN_UI_NAVBAR_OPEN_DEFAULT_TAB")
-                        local current_path = fm and fm.file_chooser and fm.file_chooser.path
-                        if current_path and not paths.isInHomeDir(current_path) then
-                            local last_dir, last_file = get_last_book_location()
-                            if last_dir and fm and fm.file_chooser then
-                                fm.file_chooser:changeToPath(last_dir, last_file)
-                                return
-                            end
-                        end
-                        if type(open_default) == "function" and not restore then
+                        if type(open_default) == "function" then
                             open_default()
-                        elseif not restore then
-                            -- Go to library root (page 1), ignoring current folder depth.
+                        else
                             local home_dir = require("common/paths").getHomeDir()
                             if fm and fm.file_chooser and home_dir then
                                 fm.file_chooser.path_items[home_dir] = nil
                                 fm.file_chooser:changeToPath(home_dir)
                             end
-                        elseif type(ui.onHome) == "function" then
-                            ui:onHome()
                         end
                     end
                 end)
             end
-            table.insert(m_self.tab_item_table, home_tab)
+            m_self._zen_home_tab_item = home_tab
+            refresh_zen_menu_tabs(m_self)
         end
         -- Refresh the zen tab icon on every menu open so it reflects the
         -- current update state without needing a full tab_item_table rebuild.
         local orig_show = menu_class.onShowMenu
         if type(orig_show) == "function" then
             menu_class.onShowMenu = function(m_self, ...)
-                if m_self._zen_tab_item then
-                    m_self._zen_tab_item.icon = zen_updater.has_update() and "zen_ui_update" or "zen_settings"
-                end
+                refresh_zen_menu_tabs(m_self)
                 return orig_show(m_self, ...)
             end
         end

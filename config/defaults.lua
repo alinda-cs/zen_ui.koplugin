@@ -124,6 +124,7 @@ local defaults = {
         },
         show_frontlight = true,
         show_warmth = true,
+        flip_lh_rh_icon = false,
         rotate_action = "cycle",
     },
     status_bar = {

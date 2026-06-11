@@ -476,6 +476,14 @@ function M.build(ctx)
                     save_and_apply_quick_settings()
                 end,
             },
+            {
+                text = _("Flip LH/RH icon"),
+                checked_func = function() return config.quick_settings.flip_lh_rh_icon == true end,
+                callback = function()
+                    config.quick_settings.flip_lh_rh_icon = config.quick_settings.flip_lh_rh_icon ~= true
+                    save_and_apply_quick_settings()
+                end,
+            },
         },
     }
 end

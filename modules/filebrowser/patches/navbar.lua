@@ -1980,6 +1980,10 @@ local function apply_navbar()
             open_default_tab()
             return
         end
+        if keep_book_location then
+            _G.__ZEN_UI_LIBRARY_STATE = nil
+            return
+        end
         local state = rawget(_G, "__ZEN_UI_LIBRARY_STATE")
         if not restore_enabled then
             _G.__ZEN_UI_LIBRARY_STATE = nil
