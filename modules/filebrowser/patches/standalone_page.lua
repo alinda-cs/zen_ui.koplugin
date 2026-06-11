@@ -116,6 +116,7 @@ function M.create_menu(opts)
         item_table = opts.item_table or {},
         onMenuSelect = opts.onMenuSelect,
         onMenuHold = opts.onMenuHold,
+        updateItems = opts.updateItems,
     })
 
     TitleBar.new = orig_tb_new

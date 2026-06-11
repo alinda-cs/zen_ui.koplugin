@@ -1480,6 +1480,7 @@ local function showDetailView(group_item, injectNavbar, tab_id)
                 })
             end
         end,
+        updateItems = function() end,
     }
     StandalonePage.prepare_shell(detail_menu)
 
@@ -1645,6 +1646,7 @@ showGroupView = function(tab_id, injectNavbar, groups)
                 end
             end
         end,
+        updateItems = function() end,
     }
     StandalonePage.prepare_shell(menu)
 
@@ -1893,6 +1895,7 @@ function M.showTBRView(injectNavbar)
                 })
             end
         end,
+        updateItems = function() end,
     }
     StandalonePage.prepare_shell(menu)
 
