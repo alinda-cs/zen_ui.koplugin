@@ -17,7 +17,7 @@ local Device = require("device")
 local utils = require("common/utils")
 
 local M = {}
-M.SIZE = { preferred_pct = 0.20, min_pct = 0.12, max_pct = 0.30, grow_priority = 3 }
+M.SIZE = { preferred_pct = 0.20, min_pct = 0.12, max_pct = 0.40, grow_priority = 1 }
 
 -- ── Strip badge helpers ───────────────────────────────────────────────────────
 

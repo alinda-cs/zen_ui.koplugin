@@ -172,19 +172,28 @@ function M.build(ctx)
     local function showButtonsArrange()
         local ZenArrangeList = require("common/ui/zen_arrange_list")
         local sort_items = {}
+        local function shouldDimButton(id)
+            return config.quick_settings.show_buttons[id] ~= true
+                and countEnabledButtons() >= quick_buttons_max
+        end
+        local function updateDimStates()
+            for _i, sort_item in ipairs(sort_items) do
+                sort_item.dim = shouldDimButton(sort_item.orig_item)
+            end
+        end
         for _i, id in ipairs(config.quick_settings.button_order) do
             local label = quick_button_label_by_id[id]
             if label then
                 local item = {
                     text = label,
                     orig_item = id,
-                    dim = config.quick_settings.show_buttons[id] ~= true,
+                    dim = shouldDimButton(id),
                     checked_func = function()
                         return config.quick_settings.show_buttons[id] == true
                     end,
-                    callback = function(sort_item)
+                    callback = function()
                         if toggleQuickButton(id) then
-                            sort_item.dim = config.quick_settings.show_buttons[id] ~= true
+                            updateDimStates()
                         end
                     end,
                 }

@@ -808,11 +808,14 @@ local function build_data_provider(cfg, dcfg)
         local quote_count = #quotes
         if quote_count == 0 then return end
         local quote_cfg = dcfg.quotes or {}
-        if type(quote_cfg.manual_index) ~= "number" then
-            quote_cfg.manual_index = get_daily_quote_index()
+        local current = quote_cfg.manual_index or get_daily_quote_index()
+        local next_idx = current
+        if quote_count > 1 then
+            while next_idx == current do
+                next_idx = math.random(1, quote_count)
+            end
         end
-        quote_cfg.manual_index = quote_cfg.manual_index + 1
-        if quote_cfg.manual_index > quote_count then quote_cfg.manual_index = 1 end
+        quote_cfg.manual_index = next_idx
         quote_cfg.day_seed = get_quote_day_index()
         dcfg.quotes = quote_cfg
         save_home_settings(dcfg)

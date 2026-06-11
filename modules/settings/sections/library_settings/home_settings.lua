@@ -780,24 +780,53 @@ function M.build(ctx)
         return true
     end
 
+    local build_widget_settings_items
+    local widget_ids_with_settings = {
+        featured_custom = true,
+        featured_tbr = true,
+        featured_recent = true,
+        stats_triplet = true,
+        reading_goals = true,
+        strip_custom = true,
+        strip_tbr = true,
+        strip_recent = true,
+        quotes = true,
+    }
+
     local function arrange_widgets()
         local ZenArrangeList = require("common/ui/zen_arrange_list")
         local order = sort_order_with_defaults(dcfg.rows.order)
         local sort_items = {}
+        local function should_dim_widget(id)
+            return dcfg.rows.enabled[id] ~= true
+                and enabled_count(dcfg.rows.enabled) >= home_max_widgets
+        end
+        local function update_dim_states()
+            for _i, sort_item in ipairs(sort_items) do
+                sort_item.dim = should_dim_widget(sort_item.orig_item)
+            end
+        end
         for _i, id in ipairs(order) do
-            sort_items[#sort_items + 1] = {
+            local item = {
                 text = component_label(id),
                 orig_item = id,
-                dim = dcfg.rows.enabled[id] ~= true,
+                dim = should_dim_widget(id),
                 checked_func = function()
                     return dcfg.rows.enabled[id] == true
                 end,
-                callback = function(item)
+                callback = function()
                     if toggle_widget_enabled(id) then
-                        item.dim = dcfg.rows.enabled[id] ~= true
+                        update_dim_states()
                     end
                 end,
             }
+            if widget_ids_with_settings[id] then
+                item.sub_title = component_label(id)
+                item.sub_item_table_func = function()
+                    return build_widget_settings_items(id)
+                end
+            end
+            sort_items[#sort_items + 1] = item
         end
         ZenArrangeList.show{
             title = _("Widgets"),
@@ -1002,10 +1031,10 @@ function M.build(ctx)
         return items
     end
 
-    local goals_items = {
-        (function()
-            local goals_cfg = ensure_module_cfg(dcfg, "reading_goals")
-            return {
+    local function build_goals_items()
+        local goals_cfg = ensure_module_cfg(dcfg, "reading_goals")
+        return {
+            {
                 text = _("Show widget title"),
                 checked_func = function()
                     return goals_cfg.show_module_title == true
@@ -1014,113 +1043,113 @@ function M.build(ctx)
                     goals_cfg.show_module_title = goals_cfg.show_module_title ~= true
                     save_home("reinit")
                 end,
-            }
-        end)(),
-        {
-            text = _("Goal shown: Daily"),
-            radio = true,
-            checked_func = function() return dcfg.goals.period ~= "weekly" end,
-            callback = function()
-                dcfg.goals.period = "daily"
-                save_home("reinit")
-            end,
-        },
-        {
-            text = _("Goal shown: Weekly"),
-            radio = true,
-            checked_func = function() return dcfg.goals.period == "weekly" end,
-            callback = function()
-                dcfg.goals.period = "weekly"
-                save_home("reinit")
-            end,
-        },
-        {
-            text = _("Goals metric: Pages"),
-            radio = true,
-            checked_func = function() return dcfg.goals.metric ~= "time" end,
-            callback = function()
-                dcfg.goals.metric = "pages"
-                save_home("reinit")
-            end,
-        },
-        {
-            text = _("Goals metric: Time"),
-            radio = true,
-            checked_func = function() return dcfg.goals.metric == "time" end,
-            callback = function()
-                dcfg.goals.metric = "time"
-                save_home("reinit")
-            end,
-        },
-        {
-            text_func = function() return _("Daily pages goal: ") .. tostring(dcfg.goals.daily_pages_target or 30) end,
-            keep_menu_open = true,
-            callback = function()
-                local SpinWidget = require("ui/widget/spinwidget")
-                UIManager:show(SpinWidget:new{
-                    title_text = _("Daily pages goal"),
-                    value = dcfg.goals.daily_pages_target or 30,
-                    value_min = 1,
-                    value_max = 5000,
-                    callback = function(spin)
-                        dcfg.goals.daily_pages_target = spin.value
-                        save_home("reinit")
-                    end,
-                })
-            end,
-        },
-        {
-            text_func = function() return _("Weekly pages goal: ") .. tostring(dcfg.goals.weekly_pages_target or 210) end,
-            keep_menu_open = true,
-            callback = function()
-                local SpinWidget = require("ui/widget/spinwidget")
-                UIManager:show(SpinWidget:new{
-                    title_text = _("Weekly pages goal"),
-                    value = dcfg.goals.weekly_pages_target or 210,
-                    value_min = 1,
-                    value_max = 20000,
-                    callback = function(spin)
-                        dcfg.goals.weekly_pages_target = spin.value
-                        save_home("reinit")
-                    end,
-                })
-            end,
-        },
-        {
-            text_func = function() return _("Daily time goal (min): ") .. tostring(dcfg.goals.daily_time_target_min or 30) end,
-            keep_menu_open = true,
-            callback = function()
-                local SpinWidget = require("ui/widget/spinwidget")
-                UIManager:show(SpinWidget:new{
-                    title_text = _("Daily time goal (min)"),
-                    value = dcfg.goals.daily_time_target_min or 30,
-                    value_min = 1,
-                    value_max = 1440,
-                    callback = function(spin)
-                        dcfg.goals.daily_time_target_min = spin.value
-                        save_home("reinit")
-                    end,
-                })
-            end,
-        },
-        {
-            text_func = function() return _("Weekly time goal (min): ") .. tostring(dcfg.goals.weekly_time_target_min or 210) end,
-            keep_menu_open = true,
-            callback = function()
-                local SpinWidget = require("ui/widget/spinwidget")
-                UIManager:show(SpinWidget:new{
-                    title_text = _("Weekly time goal (min)"),
-                    value = dcfg.goals.weekly_time_target_min or 210,
-                    value_min = 1,
-                    value_max = 10080,
-                    callback = function(spin)
-                        dcfg.goals.weekly_time_target_min = spin.value
-                        save_home("reinit")
-                    end,
-                })
-            end,
-        },
-    }
+            },
+            {
+                text = _("Goal shown: Daily"),
+                radio = true,
+                checked_func = function() return dcfg.goals.period ~= "weekly" end,
+                callback = function()
+                    dcfg.goals.period = "daily"
+                    save_home("reinit")
+                end,
+            },
+            {
+                text = _("Goal shown: Weekly"),
+                radio = true,
+                checked_func = function() return dcfg.goals.period == "weekly" end,
+                callback = function()
+                    dcfg.goals.period = "weekly"
+                    save_home("reinit")
+                end,
+            },
+            {
+                text = _("Goals metric: Pages"),
+                radio = true,
+                checked_func = function() return dcfg.goals.metric ~= "time" end,
+                callback = function()
+                    dcfg.goals.metric = "pages"
+                    save_home("reinit")
+                end,
+            },
+            {
+                text = _("Goals metric: Time"),
+                radio = true,
+                checked_func = function() return dcfg.goals.metric == "time" end,
+                callback = function()
+                    dcfg.goals.metric = "time"
+                    save_home("reinit")
+                end,
+            },
+            {
+                text_func = function() return _("Daily pages goal: ") .. tostring(dcfg.goals.daily_pages_target or 30) end,
+                keep_menu_open = true,
+                callback = function()
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    UIManager:show(SpinWidget:new{
+                        title_text = _("Daily pages goal"),
+                        value = dcfg.goals.daily_pages_target or 30,
+                        value_min = 1,
+                        value_max = 5000,
+                        callback = function(spin)
+                            dcfg.goals.daily_pages_target = spin.value
+                            save_home("reinit")
+                        end,
+                    })
+                end,
+            },
+            {
+                text_func = function() return _("Weekly pages goal: ") .. tostring(dcfg.goals.weekly_pages_target or 210) end,
+                keep_menu_open = true,
+                callback = function()
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    UIManager:show(SpinWidget:new{
+                        title_text = _("Weekly pages goal"),
+                        value = dcfg.goals.weekly_pages_target or 210,
+                        value_min = 1,
+                        value_max = 20000,
+                        callback = function(spin)
+                            dcfg.goals.weekly_pages_target = spin.value
+                            save_home("reinit")
+                        end,
+                    })
+                end,
+            },
+            {
+                text_func = function() return _("Daily time goal (min): ") .. tostring(dcfg.goals.daily_time_target_min or 30) end,
+                keep_menu_open = true,
+                callback = function()
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    UIManager:show(SpinWidget:new{
+                        title_text = _("Daily time goal (min)"),
+                        value = dcfg.goals.daily_time_target_min or 30,
+                        value_min = 1,
+                        value_max = 1440,
+                        callback = function(spin)
+                            dcfg.goals.daily_time_target_min = spin.value
+                            save_home("reinit")
+                        end,
+                    })
+                end,
+            },
+            {
+                text_func = function() return _("Weekly time goal (min): ") .. tostring(dcfg.goals.weekly_time_target_min or 210) end,
+                keep_menu_open = true,
+                callback = function()
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    UIManager:show(SpinWidget:new{
+                        title_text = _("Weekly time goal (min)"),
+                        value = dcfg.goals.weekly_time_target_min or 210,
+                        value_min = 1,
+                        value_max = 10080,
+                        callback = function(spin)
+                            dcfg.goals.weekly_time_target_min = spin.value
+                            save_home("reinit")
+                        end,
+                    })
+                end,
+            },
+        }
+    end
 
     local stats_field_options = {
         { id = "today_pages", text = "Pages today" },
@@ -1130,82 +1159,129 @@ function M.build(ctx)
         { id = "week_duration", text = "Week time" },
     }
 
-    local stats_cfg = ensure_module_cfg(dcfg, "stats_triplet")
-    local stats_triplet_items = {
-        {
-            text = _("Show widget title"),
-            checked_func = function()
-                return stats_cfg.show_module_title == true
-            end,
-            callback = function()
-                stats_cfg.show_module_title = stats_cfg.show_module_title ~= true
-                save_home("reinit")
-            end,
-        },
-        {
-            text = _("Stat separators"),
-            sub_item_table = {
-                {
-                    text = _("Dividing lines"),
-                    radio = true,
-                    checked_func = function()
-                        return stats_cfg.stat_style ~= "outline" and stats_cfg.stat_style ~= "none"
-                    end,
-                    callback = function()
-                        stats_cfg.stat_style = "divider"
-                        save_home("reinit")
-                    end,
-                },
-                {
-                    text = _("Outlined boxes"),
-                    radio = true,
-                    checked_func = function()
-                        return stats_cfg.stat_style == "outline"
-                    end,
-                    callback = function()
-                        stats_cfg.stat_style = "outline"
-                        save_home("reinit")
-                    end,
-                },
-                {
-                    text = _("None"),
-                    radio = true,
-                    checked_func = function()
-                        return stats_cfg.stat_style == "none"
-                    end,
-                    callback = function()
-                        stats_cfg.stat_style = "none"
-                        save_home("reinit")
-                    end,
-                },
+    local function build_stats_triplet_items()
+        local stats_cfg = ensure_module_cfg(dcfg, "stats_triplet")
+        local items = {
+            {
+                text = _("Show widget title"),
+                checked_func = function()
+                    return stats_cfg.show_module_title == true
+                end,
+                callback = function()
+                    stats_cfg.show_module_title = stats_cfg.show_module_title ~= true
+                    save_home("reinit")
+                end,
             },
-        },
-    }
-    for slot = 1, 3 do
-        stats_triplet_items[#stats_triplet_items + 1] = {
-            text_func = function()
-                local cur = dcfg.middle_stats_triplet[slot] or "today_pages"
-                return _("Stat slot ") .. tostring(slot) .. ": " .. cur
-            end,
-            sub_item_table = (function()
-                local items = {}
-                for _i, opt in ipairs(stats_field_options) do
-                    local oid = opt.id
-                    items[#items + 1] = {
-                        text = opt.text,
+            {
+                text = _("Stat separators"),
+                sub_item_table = {
+                    {
+                        text = _("Dividing lines"),
                         radio = true,
                         checked_func = function()
-                            return (dcfg.middle_stats_triplet[slot] or "today_pages") == oid
+                            return stats_cfg.stat_style ~= "outline" and stats_cfg.stat_style ~= "none"
                         end,
                         callback = function()
-                            dcfg.middle_stats_triplet[slot] = oid
+                            stats_cfg.stat_style = "divider"
                             save_home("reinit")
                         end,
-                    }
-                end
-                return items
-            end)(),
+                    },
+                    {
+                        text = _("Outlined boxes"),
+                        radio = true,
+                        checked_func = function()
+                            return stats_cfg.stat_style == "outline"
+                        end,
+                        callback = function()
+                            stats_cfg.stat_style = "outline"
+                            save_home("reinit")
+                        end,
+                    },
+                    {
+                        text = _("None"),
+                        radio = true,
+                        checked_func = function()
+                            return stats_cfg.stat_style == "none"
+                        end,
+                        callback = function()
+                            stats_cfg.stat_style = "none"
+                            save_home("reinit")
+                        end,
+                    },
+                },
+            },
         }
+        for slot = 1, 3 do
+            items[#items + 1] = {
+                text_func = function()
+                    local cur = dcfg.middle_stats_triplet[slot] or "today_pages"
+                    return _("Stat slot ") .. tostring(slot) .. ": " .. cur
+                end,
+                sub_item_table = (function()
+                    local slot_items = {}
+                    for _i, opt in ipairs(stats_field_options) do
+                        local oid = opt.id
+                        slot_items[#slot_items + 1] = {
+                            text = opt.text,
+                            radio = true,
+                            checked_func = function()
+                                return (dcfg.middle_stats_triplet[slot] or "today_pages") == oid
+                            end,
+                            callback = function()
+                                dcfg.middle_stats_triplet[slot] = oid
+                                save_home("reinit")
+                            end,
+                        }
+                    end
+                    return slot_items
+                end)(),
+            }
+        end
+        return items
+    end
+
+    local function build_quotes_items()
+        local quotes_cfg = ensure_module_cfg(dcfg, "quotes")
+        return {
+            {
+                text = _("Show widget title"),
+                checked_func = function()
+                    return quotes_cfg.show_module_title == true
+                end,
+                callback = function()
+                    quotes_cfg.show_module_title = quotes_cfg.show_module_title ~= true
+                    save_home("reinit")
+                end,
+            },
+            {
+                text = _("Show author"),
+                checked_func = function()
+                    return dcfg.quotes.show_author ~= false
+                end,
+                callback = function()
+                    dcfg.quotes.show_author = dcfg.quotes.show_author == false
+                    save_home("reinit")
+                end,
+            },
+        }
+    end
+
+    build_widget_settings_items = function(id)
+        if id == "featured_custom" or id == "featured_tbr" or id == "featured_recent" then
+            return build_featured_widget_items(id)
+        end
+        if id == "strip_custom" or id == "strip_tbr" or id == "strip_recent" then
+            return build_strip_widget_items(id)
+        end
+        if id == "reading_goals" then
+            return build_goals_items()
+        end
+        if id == "stats_triplet" then
+            return build_stats_triplet_items()
+        end
+        if id == "quotes" then
+            return build_quotes_items()
+        end
     end
 
     return {
@@ -1269,39 +1345,15 @@ function M.build(ctx)
                     },
                     {
                         text = _("Reading goals"),
-                        sub_item_table = goals_items,
+                        sub_item_table = build_goals_items(),
                     },
                     {
                         text = _("Reading stats widget"),
-                        sub_item_table = stats_triplet_items,
+                        sub_item_table = build_stats_triplet_items(),
                     },
                     {
                         text = _("Quotes widget"),
-                        sub_item_table = {
-                            (function()
-                                local quotes_cfg = ensure_module_cfg(dcfg, "quotes")
-                                return {
-                                    text = _("Show widget title"),
-                                    checked_func = function()
-                                        return quotes_cfg.show_module_title == true
-                                    end,
-                                    callback = function()
-                                        quotes_cfg.show_module_title = quotes_cfg.show_module_title ~= true
-                                        save_home("reinit")
-                                    end,
-                                }
-                            end)(),
-                            {
-                                text = _("Show author"),
-                                checked_func = function()
-                                    return dcfg.quotes.show_author ~= false
-                                end,
-                                callback = function()
-                                    dcfg.quotes.show_author = dcfg.quotes.show_author == false
-                                    save_home("reinit")
-                                end,
-                            },
-                        },
+                        sub_item_table = build_quotes_items(),
                     },
                 },
             },
