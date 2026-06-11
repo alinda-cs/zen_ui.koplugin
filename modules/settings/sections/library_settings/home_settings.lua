@@ -334,7 +334,9 @@ function M.build(ctx)
             if not home_rebuild_pending then return end
             home_rebuild_pending = false
             if home and home.rebuildActive then
-                home.rebuildActive()
+                UIManager:scheduleIn(0, function()
+                    home.rebuildActive()
+                end)
             end
         end
         UIManager:scheduleIn(0.25, tick)

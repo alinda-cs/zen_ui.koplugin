@@ -105,6 +105,16 @@ local function apply_filemanager_reinit()
     end
 end
 
+local function rebuild_active_home()
+    local plugin = rawget(_G, "__ZEN_UI_PLUGIN")
+    local home = plugin
+        and plugin._zen_shared
+        and plugin._zen_shared.home
+    if home and home.rebuildActive then
+        home.rebuildActive()
+    end
+end
+
 local function apply_filemanager_refresh()
     local ok, FileManager = pcall(require, "apps/filemanager/filemanager")
     local fm = ok and FileManager and FileManager.instance
@@ -143,7 +153,16 @@ local function is_filemanager_menu_open()
     local ok, FileManager = pcall(require, "apps/filemanager/filemanager")
     if not ok or not FileManager or not FileManager.instance then return false end
     local fm = FileManager.instance
-    return fm.menu ~= nil and fm.menu.menu_container ~= nil
+    local menu = fm.menu
+    if not menu then return false end
+    local menu_container = menu.menu_container
+    local stack = UIManager._window_stack
+    if not stack then return menu_container ~= nil end
+    for _i, entry in ipairs(stack) do
+        local widget = entry and entry.widget
+        if widget == menu or (menu_container and widget == menu_container) then return true end
+    end
+    return false
 end
 
 local function run_apply_mode_now(mode)
@@ -151,6 +170,7 @@ local function run_apply_mode_now(mode)
         apply_filemanager_layout()
     elseif mode == "filemanager_reinit" then
         apply_filemanager_reinit()
+        UIManager:scheduleIn(0, rebuild_active_home)
     elseif mode == "filemanager_refresh" then
         apply_filemanager_refresh()
     elseif mode == "menu_refresh" then
@@ -182,6 +202,15 @@ local function flush_deferred()
     flush_deferred_now()
 end
 
+local function queue_deferred_apply(mode)
+    deferred_applies[mode] = true
+    if not deferred_poll_active then
+        deferred_poll_active  = true
+        deferred_poll_retries = 0
+        UIManager:scheduleIn(0.25, flush_deferred)
+    end
+end
+
 local function install_touchmenu_close_flush()
     local ok, TouchMenu = pcall(require, "ui/widget/touchmenu")
     if not ok or not TouchMenu or TouchMenu._zen_settings_apply_close_flush then return end
@@ -198,12 +227,7 @@ install_touchmenu_close_flush()
 
 local function run_apply_mode(mode)
     if DISRUPTIVE_MODES[mode] and is_filemanager_menu_open() then
-        deferred_applies[mode] = true
-        if not deferred_poll_active then
-            deferred_poll_active  = true
-            deferred_poll_retries = 0
-            UIManager:scheduleIn(0.25, flush_deferred)
-        end
+        queue_deferred_apply(mode)
         return
     end
     run_apply_mode_now(mode)
@@ -237,7 +261,7 @@ end
 -- Queue a file manager reinit for the next TouchMenu close.
 -- Use this from TouchMenu callbacks that change footer/navbar height.
 function M.reinit_filemanager_on_menu_close()
-    deferred_applies.filemanager_reinit = true
+    queue_deferred_apply("filemanager_reinit")
 end
 
 return M
