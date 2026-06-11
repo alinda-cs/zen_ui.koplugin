@@ -781,7 +781,7 @@ function M.build(ctx)
     end
 
     local function arrange_widgets()
-        local SortWidget = require("ui/widget/sortwidget")
+        local ZenArrangeList = require("common/ui/zen_arrange_list")
         local order = sort_order_with_defaults(dcfg.rows.order)
         local sort_items = {}
         for _i, id in ipairs(order) do
@@ -799,7 +799,7 @@ function M.build(ctx)
                 end,
             }
         end
-        local sort_widget = SortWidget:new{
+        ZenArrangeList.show{
             title = _("Widgets"),
             item_table = sort_items,
             callback = function()
@@ -811,34 +811,6 @@ function M.build(ctx)
                 save_home("reinit")
             end,
         }
-        local function hide_disabled_footer_cancel()
-            local button = sort_widget.footer_cancel
-            if not button then return end
-            button:disableWithoutDimming()
-            button.callback = function() return true end
-            button.onTapSelectButton = function() return true end
-            button.onHoldSelectButton = function() return true end
-            button:hide()
-        end
-        local title_bar = sort_widget.title_bar
-        if title_bar and title_bar.left_button then
-            local button = title_bar.left_button
-            button:setIcon("zen_ui")
-            button.allow_flash = false
-            button.callback = function() return true end
-            button.hold_callback = false
-            button.onTapIconButton = function() return true end
-            button.onHoldIconButton = function() return true end
-            button.onHoldReleaseIconButton = function() return true end
-        end
-        hide_disabled_footer_cancel()
-        local orig_populate = sort_widget._populateItems
-        sort_widget._populateItems = function(self, ...)
-            local result = orig_populate(self, ...)
-            hide_disabled_footer_cancel()
-            return result
-        end
-        UIManager:show(sort_widget)
     end
 
     local function all_home_presets()
@@ -1240,7 +1212,7 @@ function M.build(ctx)
         text = _("Home"),
         sub_item_table = {
             {
-                text = _("Widgets"),
+                text = _("Widgets") .. " \u{25B8}",
                 keep_menu_open = true,
                 callback = arrange_widgets,
             },
