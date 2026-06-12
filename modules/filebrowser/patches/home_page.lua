@@ -7,6 +7,7 @@ local HomePresets = require("modules/filebrowser/patches/home/home_presets")
 local PresetStore = require("config/preset_store")
 local Registry = require("modules/filebrowser/patches/home/components/registry")
 local StandalonePage = require("modules/filebrowser/patches/standalone_page")
+local SharedState = require("common/shared_state")
 
 local M = {}
 
@@ -14,6 +15,13 @@ local _home_menu = nil
 local _home_inject_navbar = nil
 local _zen_shared = nil
 local _zen_plugin = nil
+
+local function refresh_shared_state()
+    if _zen_plugin then
+        _zen_shared = SharedState.restore(_zen_plugin) or _zen_shared
+    end
+    return _zen_shared
+end
 
 local DEFAULT_ROW_ORDER = {
     "datetime",
@@ -1252,6 +1260,7 @@ end
 function M.showHomeView(injectNavbar)
     local UIManager = require("ui/uimanager")
 
+    refresh_shared_state()
     _home_inject_navbar = injectNavbar
     local cfg = load_zen_config()
     if type(cfg) ~= "table" then return end
@@ -1320,6 +1329,7 @@ function M.showHomeView(injectNavbar)
     end
 
     function menu:_home_rebuild(refresh_stats, reload_config)
+        refresh_shared_state()
         if reload_config == true then
             local next_cfg = load_zen_config()
             if type(next_cfg) == "table" then
@@ -1414,11 +1424,14 @@ function M.closeAll()
     end
 end
 
-return function()
-    local zen_plugin = rawget(_G, "__ZEN_UI_PLUGIN")
+local function register_home_api(zen_plugin)
     if not zen_plugin or type(zen_plugin.config) ~= "table" then return end
-    if not zen_plugin._zen_shared then zen_plugin._zen_shared = {} end
-    _zen_shared = zen_plugin._zen_shared
+    _zen_shared = SharedState.register(zen_plugin, { home = M })
     _zen_plugin = zen_plugin
-    zen_plugin._zen_shared.home = M
+end
+
+SharedState.registerLoader("home", register_home_api)
+
+return function()
+    register_home_api(rawget(_G, "__ZEN_UI_PLUGIN"))
 end

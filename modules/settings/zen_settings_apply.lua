@@ -3,8 +3,10 @@ local _ = require("gettext")
 local UIManager = require("ui/uimanager")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Event = require("ui/event")
+local SharedState = require("common/shared_state")
 
 local M = {}
+local active_plugin
 
 local PATCH_MODULES = {
     navbar = "modules/filebrowser/patches/navbar",
@@ -71,6 +73,12 @@ local function ensure_patch_loaded(plugin, feature)
     return ok_apply
 end
 
+local function get_shared(plugin, key)
+    return SharedState.get(plugin, key)
+end
+
+M.get_shared = get_shared
+
 local function prompt_restart()
     UIManager:show(ConfirmBox:new{
         text = _("This change requires a restart to take effect."),
@@ -106,10 +114,8 @@ local function apply_filemanager_reinit()
 end
 
 local function rebuild_active_home()
-    local plugin = rawget(_G, "__ZEN_UI_PLUGIN")
-    local home = plugin
-        and plugin._zen_shared
-        and plugin._zen_shared.home
+    local plugin = active_plugin or rawget(_G, "__ZEN_UI_PLUGIN")
+    local home = get_shared(plugin, "home")
     if home and home.rebuildActive then
         home.rebuildActive()
     end
@@ -234,6 +240,7 @@ local function run_apply_mode(mode)
 end
 
 function M.apply_feature_toggle(plugin, feature, enabled)
+    active_plugin = plugin or active_plugin
     if RESTART_REQUIRED[feature] then
         prompt_restart()
         return
@@ -251,6 +258,10 @@ function M.apply_feature_toggle(plugin, feature, enabled)
 end
 
 M.prompt_restart = prompt_restart
+
+function M.set_plugin(plugin)
+    active_plugin = plugin or active_plugin
+end
 
 -- Trigger a file manager reinit (deferred while the touch menu is open).
 -- Use this when a setting changes the footer height (e.g. scroll bar style).

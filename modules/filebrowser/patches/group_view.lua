@@ -1,6 +1,7 @@
 local ConfigManager = require("config/manager")
 local book_status = require("common/book_status")
 local StandalonePage = require("modules/filebrowser/patches/standalone_page")
+local SharedState = require("common/shared_state")
 
 local M = {}
 
@@ -19,6 +20,13 @@ local _detail_menus = {}
 -- Set during apply (called at init while __ZEN_UI_PLUGIN is set)
 local _zen_shared    = nil
 local _zen_plugin    = nil  -- captured at init; __ZEN_UI_PLUGIN is cleared after init
+
+local function refresh_shared_state()
+    if _zen_plugin then
+        _zen_shared = SharedState.restore(_zen_plugin) or _zen_shared
+    end
+    return _zen_shared
+end
 
 local function load_zen_config()
     if _zen_plugin and type(_zen_plugin.config) == "table" then
@@ -1790,6 +1798,7 @@ end
 -- Public API called by navbar.lua tab callbacks
 -------------------------------------------------------------------------------
 function M.showAuthorsView(injectNavbar)
+    refresh_shared_state()
     local ok, db = pcall(require, "common/db_bookinfo")
     if not ok then return end
     local groups = db.getGroupedByAuthor()
@@ -1797,6 +1806,7 @@ function M.showAuthorsView(injectNavbar)
 end
 
 function M.showSeriesView(injectNavbar)
+    refresh_shared_state()
     local ok, db = pcall(require, "common/db_bookinfo")
     if not ok then return end
     local groups = db.getGroupedBySeries()
@@ -1804,6 +1814,7 @@ function M.showSeriesView(injectNavbar)
 end
 
 function M.showTagsView(injectNavbar)
+    refresh_shared_state()
     local ok, db = pcall(require, "common/db_bookinfo")
     if not ok then return end
     local groups = db.getGroupedByTags()
@@ -1814,6 +1825,7 @@ end
 -- M.showTBRView: flat book list filtered to "To Be Read" (abandoned) status
 -------------------------------------------------------------------------------
 function M.showTBRView(injectNavbar)
+    refresh_shared_state()
     local _          = require("gettext")
     local UIManager  = require("ui/uimanager")
 
@@ -1988,6 +2000,7 @@ end
 -- Open a detail view synchronously by group name (used by navbar.showFiles post-hook).
 -- Called after showGroupView so the root group menu is already set.
 function M.restoreDetail(group_name, tab_id, injectNavbar_fn)
+    refresh_shared_state()
     local menu
     if tab_id == "authors" then
         menu = _authors_menu
@@ -2039,11 +2052,14 @@ function M.closeAll()
     if _tags_menu    then UIManager2:close(_tags_menu);    _tags_menu    = nil end
 end
 
-return function()
-    local zen_plugin = rawget(_G, "__ZEN_UI_PLUGIN")
+local function register_group_view_api(zen_plugin)
     if not zen_plugin or type(zen_plugin.config) ~= "table" then return end
-    if not zen_plugin._zen_shared then zen_plugin._zen_shared = {} end
-    _zen_shared  = zen_plugin._zen_shared
+    _zen_shared  = SharedState.register(zen_plugin, { group_view = M })
     _zen_plugin  = zen_plugin  -- keep reference; __ZEN_UI_PLUGIN is cleared after init
-    zen_plugin._zen_shared.group_view = M
+end
+
+SharedState.registerLoader("group_view", register_group_view_api)
+
+return function()
+    register_group_view_api(rawget(_G, "__ZEN_UI_PLUGIN"))
 end

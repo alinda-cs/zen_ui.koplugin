@@ -318,9 +318,10 @@ function M.build(ctx)
         home_rebuild_poll_active = true
         local function tick()
             local plugin = ctx.plugin or rawget(_G, "__ZEN_UI_PLUGIN")
-            local home = plugin
-                and plugin._zen_shared
-                and plugin._zen_shared.home
+            local settings_apply = ctx.settings_apply
+            local home = settings_apply
+                and settings_apply.get_shared
+                and settings_apply.get_shared(plugin, "home")
             local home_waiting = home
                 and home.hasActive
                 and home.hasActive()

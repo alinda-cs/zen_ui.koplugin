@@ -15,7 +15,6 @@ function M.build(ctx)
     local config        = ctx.config
     local save_and_apply = ctx.save_and_apply
     local apply_feature  = ctx.apply_feature
-    local settings_apply = ctx.settings_apply
 
     -- Defer reinject to next event loop tick so the menu's post-callback
     -- redraws complete first, then the navbar repaints correctly.
@@ -66,14 +65,7 @@ function M.build(ctx)
     end
 
     local function save_and_reinit_navbar()
-        ctx.plugin:saveConfig()
-        if settings_apply and settings_apply.reinit_filemanager_on_menu_close then
-            settings_apply.reinit_filemanager_on_menu_close()
-        elseif settings_apply and settings_apply.reinit_filemanager then
-            settings_apply.reinit_filemanager()
-        else
-            save_and_apply("navbar")
-        end
+        save_and_defer_navbar_refresh()
     end
 
     if type(config.navbar.default_tab) ~= "string" or config.navbar.default_tab == "" then

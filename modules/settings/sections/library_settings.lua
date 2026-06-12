@@ -5,6 +5,7 @@
 local _ = require("gettext")
 local UIManager = require("ui/uimanager")
 local paths = require("common/paths")
+local SharedState = require("common/shared_state")
 
 local status_bar_section  = require("modules/settings/sections/library_settings/status_bar_settings")
 local settings_apply      = require("modules/settings/zen_settings_apply")
@@ -35,7 +36,7 @@ local function schedule_home_rebuild_on_menu_close(plugin)
         home_rebuild_poll_active = false
         if not home_rebuild_pending then return end
         home_rebuild_pending = false
-        local home = plugin._zen_shared and plugin._zen_shared.home
+        local home = SharedState.get(plugin, "home")
         if home and home.rebuildActive then
             home.rebuildActive()
         end

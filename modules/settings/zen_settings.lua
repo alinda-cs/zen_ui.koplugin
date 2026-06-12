@@ -19,6 +19,9 @@ local M = {}
 function M.build(plugin)
     -- Load cached update state for the banner; background check runs after resume.
     updater.init_banner()
+    if settings_apply.set_plugin then
+        settings_apply.set_plugin(plugin)
+    end
 
     local config = plugin.config
 

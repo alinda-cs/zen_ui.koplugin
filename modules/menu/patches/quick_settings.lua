@@ -22,6 +22,7 @@ local function apply_quick_settings()
     local VerticalGroup = require("ui/widget/verticalgroup")
     local VerticalSpan = require("ui/widget/verticalspan")
     local utils = require("common/utils")
+    local SharedState = require("common/shared_state")
     local build_brightness_slider = require("modules/menu/patches/brightness_slider")
     local build_warmth_slider     = require("modules/menu/patches/warmth_slider")
     local _ = require("gettext")
@@ -31,6 +32,10 @@ local function apply_quick_settings()
     local zen_plugin = rawget(_G, "__ZEN_UI_PLUGIN")
     if not zen_plugin or type(zen_plugin.config) ~= "table" then
         return
+    end
+
+    local function get_shared(key)
+        return SharedState.get(zen_plugin, key)
     end
 
     -- Resolve plugin icons/ dir from this file's path at apply-time.
@@ -868,10 +873,9 @@ local function apply_quick_settings()
 
         -- ----- Status bar row (reuses status_bar component when that feature is active) -----
 
-        local _zen_shared = zen_plugin._zen_shared
-        local status_row  = _zen_shared
-            and type(_zen_shared.buildStatusRow) == "function"
-            and _zen_shared.buildStatusRow(panel_width, {
+        local buildStatusRow = get_shared("buildStatusRow")
+        local status_row  = type(buildStatusRow) == "function"
+            and buildStatusRow(panel_width, {
                 padding   = Screen:scaleBySize(6),
                 font_name = "x_smallinfofont",
             })
@@ -1047,9 +1051,9 @@ local function apply_quick_settings()
         end
 
         if not self.item_table or not self.item_table.panel then
-            local _shared = zen_plugin._zen_shared
-            if _shared and type(_shared.cancelPanelRefresh) == "function" then
-                _shared.cancelPanelRefresh(self)
+            local cancelPanelRefresh = get_shared("cancelPanelRefresh")
+            if type(cancelPanelRefresh) == "function" then
+                cancelPanelRefresh(self)
             end
             self._qs_refs = nil -- clear refs when switching away from panel tab
             return orig_updateItems(self, target_page, target_item_id)
@@ -1096,9 +1100,9 @@ local function apply_quick_settings()
         self.page_info_right_chev:enableDisable(false)
 
         -- Schedule 60-second status row refresh (status_bar component owns the clock)
-        local _shared = zen_plugin._zen_shared
-        if _shared and type(_shared.schedulePanelRefresh) == "function" then
-            _shared.schedulePanelRefresh(self)
+        local schedulePanelRefresh = get_shared("schedulePanelRefresh")
+        if type(schedulePanelRefresh) == "function" then
+            schedulePanelRefresh(self)
         end
 
         -- Recalculate dimen
@@ -1239,9 +1243,9 @@ local function apply_quick_settings()
     -- Cancel status bar refresh timer when the menu is closed
     local orig_onCloseWidget = TouchMenu.onCloseWidget
     function TouchMenu:onCloseWidget()
-        local _shared = zen_plugin._zen_shared
-        if _shared and type(_shared.cancelPanelRefresh) == "function" then
-            _shared.cancelPanelRefresh(self)
+        local cancelPanelRefresh = get_shared("cancelPanelRefresh")
+        if type(cancelPanelRefresh) == "function" then
+            cancelPanelRefresh(self)
         end
         -- Clear refs and gesture-tracking state so they reset on next open.
         self._qs_refs = nil

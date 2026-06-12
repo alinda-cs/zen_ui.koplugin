@@ -95,8 +95,7 @@ local function apply_browser_hide_underline()
     -- Export shared utilities for other patches (e.g. collections classic mode)
     local zen_plugin = rawget(_G, "__ZEN_UI_PLUGIN")
     if zen_plugin then
-        if not zen_plugin._zen_shared then zen_plugin._zen_shared = {} end
-        zen_plugin._zen_shared.hide_underline_active = true
+        require("common/shared_state").register(zen_plugin, { hide_underline_active = true })
     end
 
     -- Patch Menu.updateItems at the class level so ALL menu views

@@ -23,6 +23,7 @@ local function apply_status_bar()
     local library_font = require("modules/filebrowser/patches/library_font")
     local utils = require("common/utils")
     local paths = require("common/paths")
+    local SharedState = require("common/shared_state")
     local _ = require("gettext")
 
     local zen_plugin = rawget(_G, "__ZEN_UI_PLUGIN")
@@ -845,14 +846,28 @@ local function apply_status_bar()
     -- Expose for cross-patch use. Stored on the plugin table so it is naturally
     -- scoped to when this feature is active and cleaned up on plugin reload.
     if type(zen_plugin) == "table" then
-        if not zen_plugin._zen_shared then zen_plugin._zen_shared = {} end
-        zen_plugin._zen_shared.createStatusRow         = createStatusRow
-        zen_plugin._zen_shared.createStatusRowCustomBack = createStatusRowCustomBack
-        zen_plugin._zen_shared.buildStatusRow          = buildStatusRow
-        zen_plugin._zen_shared.schedulePanelRefresh    = schedulePanelRefresh
-        zen_plugin._zen_shared.cancelPanelRefresh      = cancelPanelRefresh
-        zen_plugin._zen_shared.repaintTitleBar         = repaintTitleBar
-        zen_plugin._zen_shared.clockTimer              = clock_timer
+        local status_bar_api = {
+            createStatusRow = createStatusRow,
+            createStatusRowCustomBack = createStatusRowCustomBack,
+            buildStatusRow = buildStatusRow,
+            schedulePanelRefresh = schedulePanelRefresh,
+            cancelPanelRefresh = cancelPanelRefresh,
+            repaintTitleBar = repaintTitleBar,
+            clockTimer = clock_timer,
+        }
+        local function register_status_bar_api(plugin)
+            SharedState.register(plugin or zen_plugin, status_bar_api)
+        end
+        SharedState.registerLoader({
+            "createStatusRow",
+            "createStatusRowCustomBack",
+            "buildStatusRow",
+            "schedulePanelRefresh",
+            "cancelPanelRefresh",
+            "repaintTitleBar",
+            "clockTimer",
+        }, register_status_bar_api)
+        register_status_bar_api(zen_plugin)
     end
 
     -- === Replace title content and reposition buttons ===

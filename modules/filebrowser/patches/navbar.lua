@@ -19,6 +19,7 @@ local function apply_navbar()
     local library_font = require("modules/filebrowser/patches/library_font")
     local utils = require("common/utils")
     local paths = require("common/paths")
+    local SharedState = require("common/shared_state")
     local Screen = Device.screen
     local _ = require("gettext")
     local lfs = require("libs/libkoreader-lfs")
@@ -26,6 +27,10 @@ local function apply_navbar()
     local zen_plugin = rawget(_G, "__ZEN_UI_PLUGIN")
     if not zen_plugin or type(zen_plugin.config) ~= "table" then
         return
+    end
+
+    local function get_shared(key)
+        return SharedState.get(zen_plugin, key)
     end
 
     local _icons_dir
@@ -388,27 +393,27 @@ local function apply_navbar()
     end
 
     local function onTabAuthors()
-        local GroupView = zen_plugin._zen_shared and zen_plugin._zen_shared.group_view
+        local GroupView = get_shared("group_view")
         if GroupView then GroupView.showAuthorsView(injectStandaloneNavbar) end
     end
 
     local function onTabSeries()
-        local GroupView = zen_plugin._zen_shared and zen_plugin._zen_shared.group_view
+        local GroupView = get_shared("group_view")
         if GroupView then GroupView.showSeriesView(injectStandaloneNavbar) end
     end
 
     local function onTabTBR()
-        local GroupView = zen_plugin._zen_shared and zen_plugin._zen_shared.group_view
+        local GroupView = get_shared("group_view")
         if GroupView then GroupView.showTBRView(injectStandaloneNavbar) end
     end
 
     local function onTabTags()
-        local GroupView = zen_plugin._zen_shared and zen_plugin._zen_shared.group_view
+        local GroupView = get_shared("group_view")
         if GroupView then GroupView.showTagsView(injectStandaloneNavbar) end
     end
 
     local function onTabHome()
-        local Home = zen_plugin._zen_shared and zen_plugin._zen_shared.home
+        local Home = get_shared("home")
         if Home then Home.showHomeView(injectStandaloneNavbar) end
     end
 
@@ -433,10 +438,8 @@ local function apply_navbar()
 
     local function onTabStats()
         local StatsPage = require("modules/filebrowser/patches/stats_page")
-        local _createStatusRow = zen_plugin._zen_shared
-            and zen_plugin._zen_shared.createStatusRow
-        local _repaintTitleBar = zen_plugin._zen_shared
-            and zen_plugin._zen_shared.repaintTitleBar
+        local _createStatusRow = get_shared("createStatusRow")
+        local _repaintTitleBar = get_shared("repaintTitleBar")
         local stats_page = StatsPage.create(_createStatusRow, _repaintTitleBar)
         injectStandaloneNavbar(stats_page, "stats")
         UIManager:show(stats_page)
@@ -831,6 +834,7 @@ local function apply_navbar()
         if not is_navbar_enabled() then
             return nil
         end
+        config = loadConfig()
 
         -- Recompute layout constants so magnify_ui takes effect on each build.
         local lc = zen_plugin.config and zen_plugin.config.lockdown
@@ -1538,7 +1542,9 @@ local function apply_navbar()
 
             -- Already in this view: close detail to return to group, or scroll to first page
             if tapped_id == view_tab_id then
-                local is_detail = menu.name == "authors_detail" or menu.name == "series_detail"
+                local is_detail = menu.name == "authors_detail"
+                    or menu.name == "series_detail"
+                    or menu.name == "tags_detail"
                 if is_detail then
                     if menu.close_callback then
                         menu.close_callback()
@@ -1633,6 +1639,7 @@ local function apply_navbar()
             if vg.resetLayout then vg:resetLayout() end
             if menu[1] and menu[1].resetLayout then menu[1]:resetLayout() end
         end
+        local reopenStandaloneAfterResize
         menu._zen_reinject_navbar = function()
             local saved_active_local = active_tab
             active_tab = view_tab_id
@@ -1642,12 +1649,28 @@ local function apply_navbar()
             local new_h = new_nb:getSize().h
             local old_h = menu._zen_navbar_height or new_h
             if new_h ~= old_h and menu.name == "home" then
-                local Home = zen_plugin._zen_shared and zen_plugin._zen_shared.home
+                local Home = get_shared("home")
                 if Home and Home.showHomeView then
                     UIManager:close(menu)
                     Home.showHomeView(injectStandaloneNavbar)
-                    return
+                    return "reopened"
                 end
+            end
+            local is_group_view = menu.name == "authors"
+                or menu.name == "series"
+                or menu.name == "tags"
+                or menu.name == "to_be_read"
+                or menu.name == "authors_detail"
+                or menu.name == "series_detail"
+                or menu.name == "tags_detail"
+            local is_booklist_view = view_tab_id == "history"
+                or view_tab_id == "favorites"
+                or view_tab_id == "collections"
+            if new_h ~= old_h
+                    and (is_group_view or is_booklist_view)
+                    and reopenStandaloneAfterResize then
+                reopenStandaloneAfterResize()
+                return "reopened"
             end
             menu._zen_navbar_height = new_h
             vg[2] = new_nb
@@ -1655,7 +1678,7 @@ local function apply_navbar()
             UIManager:setDirty(menu, "ui")
         end
 
-        local function reopenStandaloneAfterResize()
+        reopenStandaloneAfterResize = function()
             if menu._zen_standalone_reopen_scheduled then return false end
             menu._zen_standalone_reopen_scheduled = true
             utils.closeWidgetsAbove(menu)
@@ -1871,14 +1894,14 @@ local function apply_navbar()
     }
     local orig_fm_onShowingReader = FileManager.onShowingReader
     function FileManager:onShowingReader()
-        local gv = zen_plugin._zen_shared and zen_plugin._zen_shared.group_view
+        local gv = get_shared("group_view")
         if is_restore_enabled() and not skip_tabs_for_state[active_tab] then
             local page = 1
             -- Group views expose page via M.getActivePage
             if gv and gv.getActivePage then
                 page = gv.getActivePage(active_tab) or 1
             end
-            local home = zen_plugin._zen_shared and zen_plugin._zen_shared.home
+            local home = get_shared("home")
             if home and active_tab == "home" and home.getActivePage then
                 page = home.getActivePage() or 1
             end
@@ -1911,7 +1934,7 @@ local function apply_navbar()
         end
         -- Close orphaned overlay menus to keep UIManager's stack clean
         if gv and gv.closeAll then gv.closeAll() end
-        local home = zen_plugin._zen_shared and zen_plugin._zen_shared.home
+        local home = get_shared("home")
         if home and home.closeAll then home.closeAll() end
         local fm = FileManager.instance
         if fm then
@@ -2010,7 +2033,7 @@ local function apply_navbar()
             end
             return
         end
-        local gv = zen_plugin._zen_shared and zen_plugin._zen_shared.group_view
+        local gv = get_shared("group_view")
         -- onPathChanged inside orig_setupLayout may have reset active_tab to "books";
         -- restore it now so onShowingReader saves the right tab on the next book open.
         active_tab = state.tab
@@ -2234,11 +2257,17 @@ local function apply_navbar()
         local top_widget = top and top.widget
         local has_standalone_navbar = top_widget
             and type(top_widget._zen_reinject_navbar) == "function"
+        local standalone_result
         if top_widget and type(top_widget._zen_reinject_navbar) == "function" then
-            top_widget:_zen_reinject_navbar()
-            UIManager:forceRePaint()
+            standalone_result = top_widget:_zen_reinject_navbar()
+            if standalone_result ~= "reopened" then
+                UIManager:forceRePaint()
+            end
         end
         if has_standalone_navbar then
+            if standalone_result == "reopened" then
+                return
+            end
             local fm = FileManager.instance
             if fm then
                 injectNavbar(fm)
