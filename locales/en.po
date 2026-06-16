@@ -2069,3 +2069,6 @@ msgstr "Zen UI is up to date."
 
 msgid "Zen UI: "
 msgstr "Zen UI: "
+
+msgid "Title natural"
+msgstr "Title natural"

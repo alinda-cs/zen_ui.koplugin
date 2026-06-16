@@ -826,6 +826,7 @@ function M.build(ctx)
         { key = "percent_unopened_last",  text = _("percent - unopened last")                       },
         { key = "percent_natural",        text = _("percent - unopened - finished last")            },
         { key = "title",                  text = _("Title")                                         },
+        { key = "title_natural",          text = _("Title natural")                                   },
         { key = "authors",                text = _("Authors")                                       },
         { key = "series",                 text = _("Series")                                        },
         { key = "keywords",               text = _("Keywords"),        separator = true             },

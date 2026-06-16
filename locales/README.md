@@ -18,6 +18,7 @@ at runtime — KOReader handles this automatically.
 | `es` | Spanish |
 | `fr` | French |
 | `nl` | Dutch |
+| `de` | German |
 | `bg` | Bulgarian |
 | `cs` | Czech |
 | `pt_BR` | Brazilian Portuguese |

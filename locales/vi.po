@@ -2069,3 +2069,6 @@ msgstr "Zen UI đã được cập nhật."
 
 msgid "Zen UI: "
 msgstr "Zen UI: "
+
+msgid "Title natural"
+msgstr "Tiêu đề tự nhiên"

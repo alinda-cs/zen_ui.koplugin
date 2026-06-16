@@ -15,6 +15,7 @@ local FEATURES = {
 }
 
 local PATCH_MODULES = {
+    add_sort_title_natural = "modules/filebrowser/patches/add_sort_title_natural",
     coverbrowser_check = "modules/filebrowser/patches/coverbrowser_check",
     coverbrowser_subprocess_compat = "modules/filebrowser/patches/coverbrowser_subprocess_compat",
     context_menu = "modules/filebrowser/patches/context_menu",
@@ -85,6 +86,11 @@ end
 function M.init(logger, plugin)
     if initialized then
         return true
+    end
+
+    local add_sort_title_natural_fn = load_patch("add_sort_title_natural")
+    if add_sort_title_natural_fn then
+        run_feature(logger, plugin, "add_sort_title_natural", add_sort_title_natural_fn)
     end
 
     local coverbrowser_check_fn = load_patch("coverbrowser_check")

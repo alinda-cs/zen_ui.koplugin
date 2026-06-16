@@ -2069,3 +2069,6 @@ msgstr "Zen UIは最新です。"
 
 msgid "Zen UI: "
 msgstr "Zen UI: "
+
+msgid "Title natural"
+msgstr "自然順タイトル"
