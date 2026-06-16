@@ -17,7 +17,7 @@ local about_section    = require("modules/settings/sections/about_settings")
 local M = {}
 
 function M.build(plugin)
-    -- Load cached update state for the banner; background check runs after resume.
+    -- Initialize updater banner state; release metadata stays live-only.
     updater.init_banner()
     if settings_apply.set_plugin then
         settings_apply.set_plugin(plugin)

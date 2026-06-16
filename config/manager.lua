@@ -323,6 +323,17 @@ local function migrate_legacy_updater_keys(cfg)
     local changed = false
     local removed_legacy = false
 
+    for _i, key_name in ipairs({
+        "latest_version",
+        "update_dl_url",
+        "update_sha256",
+    }) do
+        if updater[key_name] ~= nil then
+            updater[key_name] = nil
+            changed = true
+        end
+    end
+
     local function del_legacy(key_name)
         g:delSetting(key_name)
         removed_legacy = true
@@ -359,31 +370,16 @@ local function migrate_legacy_updater_keys(cfg)
 
     local latest_version = g:readSetting("zen_ui_latest_version")
     if latest_version ~= nil then
-        local normalized = type(latest_version) == "string" and latest_version or ""
-        if updater.latest_version ~= normalized then
-            updater.latest_version = normalized
-            changed = true
-        end
         del_legacy("zen_ui_latest_version")
     end
 
     local update_dl_url = g:readSetting("zen_ui_update_dl_url")
     if update_dl_url ~= nil then
-        local normalized = type(update_dl_url) == "string" and update_dl_url or ""
-        if updater.update_dl_url ~= normalized then
-            updater.update_dl_url = normalized
-            changed = true
-        end
         del_legacy("zen_ui_update_dl_url")
     end
 
     local update_sha256 = g:readSetting("zen_ui_update_sha256")
     if update_sha256 ~= nil then
-        local normalized = type(update_sha256) == "string" and update_sha256 or ""
-        if updater.update_sha256 ~= normalized then
-            updater.update_sha256 = normalized
-            changed = true
-        end
         del_legacy("zen_ui_update_sha256")
     end
 

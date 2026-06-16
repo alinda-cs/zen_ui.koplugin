@@ -34,8 +34,6 @@ local PTF_HEADER = "\u{FFF1}"
 local PTF_BOLD_START = "\u{FFF2}"
 local PTF_BOLD_END = "\u{FFF3}"
 
--- Cached result (populated on first check_for_update call).
-M._checked          = false
 M._has_update       = false
 M._latest_ver       = nil   -- latest version string without leading "v"
 M._dl_url           = nil   -- download URL for release.zip
@@ -544,9 +542,6 @@ local INSTALL_TIMEOUT       = 120        -- max seconds for download + apply
 local UP_KEY_JUST_UPDATED = "just_updated_version"
 local UP_KEY_TIME         = "last_update_check"
 local UP_KEY_AVAIL        = "update_available"
-local UP_KEY_VER          = "latest_version"
-local UP_KEY_URL          = "update_dl_url"
-local UP_KEY_SHA          = "update_sha256"
 local UP_KEY_CHANNEL      = "update_channel"
 local UP_KEY_AUTO         = "update_auto_check"
 
@@ -564,6 +559,25 @@ end
 local function save_updater_config(cfg)
     if type(cfg) ~= "table" then return end
     pcall(ConfigManager.save, cfg)
+end
+
+local function clear_release_details()
+    M._latest_ver = nil
+    M._dl_url     = nil
+    M._latest_sha256 = nil
+    M._latest_notes = nil
+end
+
+local function reset_release_state()
+    M._has_update = false
+    clear_release_details()
+end
+
+local function clear_persisted_release_state(updater)
+    if type(updater) ~= "table" then return end
+    updater.latest_version = nil
+    updater.update_dl_url = nil
+    updater.update_sha256 = nil
 end
 
 --- Returns true when the 24h check interval has elapsed since the last check.
@@ -596,55 +610,26 @@ local function persist_state(now)
     if not updater then return end
     updater[UP_KEY_TIME]  = now
     updater[UP_KEY_AVAIL] = M._has_update == true
-    updater[UP_KEY_VER]   = M._latest_ver or ""
-    updater[UP_KEY_URL]   = M._dl_url or ""
-    updater[UP_KEY_SHA]   = M._latest_sha256 or ""
+    clear_persisted_release_state(updater)
     save_updater_config(cfg)
 end
 
 --- Clear all persisted update state (called after a successful install).
 local function clear_update_state()
-    M._has_update = false
-    M._latest_ver = nil
-    M._dl_url     = nil
-    M._latest_sha256 = nil
-    M._latest_notes = nil
+    reset_release_state()
     M._last_error = nil
     local cfg, updater = load_updater_config()
     if not updater then return end
     updater[UP_KEY_AVAIL] = false
-    updater[UP_KEY_VER] = ""
-    updater[UP_KEY_URL] = ""
-    updater[UP_KEY_SHA] = ""
+    clear_persisted_release_state(updater)
     save_updater_config(cfg)
-end
-
-local function load_cached_state()
-    local updater = select(2, load_updater_config())
-    if not updater then return end
-    M._has_update = updater[UP_KEY_AVAIL] == true
-    local sha = updater[UP_KEY_SHA]
-    M._latest_sha256 = is_valid_sha256_digest(sha) and sha:lower() or nil
-    M._latest_notes = nil
-    local ver = updater[UP_KEY_VER]
-    M._latest_ver = (type(ver) == "string" and ver ~= "") and ver or nil
-    local url = updater[UP_KEY_URL]
-    -- Reject stale zipball/tarball URLs from before the asset-only fix.
-    M._dl_url = is_valid_asset_url(url) and url or nil
-    if not M._dl_url then
-        M._latest_sha256 = nil
-    end
-    -- Discard stale notifications when the installed version already matches
-    -- or exceeds the cached release (e.g. after a successful update).
-    if M._has_update and not semver_gt(M._latest_ver or "", get_current_version()) then
-        clear_update_state()
-    end
 end
 
 --- Perform an actual network check; returns true on success.
 local function do_network_check()
     local channel = get_channel()
     local current = get_current_version()
+    clear_release_details()
     M._last_error = nil
     logger.dbg("ZenUpdater: do_network_check channel=", channel, "current=", current)
 
@@ -672,11 +657,7 @@ local function do_network_check()
 
     if not selected then
         logger.warn("ZenUpdater: no eligible tag with digest for channel", channel)
-        M._has_update = false
-        M._latest_ver = nil
-        M._dl_url     = nil
-        M._latest_sha256 = nil
-        M._latest_notes = nil
+        reset_release_state()
         M._last_error = _("Release metadata is invalid or incomplete.")
         return false
     end
@@ -691,8 +672,8 @@ local function do_network_check()
     return true
 end
 
-local function ensure_selected_release_details()
-    if M._latest_ver and M._latest_notes and is_valid_asset_url(M._dl_url)
+local function ensure_selected_release_details(force_live)
+    if not force_live and M._latest_ver and M._latest_notes and is_valid_asset_url(M._dl_url)
         and is_valid_sha256_digest(M._latest_sha256) then
         return true
     end
@@ -819,11 +800,17 @@ local function network_check_async(trap_widget, setup_fn, on_done, on_cancelled)
 end
 
 --- Load persisted banner state once per session; never makes network calls.
---- Called from zen_settings.lua so the update banner appears from cached data.
+--- Called from zen_settings.lua; release metadata is intentionally live-only.
 function M.init_banner()
     if M._banner_loaded then return end
     M._banner_loaded = true
-    load_cached_state()
+    local cfg, updater = load_updater_config()
+    if updater then
+        M._has_update = updater[UP_KEY_AVAIL] == true
+        clear_release_details()
+        clear_persisted_release_state(updater)
+        save_updater_config(cfg)
+    end
 end
 
 --- Cancel any pending background wakeup check.
@@ -934,31 +921,14 @@ function M.schedule_wakeup_check()
     logger.info("ZenUpdater: wakeup check scheduled in ", NET_SETTLE_DELAY, "s")
 end
 
---- Check for updates at most once every 24 h (throttled via zen_ui_config).
---- Returns "ok" (live check succeeded), "error" (network failure), or "cached" (throttled).
+--- Check for updates with a live network request.
+--- Returns "ok" (live check succeeded) or "error" (network failure).
 function M.check_for_update()
-    if M._checked then
-        logger.dbg("ZenUpdater: already checked this session, skipping")
-        return "cached"
-    end
-    M._checked = true
-
-    local updater = select(2, load_updater_config())
     local now = os.time()
-    local last = updater and updater[UP_KEY_TIME] or 0
-    logger.dbg("ZenUpdater: check_for_update now=", now, "last=", last, "interval=", CHECK_INTERVAL)
-
-    if type(last) == "number" and (now - last) < CHECK_INTERVAL then
-        logger.dbg("ZenUpdater: within throttle window, loading cached state")
-        load_cached_state()
-        logger.dbg("ZenUpdater: cached has_update=", tostring(M._has_update), "latest=", tostring(M._latest_ver))
-        return "cached"
-    end
-
-    -- Attempt a live check; if it fails, fall back to cached state.
+    logger.dbg("ZenUpdater: check_for_update live now=", now)
     if not do_network_check() then
-        logger.warn("ZenUpdater: live check failed, loading cached state")
-        load_cached_state()
+        logger.warn("ZenUpdater: live check failed")
+        clear_release_details()
         return "error"
     end
 
@@ -1276,9 +1246,21 @@ local function _do_install(screen, plugin_root, plugins_dir)
 
     logger.info("ZenUpdater: install begin plugin_root=", plugin_root, "plugins_dir=", plugins_dir)
 
-    if not is_valid_asset_url(M._dl_url) or not is_valid_sha256_digest(M._latest_sha256) then
-        logger.dbg("ZenUpdater: install metadata invalid, re-checking network state")
-        do_network_check()
+    logger.dbg("ZenUpdater: install refreshing release metadata")
+    if not do_network_check() then
+        logger.warn("ZenUpdater: install abort live metadata refresh failed")
+        screen:update{
+            subtitle    = M._last_error or _("Could not reach update server. Check your internet connection."),
+            button      = _("OK"),
+            dismissable = true,
+        }
+        return
+    end
+    persist_state(os.time())
+    if not M._has_update then
+        logger.warn("ZenUpdater: install abort no newer release after refresh")
+        screen:update{ subtitle = _("Zen UI is up to date."), button = _("OK"), dismissable = true }
+        return
     end
     if not is_valid_asset_url(M._dl_url) then
         logger.warn("ZenUpdater: install abort invalid dl url:", tostring(M._dl_url))
@@ -1537,9 +1519,34 @@ local function _show_update_screen_and_install(plugin)
         or ""
     local plugins_dir = plugin_root:match("^(.*)/[^/]+$") or plugin_root
 
-    -- Best-effort refresh so the update prompt includes changelog text.
-    if not M._latest_notes then
-        ensure_selected_release_details()
+    if not ensure_selected_release_details(true) then
+        UIManager:show(ZenScreen:new{
+            title       = _("Zen UI"),
+            subtitle    = M._last_error or _("Could not reach update server. Check your internet connection."),
+            button      = _("OK"),
+            dismissable = true,
+        })
+        return
+    end
+    persist_state(os.time())
+
+    if not M._has_update then
+        local current = get_current_version()
+        local subtitle
+        if M._latest_ver and semver_eq(M._latest_ver, current) then
+            subtitle = _("Zen UI is up to date.")
+        elseif M._latest_ver and semver_gt(current, M._latest_ver) then
+            subtitle = _("Installed version is newer than the latest release.")
+        else
+            subtitle = M._last_error or _("Could not determine update status.")
+        end
+        UIManager:show(ZenScreen:new{
+            title       = _("Zen UI"),
+            subtitle    = subtitle,
+            button      = _("OK"),
+            dismissable = true,
+        })
+        return
     end
 
     local ver_label   = M._latest_ver and ("v" .. M._latest_ver) or _("latest")
@@ -1614,16 +1621,13 @@ function M.build_update_now_item(plugin)
             local ZenScreen  = require("common/ui/zen_screen")
             local ok_nm, NetworkMgr = pcall(require, "ui/network/manager")
 
-            -- Reset throttle so this check always goes to the network.
-            M._checked    = false
-            M._has_update = false
-            M._latest_ver = nil
-            M._dl_url     = nil
-            M._latest_sha256 = nil
-            M._latest_notes = nil
+            -- Force this check to go to the network; keep any persisted banner
+            -- until the live check says otherwise.
+            clear_release_details()
             local cfg, updater = load_updater_config()
             if updater then
                 updater[UP_KEY_TIME] = 0
+                clear_persisted_release_state(updater)
                 save_updater_config(cfg)
             end
 
@@ -1649,10 +1653,9 @@ function M.build_update_now_item(plugin)
                         function(net_ok)
                             screen._on_button_action = nil
                             if net_ok then
-                                M._checked = true
                                 persist_state(os.time())
                             else
-                                load_cached_state()
+                                clear_release_details()
                             end
                             if not net_ok then
                                 screen:update{
@@ -1814,8 +1817,7 @@ function M.set_channel(ch)
     local cfg, updater = load_updater_config()
     if not updater then return end
     updater[UP_KEY_CHANNEL] = ch == "beta" and "beta" or "stable"
-    -- Invalidate cache so next check_for_update() goes to the network.
-    M._checked    = false
+    -- Drop in-memory release details so the next check goes to the network.
     M._has_update = false
     M._latest_ver = nil
     M._dl_url     = nil

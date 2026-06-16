@@ -130,7 +130,7 @@ function ZenUI:init()
     self.config = ConfigManager.load()
     _G.__ZEN_UI_LIBRARY_FONT_CFG = self.config and self.config.library_font or nil
     _zen_plugin_ref = self
-    -- Load cached update state now so has_update() is correct when the menu first opens.
+    -- Initialize updater state; release metadata stays live-only.
     zen_updater.init_banner()
 
     -- Run incompatible-plugin detection before ANY module or patch loads.
