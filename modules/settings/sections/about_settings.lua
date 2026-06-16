@@ -48,9 +48,9 @@ function M.build(ctx)
     table.insert(items, {
         text = _("Setup Guide"),
         callback = function()
-            local ok_qs, QuickstartScreen = pcall(require, "common/quickstart_screen")
+            local ok_qs, QuickstartScreen = pcall(require, "common/quickstart/quickstart_screen")
             if not ok_qs then return end
-            local ok_pg, pages_mod = pcall(require, "common/quickstart_pages")
+            local ok_pg, pages_mod = pcall(require, "common/quickstart/quickstart_pages")
             if not ok_pg then return end
             UIManager:show(QuickstartScreen:new{
                 pages    = pages_mod.build_install_pages({

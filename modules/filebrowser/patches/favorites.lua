@@ -1,6 +1,7 @@
 local function apply_favorites()
     local FileManagerCollection = require("apps/filemanager/filemanagercollection")
     local Menu = require("ui/widget/menu")
+    local SharedState = require("common/shared_state")
 
     local zen_plugin = rawget(_G, "__ZEN_UI_PLUGIN")
     if not zen_plugin or type(zen_plugin.config) ~= "table" then
@@ -10,6 +11,10 @@ local function apply_favorites()
     local function is_enabled()
         local features = zen_plugin.config and zen_plugin.config.features
         return type(features) == "table" and features.favorites == true
+    end
+
+    local function get_shared(key)
+        return SharedState.get(zen_plugin, key)
     end
 
     -- Returns true when status_bar is enabled AND hide_browser_bar is true
@@ -104,10 +109,8 @@ local function apply_favorites()
         if not tb then return end
 
         -- === Title-bar content ===
-        local createStatusRow = zen_plugin._zen_shared
-            and zen_plugin._zen_shared.createStatusRow
-        local createStatusRowCustomBack = zen_plugin._zen_shared
-            and zen_plugin._zen_shared.createStatusRowCustomBack
+        local createStatusRow = get_shared("createStatusRow")
+        local createStatusRowCustomBack = get_shared("createStatusRowCustomBack")
 
         if tb.title_group and #tb.title_group >= 2
                 and (createStatusRow or createStatusRowCustomBack) then
@@ -146,8 +149,7 @@ local function apply_favorites()
             -- Periodic refresh callback so autoRefresh preserves the back button.
             -- Uses repaintTitleBar which clears the region first (prevents overlap
             -- artifacts) and avoids marking the dithered menu dirty (prevents freeze).
-            local repaintTitleBar = zen_plugin._zen_shared
-                and zen_plugin._zen_shared.repaintTitleBar
+            local repaintTitleBar = get_shared("repaintTitleBar")
             if show_back and createStatusRowCustomBack then
                 local back_cb = menu.onReturn and function() menu.onReturn() end
                             or function() end

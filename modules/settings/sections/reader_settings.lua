@@ -7,6 +7,7 @@ local UIManager = require("ui/uimanager")
 local Event = require("ui/event")
 local utils = require("modules/settings/zen_settings_utils")
 local constants = require("common/constants")
+local PresetStore = require("config/preset_store")
 
 local M = {}
 
@@ -342,6 +343,18 @@ function M.build(ctx)
                     sub_item_table = sub,
                 }
             end)(),
+            {
+                text = _("Show bottom border"),
+                checked_func = function()
+                    return type(config.reader_top_status_bar) == "table"
+                        and config.reader_top_status_bar.show_bottom_border == true
+                end,
+                callback = function()
+                    if type(config.reader_top_status_bar) ~= "table" then config.reader_top_status_bar = {} end
+                    config.reader_top_status_bar.show_bottom_border = not config.reader_top_status_bar.show_bottom_border
+                    save_clock()
+                end,
+            },
         },
     })
 
@@ -349,74 +362,173 @@ function M.build(ctx)
     -- Footer presets
     -- -------------------------------------------------------------------------
 
-    table.insert(items, {
-        text = _("Presets"),
-        enabled_func = function()
-            local ReaderUI = require("apps/reader/readerui")
-            return ReaderUI.instance ~= nil
-        end,
-        sub_item_table_func = function()
-            local ReaderUI = require("apps/reader/readerui")
-            local ui = ReaderUI.instance
-            if not (ui and ui.view and ui.view.footer) then
-                return {}
-            end
-            local function resolve_preset_font(preset)
-                if not (preset.footer and preset.footer.text_font_face) then return preset end
-                local ok_fc, FontChooser = pcall(require, "ui/widget/fontchooser")
-                if not ok_fc then return preset end
-                local face = preset.footer.text_font_face
-                if FontChooser.isFontRegistered(face) then return preset end
-                -- bare filename: search fontinfo for a matching full path
-                local FontList = require("fontlist")
-                FontList:getFontList()
-                local suffix = "/" .. face
-                for path in pairs(FontList.fontinfo) do
-                    if path:sub(-#suffix) == suffix then
-                        local util = require("util")
-                        local copy = util.tableDeepCopy(preset)
-                        copy.footer.text_font_face = path
-                        return copy
-                    end
+    local function build_footer_presets_item()
+        return {
+            text = _("Zen Presets"),
+            enabled_func = function()
+                local ReaderUI = require("apps/reader/readerui")
+                return ReaderUI.instance ~= nil
+            end,
+            sub_item_table_func = function()
+                local ReaderUI = require("apps/reader/readerui")
+                local ui = ReaderUI.instance
+                if not (ui and ui.view and ui.view.footer) then
+                    return {}
                 end
-                return preset
-            end
+                local function resolve_preset_font(preset)
+                    if not (preset.footer and preset.footer.text_font_face) then return preset end
+                    local ok_fc, FontChooser = pcall(require, "ui/widget/fontchooser")
+                    if not ok_fc then return preset end
+                    local face = preset.footer.text_font_face
+                    if FontChooser.isFontRegistered(face) then return preset end
+                    -- bare filename: search fontinfo for a matching full path
+                    local FontList = require("fontlist")
+                    FontList:getFontList()
+                    local suffix = "/" .. face
+                    for path in pairs(FontList.fontinfo) do
+                        if path:sub(-#suffix) == suffix then
+                            local util = require("util")
+                            local copy = util.tableDeepCopy(preset)
+                            copy.footer.text_font_face = path
+                            return copy
+                        end
+                    end
+                    return preset
+                end
 
-            local function apply_footer_preset(preset)
-                ui.view.footer:loadPreset(resolve_preset_font(preset))
-                config.features["reader_top_status_bar"] = true
-                save_and_apply("reader_top_status_bar")
-                if ui.rolling then
-                    ui.document.configurable.status_line = 1
-                    ui:handleEvent(Event:new("SetStatusLine", 1))
+                local function capture_footer_state()
+                    local util = require("util")
+                    local footer_settings = ui.view.footer.settings
+                        or G_reader_settings:readSetting("footer")
+                        or {}
+                    return {
+                        footer = util.tableDeepCopy(footer_settings),
+                        reader_footer_mode = G_reader_settings:readSetting("reader_footer_mode") or 1,
+                        reader_footer_custom_text = G_reader_settings:readSetting("reader_footer_custom_text") or "KOReader",
+                        reader_footer_custom_text_repetitions =
+                            G_reader_settings:readSetting("reader_footer_custom_text_repetitions") or 1,
+                        zen = {
+                            verbose_chapter_time = type(config.reader_footer) == "table"
+                                and config.reader_footer.verbose_chapter_time == true,
+                        },
+                    }
                 end
-                if preset.zen then
-                    if type(config.reader_footer) ~= "table" then config.reader_footer = {} end
-                    if preset.zen.verbose_chapter_time ~= nil then
-                        config.reader_footer.verbose_chapter_time = preset.zen.verbose_chapter_time
+
+                local function apply_footer_preset(preset)
+                    ui.view.footer:loadPreset(resolve_preset_font(preset))
+                    config.features["reader_top_status_bar"] = true
+                    save_and_apply("reader_top_status_bar")
+                    if ui.rolling then
+                        ui.document.configurable.status_line = 1
+                        ui:handleEvent(Event:new("SetStatusLine", 1))
                     end
-                    plugin:saveConfig()
+                    if preset.zen then
+                        if type(config.reader_footer) ~= "table" then config.reader_footer = {} end
+                        if preset.zen.verbose_chapter_time ~= nil then
+                            config.reader_footer.verbose_chapter_time = preset.zen.verbose_chapter_time
+                        end
+                        plugin:saveConfig()
+                    end
+                    PresetStore.saveSettings("reader", capture_footer_state())
+                    PresetStore.setActivePreset("reader", preset.name)
                 end
-            end
-            local presets_items = {}
-            if type(config.reader_footer) == "table" and config.reader_footer.backup_preset then
-                local backup = config.reader_footer.backup_preset
+
+                local presets_items = {}
+                local function refresh_preset_menu(touchmenu_instance)
+                    if touchmenu_instance then
+                        local presets_item = build_footer_presets_item()
+                        touchmenu_instance.item_table = presets_item.sub_item_table_func()
+                        touchmenu_instance:updateItems()
+                    end
+                end
+
                 table.insert(presets_items, {
-                    text = _(backup.name),
-                    callback = function() apply_footer_preset(backup) end,
-                    separator = true,
+                    text = _("Save current settings as preset"),
+                    keep_menu_open = true,
+                    callback = function(touchmenu_instance)
+                        local InputDialog = require("ui/widget/inputdialog")
+                        local dlg
+                        dlg = InputDialog:new{
+                            title = _("Preset name"),
+                            input = "",
+                            buttons = {{
+                                {
+                                    text = _("Cancel"),
+                                    id = "close",
+                                    callback = function() UIManager:close(dlg) end,
+                                },
+                                {
+                                    text = _("Save"),
+                                    is_enter_default = true,
+                                    callback = function()
+                                        local name = dlg:getInputText()
+                                        if not name or name:match("^%s*$") then return end
+                                        name = name:match("^%s*(.-)%s*$")
+                                        UIManager:close(dlg)
+                                        local state = capture_footer_state()
+                                        PresetStore.save("reader", name, state)
+                                        PresetStore.saveSettings("reader", state)
+                                        PresetStore.setActivePreset("reader", name)
+                                        refresh_preset_menu(touchmenu_instance)
+                                    end,
+                                },
+                            }},
+                        }
+                        UIManager:show(dlg)
+                        dlg:onShowKeyboard()
+                    end,
                 })
-            end
-            local footer_presets = require("modules/reader/patches/reader_footer_presets")
-            for _i, preset in ipairs(footer_presets) do
-                table.insert(presets_items, {
-                    text = _(preset.name),
-                    callback = function() apply_footer_preset(preset) end,
-                })
-            end
-            return presets_items
-        end,
-    })
+
+                local user_presets = PresetStore.list("reader")
+                for _i, preset in ipairs(user_presets) do
+                    local preset_name = preset.name
+                    local is_builtin = preset.builtin == true
+                    table.insert(presets_items, {
+                        text_func = function()
+                            local active = PresetStore.getActivePreset("reader")
+                            local prefix = active == preset_name and "* " or ""
+                            return prefix .. (preset_name or _("Unnamed preset"))
+                        end,
+                        callback = function(touchmenu_instance)
+                            apply_footer_preset(preset)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end,
+                        hold_callback = not is_builtin and function(touchmenu_instance)
+                            local ConfirmBox = require("ui/widget/confirmbox")
+                            UIManager:show(ConfirmBox:new{
+                                text = _("Delete preset?") .. "\n\n" .. (preset_name or ""),
+                                ok_text = _("Delete"),
+                                ok_callback = function()
+                                    PresetStore.delete("reader", preset_name)
+                                    if PresetStore.getActivePreset("reader") == preset_name then
+                                        PresetStore.setActivePreset("reader", nil)
+                                    end
+                                    refresh_preset_menu(touchmenu_instance)
+                                end,
+                            })
+                        end or nil,
+                        separator = _i == #user_presets,
+                    })
+                end
+
+                local footer_presets = require("modules/reader/patches/reader_footer_presets")
+                for _i, preset in ipairs(footer_presets) do
+                    table.insert(presets_items, {
+                        text_func = function()
+                            local active = PresetStore.getActivePreset("reader")
+                            local prefix = active == preset.name and "* " or ""
+                            return prefix .. _(preset.name)
+                        end,
+                        callback = function(touchmenu_instance)
+                            apply_footer_preset(preset)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end,
+                    })
+                end
+                return presets_items
+            end,
+        }
+    end
 
     -- -------------------------------------------------------------------------
     -- Font (passthrough to KOReader's font menu)
@@ -537,7 +649,7 @@ function M.build(ctx)
         end,
     })
     table.insert(items, {
-        text = _("Restore library view on return"),
+        text = _("Restore library location on exit"),
         checked_func = function()
             return config.features["restore_library_view"] == true
         end,
@@ -654,6 +766,7 @@ function M.build(ctx)
             local mock = {}
             ui.view.footer:addToMainMenu(mock)
             local result = {}
+            table.insert(result, build_footer_presets_item())
             table.insert(result, font_submenu)
             table.insert(result, {
                 text = _("Hide in CBZ/PDF files"),
@@ -677,7 +790,7 @@ function M.build(ctx)
                 end,
             })
             if mock.status_bar and mock.status_bar.sub_item_table then
-                for _, item in ipairs(mock.status_bar.sub_item_table) do
+                for _i, item in ipairs(mock.status_bar.sub_item_table) do
                     table.insert(result, item)
                 end
             end

@@ -29,7 +29,7 @@ local TitleBar        = require("ui/widget/titlebar")
 local UIManager       = require("ui/uimanager")
 local VerticalGroup   = require("ui/widget/verticalgroup")
 local VerticalSpan    = require("ui/widget/verticalspan")
-local ZenSlider       = require("common/zen_slider")
+local ZenSlider       = require("common/ui/zen_slider")
 local _               = require("gettext")
 local Screen          = Device.screen
 

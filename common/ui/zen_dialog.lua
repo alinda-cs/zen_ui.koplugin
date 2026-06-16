@@ -5,7 +5,7 @@
 --   - Outside-tap dismisses both keyboard and dialog
 --
 -- Usage:
---   local createZenDialog = require("common/zen_dialog")
+--   local createZenDialog = require("common/ui/zen_dialog")
 --   local dialog = createZenDialog{
 --       title           = _("Go to page"),
 --       input           = "",

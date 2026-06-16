@@ -4,7 +4,7 @@
 -- taps/swipes pass through to the UI below.
 --
 -- Usage:
---   require("common/countdown_screenshot").run()
+--   require("modules/menu/patches/countdown_screenshot").run()
 
 local BD               = require("ui/bidi")
 local Blitbuffer       = require("ffi/blitbuffer")

@@ -16,6 +16,7 @@ local function apply_context_menu()
     local book_status  = require("common/book_status")
     local paths        = require("common/paths")
     local icons        = require("common/inline_icon_map")
+    local submenu_arrow = icons.arrow_right
     local zen_plugin   = rawget(_G, "__ZEN_UI_PLUGIN")
     local Cover        = require("common/cover_utils")
     local VerticalGroup   = require("ui/widget/verticalgroup")
@@ -29,16 +30,21 @@ local function apply_context_menu()
     local Font            = require("ui/font")
     local Geom            = require("ui/geometry")
     local Blitbuffer      = require("ffi/blitbuffer")
-    local library_font    = require("common/library_font")
+    local library_font    = require("modules/filebrowser/patches/library_font")
 
     local function apply_button_group_font(button_rows, nominal_size)
         if type(button_rows) ~= "table" then return button_rows end
+        local size = library_font.scaleValue(nominal_size or 20)
         for _i, row in ipairs(button_rows) do
             if type(row) == "table" then
                 for _j, btn in ipairs(row) do
                     if type(btn) == "table" and type(btn.text) == "string" then
                         local face = btn.font_face or btn.text_font_face or library_font.getFontName()
+                        local fsize = btn.font_size or btn.text_font_size or size
                         btn.font_face = face
+                        btn.font_size = fsize
+                        btn.text_font_face = face
+                        btn.text_font_size = fsize
                     end
                 end
             end
@@ -540,13 +546,13 @@ local function apply_context_menu()
 
                 local buttons = {}
                 if item._zen_prepend_buttons then
-                    for _, row in ipairs(item._zen_prepend_buttons) do
+                    for _i, row in ipairs(item._zen_prepend_buttons) do
                         table.insert(buttons, row)
                     end
                 end
                 if display_cb then
                     table.insert(buttons, {{
-                        text = "\u{F06D0}  " .. _("Display") .. "  \u{25B8}",
+                        text = "\u{F06D0}  " .. _("Display") .. "  " .. submenu_arrow,
                         align = "left",
                         callback = function()
                             UIManager:close(self_fc.file_dialog)
@@ -556,7 +562,7 @@ local function apply_context_menu()
                 end
                 if sort_cb then
                     table.insert(buttons, {{
-                        text = "\u{F04BF}  " .. _("Sort") .. "  \u{25B8}",
+                        text = "\u{F04BF}  " .. _("Sort") .. "  " .. submenu_arrow,
                         align = "left",
                         callback = function()
                             UIManager:close(self_fc.file_dialog)
@@ -636,7 +642,7 @@ local function apply_context_menu()
                     table.insert(buttons, {{
                         text = icons.filter .. "  " .. _("Filter")
                             .. (n_gf > 0 and " (" .. n_gf .. ")" or "")
-                            .. "  \u{25B8}",
+                            .. "  " .. submenu_arrow,
                         align = "left",
                         callback = function()
                             UIManager:close(self_fc.file_dialog)
@@ -646,7 +652,7 @@ local function apply_context_menu()
                 end
 
                 if item._zen_extra_buttons then
-                    for _, row in ipairs(item._zen_extra_buttons) do
+                    for _i, row in ipairs(item._zen_extra_buttons) do
                         table.insert(buttons, row)
                     end
                 end
@@ -661,7 +667,7 @@ local function apply_context_menu()
 
             local home_dir = paths.getHomeDir()
             local cur_path = self_fc.path or ""
-            if home_dir and not item._zen_collection_name then
+            if home_dir and not item._zen_collection_name and not item._zen_home_context then
                 if not paths.isInHomeDir(cur_path) then
                     return orig_showFileDialog(self_fc, item)
                 end
@@ -1367,7 +1373,7 @@ local function apply_context_menu()
                 })
             end
 
-            if is_file and is_not_parent_folder then
+            if is_file and is_not_parent_folder and not item._zen_home_context then
                 table.insert(buttons, {
                     {
                         text = "\u{F01BE}  " .. _("Move"),
@@ -1385,8 +1391,7 @@ local function apply_context_menu()
                                 or file_chooser.path
                             if not move_home_dir then return end
                             local src_dir = ffiUtil.realpath(ffiUtil.dirname(src))
-                            local _g = rawget(_G, "G_reader_settings")
-                            local _zen_cfg = _g and _g:readSetting("zen_ui_config")
+                            local _zen_cfg = require("config/manager").get()
                             local _extra = type(_zen_cfg) == "table"
                                 and type(_zen_cfg.additional_home_dirs) == "table"
                                 and _zen_cfg.additional_home_dirs or nil
@@ -1484,7 +1489,7 @@ local function apply_context_menu()
                 if not item._zen_collection_name then
                     table.insert(buttons, {
                         {
-                            text = "\u{F04CE}  " .. _("Add to collection") .. "  \u{25B6}",
+                            text = "\u{F04CE}  " .. _("Add to collection") .. "  " .. submenu_arrow,
                             align = "left",
                             callback = function()
                                 close_dialog()
@@ -1537,7 +1542,7 @@ local function apply_context_menu()
             if is_file and is_not_parent_folder then
                 table.insert(buttons, {
                     {
-                        text = "\u{F0B64}  " .. _("Read status") .. "  ▶",
+                        text = "\u{F0B64}  " .. _("Read status") .. "  " .. submenu_arrow,
                         align = "left",
                         callback = function()
                             close_dialog()
@@ -1650,7 +1655,7 @@ local function apply_context_menu()
 
                 table.insert(buttons, {
                     {
-                        text = "\u{F06D0}  " .. _("Display") .. "  ▶",
+                        text = "\u{F06D0}  " .. _("Display") .. "  " .. submenu_arrow,
                         align = "left",
                         callback = showViewSubmenu,
                     },
@@ -1671,7 +1676,7 @@ local function apply_context_menu()
                     if g_sort then
                         table.insert(buttons, {
                             {
-                                text = "\u{F04BF}  " .. _("Sort library") .. "  ▶",
+                                text = "\u{F04BF}  " .. _("Sort library") .. "  " .. submenu_arrow,
                                 align = "left",
                                 callback = function()
                                     close_dialog()
@@ -1680,7 +1685,7 @@ local function apply_context_menu()
                                     local cur = g_sort:readSetting("collate", "strcoll")
                                     local cur_reverse = g_sort:isTrue("reverse_collate")
                                     if cur == "strcoll" then cur = "title" end
-                                    for _, opt in ipairs(SORT_OPTIONS) do
+                                    for _i, opt in ipairs(SORT_OPTIONS) do
                                         local is_active = cur == opt.key
                                         table.insert(sort_buttons, {{
                                             text = opt.text .. (is_active and "  \u{2713}" or ""),
@@ -1694,7 +1699,7 @@ local function apply_context_menu()
                                         }})
                                     end
                                     table.insert(sort_buttons, {{
-                                        text = "\u{F04BF}  " .. _("Order") .. "  ▶",
+                                        text = "\u{F04BF}  " .. _("Order") .. "  " .. submenu_arrow,
                                         align = "left",
                                         callback = function()
                                             UIManager:close(sort_dialog)
@@ -1729,7 +1734,7 @@ local function apply_context_menu()
 
                         table.insert(buttons, {
                             {
-                                text = "\u{F04BF}  " .. _("Sort folder") .. "  ▶",
+                                text = "\u{F04BF}  " .. _("Sort folder") .. "  " .. submenu_arrow,
                                 align = "left",
                                 callback = function()
                                     close_dialog()
@@ -1738,7 +1743,7 @@ local function apply_context_menu()
                                     local current_override = fsd_api.get(real_folder)
                                     local cur_collate = current_override and current_override.collate
                                     local cur_reverse = current_override and current_override.reverse or false
-                                    for _, opt in ipairs(SORT_OPTIONS) do
+                                    for _i, opt in ipairs(SORT_OPTIONS) do
                                         local is_active = cur_collate == opt.key
                                         table.insert(sort_buttons, {{
                                             text = opt.text .. (is_active and "  \u{2713}" or ""),
@@ -1752,7 +1757,7 @@ local function apply_context_menu()
                                         }})
                                     end
                                     table.insert(sort_buttons, {{
-                                        text = "\u{F04BF}  " .. _("Order") .. "  ▶",
+                                        text = "\u{F04BF}  " .. _("Order") .. "  " .. submenu_arrow,
                                         align = "left",
                                         callback = function()
                                             UIManager:close(sort_dialog)
@@ -1825,7 +1830,7 @@ local function apply_context_menu()
                             setFilter(nil)
                         end,
                     }})
-                    for _, st in ipairs(STATUS_OPTS) do
+                    for _i, st in ipairs(STATUS_OPTS) do
                         local is_active = cur_st and cur_st[st.key] == true
                         table.insert(fbts, {{
                             text = st.icon .. "  " .. st.label .. (is_active and "  " .. icons.check or ""),
@@ -1842,7 +1847,7 @@ local function apply_context_menu()
                                     new_st[st.key] = true
                                 end
                                 local n = 0
-                                for _, v in pairs(new_st) do if v then n = n + 1 end end
+                                for _k, v in pairs(new_st) do if v then n = n + 1 end end
                                 if n == 0 or n == 4 then setFilter(nil)
                                 else setFilter(new_st) end
                                 UIManager:nextTick(showFilterDialog)
@@ -1860,7 +1865,7 @@ local function apply_context_menu()
 
                 local n_active = 0
                 if FileChooser.show_filter and FileChooser.show_filter.status then
-                    for _, v in pairs(FileChooser.show_filter.status) do
+                    for _k, v in pairs(FileChooser.show_filter.status) do
                         if v then n_active = n_active + 1 end
                     end
                 end
@@ -1868,7 +1873,7 @@ local function apply_context_menu()
                     {
                         text = icons.filter .. "  " .. _("Filter")
                             .. (n_active > 0 and " (" .. n_active .. ")" or "")
-                            .. "  ▶",
+                            .. "  " .. submenu_arrow,
                         align = "left",
                         callback = function()
                             close_dialog()
@@ -1878,16 +1883,18 @@ local function apply_context_menu()
                 })
             end
 
-            table.insert(buttons, {
-                {
-                    text = "\u{F090C}  " .. _("Edit") .. "  ▶",
-                    align = "left",
-                    callback = showEditSubmenu,
-                },
-            })
+            if not item._zen_home_context then
+                table.insert(buttons, {
+                    {
+                        text = "\u{F090C}  " .. _("Edit") .. "  " .. submenu_arrow,
+                        align = "left",
+                        callback = showEditSubmenu,
+                    },
+                })
+            end
 
             if item._zen_extra_buttons then
-                for _, row in ipairs(item._zen_extra_buttons) do
+                for _i, row in ipairs(item._zen_extra_buttons) do
                     table.insert(buttons, row)
                 end
             end

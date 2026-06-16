@@ -16,12 +16,9 @@ local function get_cfg()
         return p.config.library_font
     end
 
-    local g = rawget(_G, "G_reader_settings")
-    if g and type(g.readSetting) == "function" then
-        local cfg = g:readSetting("zen_ui_config")
-        if type(cfg) == "table" and type(cfg.library_font) == "table" then
-            return cfg.library_font
-        end
+    local cfg = require("config/manager").get()
+    if type(cfg) == "table" and type(cfg.library_font) == "table" then
+        return cfg.library_font
     end
 
     return nil

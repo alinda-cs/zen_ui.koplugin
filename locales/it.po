@@ -9,17 +9,23 @@ msgstr ""
 msgid "%1 (%2)"
 msgstr "%1 (%2)"
 
-msgid "%1 et al."
-msgstr "%1 et al."
-
 msgid "%1 mins left in chapter"
 msgstr "%1 min al termine del capitolo"
 
 msgid "%d%% Read"
 msgstr "%d%% letto"
 
+msgid "%s left"
+msgstr "%s rimasti"
+
 msgid "(auto)"
 msgstr "(auto)"
+
+msgid "(Kindle)"
+msgstr "(Kindle)"
+
+msgid "(standard)"
+msgstr "(standard)"
 
 msgid "1 author"
 msgstr "1 autore"
@@ -81,11 +87,17 @@ msgstr "Stile scheda attiva"
 msgid "Active tab underline"
 msgstr "Sottolineatura scheda attiva"
 
+msgid "Add book"
+msgstr "Aggiungi libro"
+
 msgid "Add catalog"
 msgstr "Aggiungi catalogo"
 
 msgid "Add custom button"
 msgstr "Aggiungi pulsante personalizzato"
+
+msgid "Add custom tab"
+msgstr "Aggiungi scheda personalizzata"
 
 msgid "Add folder…"
 msgstr "Aggiungi cartella…"
@@ -162,8 +174,14 @@ msgstr "Disponi elementi a destra"
 msgid "Arrange tabs"
 msgstr "Disponi schede"
 
+msgid "Arrange widgets"
+msgstr "Disponi widget"
+
 msgid "Ascending"
 msgstr "Crescente"
+
+msgid "Author"
+msgstr "Autore"
 
 msgid "Authors"
 msgstr "Autori"
@@ -185,6 +203,12 @@ msgstr "tempo medio/libro"
 
 msgid "avg time/day"
 msgstr "tempo medio/giorno"
+
+msgid "Badge color RGB"
+msgstr "RGB colore badge"
+
+msgid "Badge color: "
+msgstr "Colore badge: "
 
 msgid "Badge size"
 msgstr "Dimensione badge"
@@ -216,6 +240,9 @@ msgstr "miglior settimana"
 msgid "Beta"
 msgstr "Beta"
 
+msgid "Black"
+msgstr "Nero"
+
 msgid "Blue"
 msgstr "Blu"
 
@@ -231,6 +258,9 @@ msgstr "Testo in grassetto"
 msgid "Book"
 msgstr "Libro"
 
+msgid "book"
+msgstr "libro"
+
 msgid "Book added to download list"
 msgstr "Libro aggiunto alla lista di download"
 
@@ -243,6 +273,15 @@ msgstr "Informazioni libro"
 msgid "Book Status"
 msgstr "Stato libro"
 
+msgid "Book Title"
+msgstr "Titolo libro"
+
+msgid "Book title"
+msgstr "Titolo libro"
+
+msgid "Book: "
+msgstr "Libro: "
+
 msgid "books"
 msgstr "libri"
 
@@ -251,6 +290,15 @@ msgstr "Libri"
 
 msgid "books finished"
 msgstr "libri terminati"
+
+msgid "books read"
+msgstr "libri letti"
+
+msgid "Books shown"
+msgstr "Libri mostrati"
+
+msgid "Books shown: "
+msgstr "Libri mostrati: "
 
 msgid "Books tab label"
 msgstr "Etichetta scheda libri"
@@ -284,9 +332,6 @@ msgstr "Segnalazione inviata!"
 
 msgid "Bug report title"
 msgstr "Titolo della segnalazione"
-
-msgid "Bullet"
-msgstr "Punto elenco"
 
 msgid "Buttons"
 msgstr "Pulsanti"
@@ -327,14 +372,23 @@ msgstr "Cambia cartella"
 msgid "Change Row"
 msgstr "Cambia riga"
 
+msgid "Changelog"
+msgstr "Registro modifiche"
+
+msgid "Chapter"
+msgstr "Capitolo"
+
 msgid "Chapter Time + %"
 msgstr "Tempo capitolo + %"
 
 msgid "Check for updates"
 msgstr "Controlla aggiornamenti"
 
-msgid "Checking for updates…"
-msgstr "Controllo aggiornamenti in corso…"
+msgid "Check for updates automatically"
+msgstr "Controlla aggiornamenti automaticamente"
+
+msgid "Checking for updates"
+msgstr "Controllo aggiornamenti"
 
 msgid "Chess"
 msgstr "Scacchi"
@@ -359,6 +413,12 @@ msgstr "Cancella"
 
 msgid "Clear all gestures"
 msgstr "Cancella tutti i gesti"
+
+msgid "Clear book"
+msgstr "Cancella libro"
+
+msgid "Clear books"
+msgstr "Cancella libri"
 
 msgid "Close"
 msgstr "Chiudi"
@@ -399,8 +459,17 @@ msgstr "Continua"
 msgid "Copy"
 msgstr "Copia"
 
+msgid "Could not determine update status."
+msgstr "Impossibile determinare lo stato dell'aggiornamento."
+
 msgid "Could not reach update server. Check your internet connection."
 msgstr "Impossibile raggiungere il server di aggiornamento. Controlla la tua connessione Internet."
+
+msgid "Could not reach update server. Check your internet connection.\n\nUnable to load changelog."
+msgstr "Impossibile raggiungere il server di aggiornamento. Controlla la tua connessione Internet.\n\nImpossibile caricare il registro modifiche."
+
+msgid "Could not read release data from update server."
+msgstr "Impossibile leggere i dati di rilascio dal server di aggiornamento."
 
 msgid "CoverBrowser plugin is not enabled, some features will not work correctly."
 msgstr "Il plugin CoverBrowser non è attivato, alcune funzionalità non funzioneranno correttamente."
@@ -414,9 +483,6 @@ msgstr "Il file crash.log verrà allegato a una segnalazione pubblica su GitHub.
 msgid "Create this folder and use as home"
 msgstr "Crea questa cartella e usala come home"
 
-msgid "Crop folder custom image"
-msgstr "Ritaglia immagine personalizzata cartella"
-
 msgid "Crossword"
 msgstr "Cruciverba"
 
@@ -425,6 +491,9 @@ msgstr "Cartella home corrente:"
 
 msgid "Current only"
 msgstr "Solo corrente"
+
+msgid "Current/total pages"
+msgstr "Pagine correnti/totali"
 
 msgid "Custom"
 msgstr "Personalizzato"
@@ -435,11 +504,23 @@ msgstr "Etichetta pulsante personalizzato"
 msgid "Custom buttons"
 msgstr "Pulsanti personalizzati"
 
+msgid "Custom featured widget"
+msgstr "Widget in evidenza personalizzato"
+
 msgid "Custom RGB"
 msgstr "RGB personalizzato"
 
 msgid "Custom separator"
 msgstr "Separatore personalizzato"
+
+msgid "Custom strip widget"
+msgstr "Widget striscia personalizzato"
+
+msgid "Custom tab label"
+msgstr "Etichetta scheda personalizzata"
+
+msgid "Custom tabs"
+msgstr "Schede personalizzate"
 
 msgid "Custom text"
 msgstr "Testo personalizzato"
@@ -453,8 +534,23 @@ msgstr "Personalizzato: "
 msgid "Cut"
 msgstr "Taglia"
 
-msgid "Dash"
-msgstr "Trattino"
+msgid "Daily pages goal"
+msgstr "Obiettivo pagine giornaliero"
+
+msgid "Daily pages goal: "
+msgstr "Obiettivo pagine giornaliero: "
+
+msgid "Daily time goal (min)"
+msgstr "Obiettivo tempo giornaliero (min)"
+
+msgid "Daily time goal (min): "
+msgstr "Obiettivo tempo giornaliero (min): "
+
+msgid "Home page"
+msgstr "Home"
+
+msgid "Home page preset"
+msgstr "Preset home"
 
 msgid "date modified"
 msgstr "data modifica"
@@ -495,6 +591,18 @@ msgstr "La registrazione di debug deve essere attivata per inviare segnalazioni.
 msgid "default"
 msgstr "predefinito"
 
+msgid "Default"
+msgstr "Predefinito"
+
+msgid "Default (black)"
+msgstr "Predefinito (nero)"
+
+msgid "Default tab: "
+msgstr "Scheda predefinita: "
+
+msgid "Default: Home"
+msgstr "Predefinito: Home"
+
 msgid "Delete"
 msgstr "Elimina"
 
@@ -524,6 +632,9 @@ msgstr "Lista dettagliata con metadati, senza immagini"
 
 msgid "Details"
 msgstr "Dettagli"
+
+msgid "Device"
+msgstr "Dispositivo"
 
 msgid "Device: "
 msgstr "Dispositivo: "
@@ -558,6 +669,9 @@ msgstr "Visualizzazione"
 msgid "Display mode"
 msgstr "Modalità di visualizzazione"
 
+msgid "Dividing lines"
+msgstr "Linee divisorie"
+
 msgid "Done"
 msgstr "Fatto"
 
@@ -572,6 +686,12 @@ msgstr "Download fallito: "
 
 msgid "Downloaded"
 msgstr "Scaricato"
+
+msgid "Downloading"
+msgstr "Download in corso"
+
+msgid "Dynamic filler 2"
+msgstr "Riempitivo dinamico 2"
 
 msgid "Edit"
 msgstr "Modifica"
@@ -597,8 +717,8 @@ msgstr "Attiva pianificazione modalità notte"
 msgid "Enable page browser"
 msgstr "Abilita navigatore di pagine"
 
-msgid "Enable reader clock"
-msgstr "Abilita orologio lettore"
+msgid "Enable top status bar"
+msgstr "Attiva barra di stato superiore"
 
 msgid "Enable warmth schedule"
 msgstr "Attiva pianificazione tonalità calda"
@@ -624,17 +744,14 @@ msgstr "Estrae e memorizza nella cache i metadati dei libri e le copertine per i
 msgid "Extract metadata"
 msgstr "Estrai metadati"
 
-msgid "Failed to remove existing plugin."
-msgstr "Impossibile rimuovere il plugin esistente."
-
 msgid "Failed to submit report: "
 msgstr "Invio della segnalazione non riuscito: "
 
-msgid "Failed to unpack update."
-msgstr "Impossibile estrarre l’aggiornamento."
-
 msgid "Favorites"
 msgstr "Preferiti"
+
+msgid "Featured widgets"
+msgstr "Widget in evidenza"
 
 msgid "File Browser"
 msgstr "Sfoglia file"
@@ -663,14 +780,14 @@ msgstr "terminato"
 msgid "Firmware: "
 msgstr "Firmware: "
 
+msgid "First cover image"
+msgstr "Prima immagine di copertina"
+
 msgid "Folder"
 msgstr "Cartella"
 
-msgid "Folder name centered"
-msgstr "Nome cartella centrato"
-
-msgid "Folder name opaque background"
-msgstr "Sfondo opaco per il nome della cartella"
+msgid "Folder name"
+msgstr "Nome cartella"
 
 msgid "Folder name position"
 msgstr "Posizione del nome della cartella"
@@ -705,8 +822,11 @@ msgstr "Sincronizzazione forzata di tutti i cataloghi"
 msgid "Format: R,G,B (0-255)"
 msgstr "Formato: R,G,B (0-255)"
 
-msgid "Gallery view"
-msgstr "Vista galleria"
+msgid "Gallery"
+msgstr "Galleria"
+
+msgid "Gallery view (4-grid)"
+msgstr "Vista galleria (griglia 4)"
 
 msgid "Get Started"
 msgstr "Inizia"
@@ -722,6 +842,21 @@ msgstr "Vai"
 
 msgid "Go to page"
 msgstr "Vai alla pagina"
+
+msgid "Goal shown: Daily"
+msgstr "Obiettivo mostrato: giornaliero"
+
+msgid "Goal shown: Weekly"
+msgstr "Obiettivo mostrato: settimanale"
+
+msgid "Goals metric: Pages"
+msgstr "Metrica obiettivi: pagine"
+
+msgid "Goals metric: Time"
+msgstr "Metrica obiettivi: tempo"
+
+msgid "Gray"
+msgstr "Grigio"
 
 msgid "Green"
 msgstr "Verde"
@@ -753,6 +888,12 @@ msgstr "Cartella home"
 msgid "Home folder"
 msgstr "Cartella home"
 
+msgid "Home tab label"
+msgstr "Etichetta scheda Home"
+
+msgid "Home tab label: "
+msgstr "Etichetta scheda Home: "
+
 msgid "Hour"
 msgstr "Ora"
 
@@ -764,6 +905,15 @@ msgstr "Plugin incompatibili disabilitati:"
 
 msgid "Install dictionary"
 msgstr "Installa dizionario"
+
+msgid "Installed version is newer than the latest release."
+msgstr "La versione installata è più recente dell'ultima release."
+
+msgid "Installing"
+msgstr "Installazione"
+
+msgid "Interactive"
+msgstr "Interattivo"
 
 msgid "items per page"
 msgstr "elementi per pagina"
@@ -813,6 +963,12 @@ msgstr "Elementi a sinistra"
 msgid "Library"
 msgstr "Libreria"
 
+msgid "Library font"
+msgstr "Carattere libreria"
+
+msgid "Library font size"
+msgstr "Dimensione carattere libreria"
+
 msgid "Library View"
 msgstr "Vista libreria"
 
@@ -827,6 +983,12 @@ msgstr "Elenco — titoli dettagliati e metadati"
 
 msgid "List: "
 msgstr "Lista: "
+
+msgid "Load more"
+msgstr "Carica altro"
+
+msgid "Loading changelog"
+msgstr "Caricamento registro modifiche"
 
 msgid "LocalSend"
 msgstr "LocalSend"
@@ -852,11 +1014,11 @@ msgstr "Cartella manga non trovata: "
 msgid "Manga tab action: "
 msgstr "Azione scheda manga: "
 
+msgid "Match whole words"
+msgstr "Solo parole intere"
+
 msgid "Menu"
 msgstr "Menu"
-
-msgid "Middle dot"
-msgstr "Punto centrale"
 
 msgid "Minimal status bar in the library view.\nCustomizable - show only what you need: time, battery, etc."
 msgstr "Barra di stato minimale nella vista libreria.\nPersonalizzabile: mostra solo ciò di cui hai bisogno: ora, batteria, ecc."
@@ -904,7 +1066,7 @@ msgid "Navigation Bar"
 msgstr "Barra di navigazione"
 
 msgid "New"
-msgstr "New"
+msgstr "Nuovo"
 
 msgid "New collection"
 msgstr "Nuova raccolta"
@@ -975,6 +1137,12 @@ msgstr "Tonalità calda notturna: "
 msgid "No books found"
 msgstr "Nessun libro trovato"
 
+msgid "No changelog entries found.\n\nNo releases are available for this channel."
+msgstr "Nessuna voce del registro modifiche trovata.\n\nNessuna release disponibile per questo canale."
+
+msgid "No changelog provided."
+msgstr "Nessun registro modifiche fornito."
+
 msgid "No description."
 msgstr "Nessuna descrizione."
 
@@ -984,11 +1152,14 @@ msgstr "Nessuna connessione di rete. Connettiti al Wi-Fi e riprova."
 msgid "No reader engine for this file or invalid file."
 msgstr "Nessun motore di lettura per questo file o file non valido."
 
-msgid "No separator"
-msgstr "Nessun separatore"
-
 msgid "No update asset found."
 msgstr "Nessun file di aggiornamento trovato."
+
+msgid "None"
+msgstr "Nessuno"
+
+msgid "None (folder name only)"
+msgstr "Nessuno (solo nome cartella)"
 
 msgid "Normal"
 msgstr "Normale"
@@ -1007,6 +1178,9 @@ msgstr "Spento"
 
 msgid "OK"
 msgstr "OK"
+
+msgid "Opaque background"
+msgstr "Sfondo opaco"
 
 msgid "OPDS"
 msgstr "OPDS"
@@ -1031,6 +1205,9 @@ msgstr "Apertura"
 
 msgid "Order"
 msgstr "Ordine"
+
+msgid "Outlined boxes"
+msgstr "Riquadri contornati"
 
 msgid "Page Browser"
 msgstr "Sfoglia pagine"
@@ -1065,6 +1242,9 @@ msgstr "Aggiornamento pagine parziali"
 msgid "Paste"
 msgstr "Incolla"
 
+msgid "Percent"
+msgstr "Percentuale"
+
 msgid "percent - unopened - finished last"
 msgstr "percentuale - non aperto - terminato per ultimo"
 
@@ -1092,14 +1272,14 @@ msgstr "Modalità mosaico verticale"
 msgid "Portrait mosaic: "
 msgstr "Mosaico verticale: "
 
-msgid "Position"
-msgstr "Posizione"
-
 msgid "Preset name"
 msgstr "Nome preset"
 
 msgid "Presets"
 msgstr "Preset"
+
+msgid "Zen Presets"
+msgstr "Zen Presets"
 
 msgid "Prev"
 msgstr "Indietro"
@@ -1109,6 +1289,12 @@ msgstr "Pagina precedente"
 
 msgid "Progress"
 msgstr "Progresso"
+
+msgid "Progress bar"
+msgstr "Barra di avanzamento"
+
+msgid "Progress labels"
+msgstr "Etichette avanzamento"
 
 msgid "Project: Title is not compatible with Zen UI."
 msgstr "Project: Title non è compatibile con Zen UI."
@@ -1131,6 +1317,9 @@ msgstr "Esci"
 msgid "Quit KOReader"
 msgstr "Chiudi KOReader"
 
+msgid "Quotes widget"
+msgstr "Widget citazioni"
+
 msgid "Rakuyomi"
 msgstr "Rakuyomi"
 
@@ -1152,12 +1341,6 @@ msgstr "letto oggi"
 msgid "Reader"
 msgstr "Lettore"
 
-msgid "Reader clock"
-msgstr "Orologio lettore"
-
-msgid "Reader clock font"
-msgstr "Font orologio lettore"
-
 msgid "Reader Progress"
 msgstr "Avanzamento di lettura"
 
@@ -1167,14 +1350,29 @@ msgstr "In lettura"
 msgid "reading"
 msgstr "in lettura"
 
-msgid "Rebooting…"
-msgstr "Riavvio in corso…"
+msgid "Reading goals"
+msgstr "Obiettivi di lettura"
+
+msgid "Reading stats widget"
+msgstr "Widget statistiche di lettura"
+
+msgid "Rebooting"
+msgstr "Riavvio in corso"
 
 msgid "Recently read"
 msgstr "Letto di recente"
 
+msgid "Recently read featured widget"
+msgstr "Widget in evidenza letti di recente"
+
+msgid "Recently read strip widget"
+msgstr "Widget striscia letti di recente"
+
 msgid "Red"
 msgstr "Rosso"
+
+msgid "Refresh"
+msgstr "Aggiorna"
 
 msgid "Refresh navbar"
 msgstr "Aggiorna barra di navigazione"
@@ -1184,6 +1382,9 @@ msgstr "Regular Oxford English"
 
 msgid "Regular Oxford English (203 MB)"
 msgstr "Regular Oxford English (203 MB)"
+
+msgid "Release metadata is invalid or incomplete."
+msgstr "I metadati della release non sono validi o sono incompleti."
 
 msgid "Remove"
 msgstr "Rimuovi"
@@ -1202,6 +1403,12 @@ msgstr "Rimuovi questo pulsante"
 
 msgid "Remove this folder from additional home folders?"
 msgstr "Rimuovere questa cartella dalle cartelle home aggiuntive?"
+
+msgid "Remove this tab"
+msgstr "Rimuovi questa scheda"
+
+msgid "Remove: "
+msgstr "Rimuovi: "
 
 msgid "Rename"
 msgstr "Rinomina"
@@ -1226,6 +1433,9 @@ msgstr "Ripristina la vista libreria al ritorno"
 
 msgid "Resume from page"
 msgstr "Riprendi dalla pagina"
+
+msgid "Reverse"
+msgstr "Inverti"
 
 msgid "Reverse sorting"
 msgstr "Ordinamento inverso"
@@ -1256,6 +1466,9 @@ msgstr "Il plugin RSS Reader non è installato."
 
 msgid "Save"
 msgstr "Salva"
+
+msgid "Save current home page as preset"
+msgstr "Salva home attuale come preset"
 
 msgid "Save current settings as preset"
 msgstr "Salva le impostazioni correnti come preset"
@@ -1289,6 +1502,9 @@ msgstr "Seleziona icona"
 
 msgid "Send with LocalSend"
 msgstr "Invia con LocalSend"
+
+msgid "Separator"
+msgstr "Separatore"
 
 msgid "Separator: "
 msgstr "Separatore: "
@@ -1326,6 +1542,9 @@ msgstr "Imposta il numero massimo di file da sincronizzare"
 msgid "Set sync folder"
 msgstr "Imposta la cartella di sincronizzazione"
 
+msgid "Settings"
+msgstr "Impostazioni"
+
 msgid "Settings & Updates"
 msgstr "Impostazioni e aggiornamenti"
 
@@ -1338,6 +1557,9 @@ msgstr "Short Oxford English"
 msgid "Short Oxford English (26 MB)"
 msgstr "Short Oxford English (26 MB)"
 
+msgid "Show author"
+msgstr "Mostra autore"
+
 msgid "Show author below cover (mosaic)"
 msgstr "Show author below cover (mosaic)"
 
@@ -1347,26 +1569,26 @@ msgstr "Mostra bordo inferiore"
 msgid "Show brightness slider"
 msgstr "Mostra cursore luminosità"
 
+msgid "Show description"
+msgstr "Mostra descrizione"
+
 msgid "Show favorite badge"
 msgstr "Mostra badge preferiti"
-
-msgid "Show folder covers as gallery"
-msgstr "Mostra le copertine delle cartelle come galleria"
 
 msgid "Show folder name"
 msgstr "Mostra nome cartella"
 
-msgid "Show folder name on cover"
-msgstr "Mostra il nome della cartella sulla copertina"
-
 msgid "Show hidden files"
 msgstr "Mostra file nascosti"
+
+msgid "Show in navbar"
+msgstr "Mostra nella barra di navigazione"
 
 msgid "Show in quick settings"
 msgstr "Mostra nelle impostazioni rapide"
 
-msgid "Show item count on folder covers"
-msgstr "Mostra conteggio elementi nelle copertine delle cartelle"
+msgid "Show item count"
+msgstr "Mostra numero elementi"
 
 msgid "Show item underline"
 msgstr "Mostra sottolineatura degli elementi"
@@ -1392,11 +1614,17 @@ msgstr "Mostra il numero di pagine"
 msgid "Show progress % on mosaic covers"
 msgstr "Mostra % avanzamento sulle copertine mosaico"
 
+msgid "Show separator"
+msgstr "Mostra separatore"
+
 msgid "Show series number on covers"
 msgstr "Mostra il numero di serie sulle copertine"
 
-msgid "Show spine lines on folder covers"
-msgstr "Mostra linee dorsale sulle copertine delle cartelle"
+msgid "Show spine lines"
+msgstr "Mostra linee dorso"
+
+msgid "Show strip item titles"
+msgstr "Mostra titoli elementi striscia"
 
 msgid "Show title below cover (mosaic)"
 msgstr "Show title below cover (mosaic)"
@@ -1404,8 +1632,14 @@ msgstr "Show title below cover (mosaic)"
 msgid "Show top border"
 msgstr "Mostra bordo superiore"
 
+msgid "Show top status bar"
+msgstr "Mostra barra di stato superiore"
+
 msgid "Show warmth slider"
 msgstr "Mostra cursore calore"
+
+msgid "Show widget title"
+msgstr "Mostra titolo widget"
 
 msgid "Show Wikipedia"
 msgstr "Mostra Wikipedia"
@@ -1464,14 +1698,20 @@ msgstr "Ordine di ordinamento"
 msgid "Sort series"
 msgstr "Ordina serie"
 
-msgid "Space only"
-msgstr "Solo spazio"
-
-msgid "Space only (small)"
-msgstr "Solo spazio (piccolo)"
-
 msgid "Stable"
 msgstr "Stable"
+
+msgid "Stack"
+msgstr "Pila"
+
+msgid "Stack effect (overlapping covers)"
+msgstr "Effetto pila (copertine sovrapposte)"
+
+msgid "Stat separators"
+msgstr "Separatori statistiche"
+
+msgid "Stat slot "
+msgstr "Slot statistica "
 
 msgid "Statistics"
 msgstr "Statistiche"
@@ -1491,6 +1731,9 @@ msgstr "Barra di stato"
 msgid "Status Bar"
 msgstr "Barra di stato"
 
+msgid "Status bar items"
+msgstr "Elementi barra di stato"
+
 msgid "Steps to reproduce, expected vs. actual behavior"
 msgstr "Passaggi per riprodurre, comportamento atteso vs. reale"
 
@@ -1499,6 +1742,9 @@ msgstr "Streak"
 
 msgid "Stream from page"
 msgstr "Flusso dalla pagina"
+
+msgid "Strip widgets"
+msgstr "Widget striscia"
 
 msgid "Styling"
 msgstr "Stile"
@@ -1563,11 +1809,20 @@ msgstr "Ora"
 msgid "Time Format"
 msgstr "Formato ora"
 
+msgid "Time to book end"
+msgstr "Tempo alla fine del libro"
+
 msgid "Title"
 msgstr "Titolo"
 
 msgid "To Be Read"
 msgstr "Da leggere"
+
+msgid "To Be Read featured widget"
+msgstr "Widget in evidenza Da leggere"
+
+msgid "To Be Read strip widget"
+msgstr "Widget striscia Da leggere"
 
 msgid "Today"
 msgstr "Oggi"
@@ -1575,8 +1830,17 @@ msgstr "Oggi"
 msgid "Too many requests. Please try again later."
 msgstr "Troppe richieste. Riprova più tardi."
 
+msgid "Top bar font"
+msgstr "Carattere barra superiore"
+
+msgid "Top status bar"
+msgstr "Barra di stato superiore"
+
 msgid "total books"
 msgstr "libri totali"
+
+msgid "Total pages"
+msgstr "Pagine totali"
 
 msgid "total pages read"
 msgstr "pagine totali lette"
@@ -1599,17 +1863,80 @@ msgstr "Sottolineatura sopra l'icona"
 msgid "Uniform covers"
 msgstr "Copertine uniformi"
 
+msgid "Unknown"
+msgstr "Sconosciuto"
+
+msgid "unknown"
+msgstr "sconosciuto"
+
+msgid "Unknown Author"
+msgstr "Autore sconosciuto"
+
 msgid "unknown error"
 msgstr "errore sconosciuto"
+
+msgid "Unnamed preset"
+msgstr "Preset senza nome"
 
 msgid "Unread"
 msgstr "Non letto"
 
+msgid "Update available"
+msgstr "Aggiornamento disponibile"
+
 msgid "Update available: "
 msgstr "Aggiornamento disponibile: "
 
+msgid "Update cancelled."
+msgstr "Aggiornamento annullato."
+
 msgid "Update channel"
 msgstr "Canale di aggiornamento"
+
+msgid "Update failed and rollback failed."
+msgstr "Aggiornamento fallito e ripristino fallito."
+
+msgid "Update failed: active plugin folder not found."
+msgstr "Aggiornamento fallito: cartella plugin attiva non trovata."
+
+msgid "Update failed: corrupted update package."
+msgstr "Aggiornamento fallito: pacchetto di aggiornamento corrotto."
+
+msgid "Update failed: could not activate new version."
+msgstr "Aggiornamento fallito: impossibile attivare la nuova versione."
+
+msgid "Update failed: could not create backup."
+msgstr "Aggiornamento fallito: impossibile creare il backup."
+
+msgid "Update failed: could not prepare staging area."
+msgstr "Aggiornamento fallito: impossibile preparare l'area temporanea."
+
+msgid "Update failed: could not restore previous plugin backup."
+msgstr "Aggiornamento fallito: impossibile ripristinare il backup precedente del plugin."
+
+msgid "Update failed: could not unpack update package."
+msgstr "Aggiornamento fallito: impossibile estrarre il pacchetto."
+
+msgid "Update failed: invalid package layout."
+msgstr "Aggiornamento fallito: struttura del pacchetto non valida."
+
+msgid "Update failed: missing checksum."
+msgstr "Aggiornamento fallito: checksum mancante."
+
+msgid "Update failed: network connection lost."
+msgstr "Aggiornamento fallito: connessione di rete persa."
+
+msgid "Update failed: new version is invalid."
+msgstr "Aggiornamento fallito: nuova versione non valida."
+
+msgid "Update failed: plugin directory is not writable."
+msgstr "Aggiornamento fallito: directory del plugin non scrivibile."
+
+msgid "Update failed: staged plugin validation failed."
+msgstr "Aggiornamento fallito: validazione del plugin preparato fallita."
+
+msgid "Update failed: timed out."
+msgstr "Aggiornamento fallito: tempo scaduto."
 
 msgid "Update now"
 msgstr "Aggiorna ora"
@@ -1622,9 +1949,6 @@ msgstr "Aggiornato a %1"
 
 msgid "Updates"
 msgstr "Aggiornamenti"
-
-msgid "Updating…"
-msgstr "Aggiornamento in corso…"
 
 msgid "USB"
 msgstr "USB"
@@ -1647,9 +1971,6 @@ msgstr "username"
 msgid "Verbose time to chapter end"
 msgstr "Tempo dettagliato alla fine del capitolo"
 
-msgid "Vertical bar"
-msgstr "Barra verticale"
-
 msgid "View"
 msgstr "Vista"
 
@@ -1662,11 +1983,26 @@ msgstr "Calore"
 msgid "Warmth schedule"
 msgstr "Pianificazione tonalità calda"
 
+msgid "Weekly pages goal"
+msgstr "Obiettivo pagine settimanale"
+
+msgid "Weekly pages goal: "
+msgstr "Obiettivo pagine settimanale: "
+
+msgid "Weekly time goal (min)"
+msgstr "Obiettivo tempo settimanale (min)"
+
+msgid "Weekly time goal (min): "
+msgstr "Obiettivo tempo settimanale (min): "
+
 msgid "Welcome to Zen UI"
 msgstr "Benvenuto in Zen UI"
 
 msgid "What should your device show when it goes to sleep?"
 msgstr "Cosa dovrebbe mostrare il tuo dispositivo durante il riposo?"
+
+msgid "What's changed"
+msgstr "Cosa è cambiato"
 
 msgid "What's New"
 msgstr "Novità"
@@ -1674,11 +2010,20 @@ msgstr "Novità"
 msgid "When enabled, icons placed in KOReader's user icons folder override the bundled Zen UI icons. Falls back to Zen UI icons, then KOReader built-ins."
 msgstr "Se attivato, le icone nella cartella icone utente di KOReader sostituiscono le icone Zen UI incluse. Se non disponibili, vengono usate le icone Zen UI, poi quelle predefinite di KOReader."
 
+msgid "When enabled, search matches whole words only. When disabled, substring matching is used (e.g., 'fish' matches 'fishing')."
+msgstr "Se attivato, la ricerca trova solo parole intere. Se disattivato, usa corrispondenze parziali (es. 'fish' trova 'fishing')."
+
 msgid "Which time format do you prefer?"
 msgstr "Quale formato ora preferisci?"
 
+msgid "White"
+msgstr "Bianco"
+
 msgid "Wi-Fi"
 msgstr "Wi-Fi"
+
+msgid "Widgets"
+msgstr "Widget"
 
 msgid "You're All Set"
 msgstr "Sei pronto"
@@ -1694,6 +2039,9 @@ msgstr "Zen"
 
 msgid "Zen highlight menu"
 msgstr "Menu evidenziazione Zen"
+
+msgid "Zen icon - black background"
+msgstr "Icona Zen - sfondo nero"
 
 msgid "Zen icon - white background"
 msgstr "Icona Zen — sfondo bianco"

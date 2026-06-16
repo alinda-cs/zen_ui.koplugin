@@ -23,7 +23,7 @@ local function apply_browser_list_item_layout()
     local VerticalSpan = require("ui/widget/verticalspan")
     local filemanagerutil = require("apps/filemanager/filemanagerutil")
     local book_status = require("common/book_status")
-    local library_font = require("common/library_font")
+    local library_font = require("modules/filebrowser/patches/library_font")
     local util = require("util")
     local zen_utils = require("common/utils")
     local _ = require("gettext")
@@ -426,10 +426,7 @@ local function apply_browser_list_item_layout()
             local series_index = (not bookinfo.ignore_meta and bookinfo.series_index)
 
             title   = title   and BD.auto(title)   or BD.filename(filename_without_suffix)
-            if title and #title > 60 then
-                title = title:sub(1, 60)
-                title = util.fixUtf8(title, "") .. "…"
-            end
+            title = zen_utils.truncateUtf8(title, 61, "…")
             authors = authors and BD.auto(authors)
 
             local series_str

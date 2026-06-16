@@ -450,6 +450,8 @@ local function apply_browser_cover_badges()
                     -- Border drawn 2px outside fill; adapts to badge color
                     paintPentagon(bb, bdg_x - 2, bdg_y - 2, bw + 4, bh + 4, badge_fg)
                     paintPentagon(bb, bdg_x, bdg_y, bw, bh, utils.getBadgeColor(_plugin and _plugin.config))
+                    local cover_border_color = target.color or target.bordercolor or Blitbuffer.COLOR_BLACK
+                    bb:paintRect(bdg_x - 2, bdg_y - 2, bw + 4, math.max(1, border), cover_border_color)
 
                     local rect_h = math.floor(bh * 30 / 42)
                     -- Inner icon/text area with a little padding
@@ -519,7 +521,7 @@ local function apply_browser_cover_badges()
                     end
                     -- Repaint cover border so pentagon never obscures it
                     if border > 0 then
-                        local bclr = target.bordercolor or Blitbuffer.COLOR_BLACK
+                        local bclr = cover_border_color
                         bb:paintRect(cover_left, target.dimen.y, target.dimen.w, border, bclr)
                         bb:paintRect(cover_left + target.dimen.w - border, target.dimen.y, border, bh + 4, bclr)
                     end

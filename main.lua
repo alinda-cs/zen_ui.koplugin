@@ -103,14 +103,14 @@ local function is_enabled(config, path)
         return true
     end
     local node = config
-    for _, key in ipairs(path) do
+    for _i, key in ipairs(path) do
         node = node and node[key]
     end
     return node == true
 end
 
 function ZenUI:_initModules()
-    for _, def in ipairs(registry) do
+    for _i, def in ipairs(registry) do
         if is_enabled(self.config, def.setting) then
             local ok, module = pcall(require, def.file)
             if ok and module and module.init then
@@ -147,14 +147,9 @@ function ZenUI:init()
 
     -- First-run: backup user's original screensaver settings as a preset.
     if not self.config._meta.screensaver_backup_created then
-        if type(self.config.sleep_screen) ~= "table" then
-            self.config.sleep_screen = { presets = {}, active_preset = nil }
-        end
-        if type(self.config.sleep_screen.presets) ~= "table" then
-            self.config.sleep_screen.presets = {}
-        end
+        local PresetStore = require("config/preset_store")
         local backup = {
-            name = "Backup of Original",
+            name = "backup",
             screensaver_type = G_reader_settings:readSetting("screensaver_type"),
             screensaver_message = G_reader_settings:readSetting("screensaver_message"),
             screensaver_show_message = G_reader_settings:isTrue("screensaver_show_message"),
@@ -163,7 +158,9 @@ function ZenUI:init()
             screensaver_stretch_images = G_reader_settings:isTrue("screensaver_stretch_images"),
             screensaver_stretch_limit_percentage = G_reader_settings:readSetting("screensaver_stretch_limit_percentage"),
         }
-        table.insert(self.config.sleep_screen.presets, 1, backup)
+        PresetStore.save("screensaver", backup.name, backup)
+        PresetStore.saveSettings("screensaver", backup)
+        PresetStore.setActivePreset("screensaver", backup.name)
         self.config._meta.screensaver_backup_created = true
         self:saveConfig()
     end
@@ -172,17 +169,22 @@ function ZenUI:init()
     if not self.config._meta.footer_backup_created then
         local footer_settings = G_reader_settings:readSetting("footer")
         if footer_settings then
+            local PresetStore = require("config/preset_store")
             local util = require("util")
             if type(self.config.reader_footer) ~= "table" then
                 self.config.reader_footer = {}
             end
-            self.config.reader_footer.backup_preset = {
+            local backup = {
                 name = "Backup of Original",
+                builtin = true,
                 footer = util.tableDeepCopy(footer_settings),
                 reader_footer_mode = G_reader_settings:readSetting("reader_footer_mode") or 1,
                 reader_footer_custom_text = G_reader_settings:readSetting("reader_footer_custom_text") or "KOReader",
                 reader_footer_custom_text_repetitions = G_reader_settings:readSetting("reader_footer_custom_text_repetitions") or 1,
             }
+            PresetStore.save("reader", backup.name, backup)
+            PresetStore.saveSettings("reader", backup)
+            PresetStore.setActivePreset("reader", backup.name)
             self.config._meta.footer_backup_created = true
             self:saveConfig()
         end
@@ -247,6 +249,16 @@ function ZenUI:init()
 
         local current_ver = get_plugin_version()
         local shown_ver   = self.config._meta.quickstart_shown_for_version
+
+        -- Normalize sentinel set by manager.lua for existing installs that
+        -- predated the quickstart feature. Persisting current_ver prevents
+        -- false-positive install and update screens on subsequent boots.
+        if shown_ver == "pre-quickstart" then
+            shown_ver = current_ver
+            self.config._meta.quickstart_shown_for_version = current_ver
+            self:saveConfig()
+        end
+
         local updater_cfg = (type(self.config.updater) == "table") and self.config.updater or nil
 
         -- One-shot flag written by zen_updater before restart; takes priority
@@ -272,7 +284,7 @@ function ZenUI:init()
             "is_update=", is_update,
             "channel=", update_channel)
         if shown_ver == false then
-            local ok_pages, pages_mod = pcall(require, "common/quickstart_pages")
+            local ok_pages, pages_mod = pcall(require, "common/quickstart/quickstart_pages")
             if ok_pages then
                 pages_to_show = pages_mod.build_install_pages({
                     plugin = self,
@@ -280,7 +292,7 @@ function ZenUI:init()
                 })
             end
         elseif is_update then
-            local ok_pages, pages_mod = pcall(require, "common/quickstart_pages")
+            local ok_pages, pages_mod = pcall(require, "common/quickstart/quickstart_pages")
             if ok_pages then
                 -- Strip beta suffix (e.g. "1.0.4-beta2" -> "1.0.4") for changelog lookup.
                 local stable_ver = current_ver:match("^([%d%.]+)")
@@ -296,7 +308,7 @@ function ZenUI:init()
             self:saveConfig()
 
             require("ui/uimanager"):scheduleIn(0.5, function()
-                local ok_qs, QuickstartScreen = pcall(require, "common/quickstart_screen")
+                local ok_qs, QuickstartScreen = pcall(require, "common/quickstart/quickstart_screen")
                 if not ok_qs then return end
                 require("ui/uimanager"):show(QuickstartScreen:new{
                     pages    = pages_to_show,
@@ -350,7 +362,7 @@ function ZenUI:init()
             logger.info("ZenUI update splash: scheduling for version", current_ver, "pages_to_show=", pages_to_show and #pages_to_show or 0)
             require("ui/uimanager"):scheduleIn(0.5, function()
                 logger.info("ZenUI update splash: timer fired, requiring zen_screen")
-                local ok_zs, ZenScreen = pcall(require, "common/zen_screen")
+                local ok_zs, ZenScreen = pcall(require, "common/ui/zen_screen")
                 if not ok_zs then
                     logger.warn("ZenUI update splash: failed to load zen_screen:", ZenScreen)
                     return
@@ -364,7 +376,7 @@ function ZenUI:init()
                     on_close  = function()
                         logger.info("ZenUI update splash: closed, pages_to_show=", pages_to_show and #pages_to_show or 0)
                         if pages_to_show and #pages_to_show > 0 then
-                            local ok_qs, QuickstartScreen = pcall(require, "common/quickstart_screen")
+                            local ok_qs, QuickstartScreen = pcall(require, "common/quickstart/quickstart_screen")
                             if not ok_qs then
                                 logger.warn("ZenUI update splash: failed to load quickstart_screen:", QuickstartScreen)
                                 return
@@ -380,11 +392,11 @@ function ZenUI:init()
         end
     end
 
-    -- Inject Zen UI tab after QuickSettings and a Home tab at the far right.
+    -- Inject Zen UI and Library tabs around Quick Settings.
     -- Patches setUpdateItemTable once per class so it persists across menu rebuilds.
     local function find_quicksettings_pos(tab_table)
         for i, tab in ipairs(tab_table) do
-            for _, field in ipairs({ "id", "name", "icon" }) do
+            for _i, field in ipairs({ "id", "name", "icon" }) do
                 local v = tab[field]
                 if type(v) == "string" then
                     local norm = v:lower():gsub("[%s_%-]+", "")
@@ -397,7 +409,90 @@ function ZenUI:init()
         return nil
     end
 
-    -- Last tab is pushed to far-right by TouchMenuBar's stretch spacer.
+    local function take_quicksettings_tab(tab_table)
+        local qs_pos = find_quicksettings_pos(tab_table)
+        if not qs_pos then return nil, nil end
+        return qs_pos, table.remove(tab_table, qs_pos)
+    end
+
+    local function zen_panel_hidden()
+        local _cfg = _zen_plugin_ref and _zen_plugin_ref.config
+        local _lc = _cfg and _cfg.lockdown
+        local _ft = _cfg and _cfg.features
+        return type(_lc) == "table" and _lc.disable_settings_panel == true
+            and type(_ft) == "table" and _ft.lockdown_mode == true
+    end
+
+    local function flip_lh_rh_icons()
+        local _cfg = _zen_plugin_ref and _zen_plugin_ref.config
+        local _qs = _cfg and _cfg.quick_settings
+        if type(_qs) == "table" and _qs.flip_lh_rh_icon ~= nil then
+            return _qs.flip_lh_rh_icon == true
+        end
+        local _menu = _cfg and _cfg.menu
+        return type(_menu) == "table" and _menu.flip_lh_rh_icons == true
+    end
+
+    local function library_home_icon()
+        local _cfg = _zen_plugin_ref and _zen_plugin_ref.config
+        local _menu = _cfg and _cfg.menu
+        local icon = type(_menu) == "table" and _menu.library_home_icon
+        return (type(icon) == "string" and icon ~= "") and icon or "library"
+    end
+
+    local function remove_zen_menu_tabs(m_self)
+        for i = #m_self.tab_item_table, 1, -1 do
+            local tab = m_self.tab_item_table[i]
+            if tab == m_self._zen_tab_item or tab == m_self._zen_home_tab_item then
+                table.remove(m_self.tab_item_table, i)
+            end
+        end
+    end
+
+    local function insert_zen_menu_tabs(m_self, panel_hidden)
+        local qs_pos, qs_tab = take_quicksettings_tab(m_self.tab_item_table)
+        if qs_pos and not m_self._zen_qs_insert_pos then
+            m_self._zen_qs_insert_pos = qs_pos
+        end
+        local insert_pos = m_self._zen_qs_insert_pos or qs_pos or 1
+        insert_pos = math.min(insert_pos, #m_self.tab_item_table + 1)
+        if flip_lh_rh_icons() then
+            table.insert(m_self.tab_item_table, insert_pos, m_self._zen_home_tab_item)
+            if not panel_hidden then
+                table.insert(m_self.tab_item_table, insert_pos + 1, m_self._zen_tab_item)
+            end
+            if qs_tab then
+                -- Last tab is pushed to far-right by TouchMenuBar's stretch spacer.
+                table.insert(m_self.tab_item_table, qs_tab)
+            end
+        else
+            if qs_tab then
+                table.insert(m_self.tab_item_table, insert_pos, qs_tab)
+            end
+            if not panel_hidden then
+                table.insert(m_self.tab_item_table,
+                    qs_tab and (insert_pos + 1) or insert_pos, m_self._zen_tab_item)
+            end
+            -- Last tab is pushed to far-right by TouchMenuBar's stretch spacer.
+            table.insert(m_self.tab_item_table, m_self._zen_home_tab_item)
+        end
+    end
+
+    local function refresh_zen_menu_tabs(m_self)
+        if type(m_self.tab_item_table) ~= "table" or not m_self._zen_home_tab_item then return end
+        local panel_hidden = zen_panel_hidden()
+        m_self._zen_home_tab_item.icon = library_home_icon()
+        if not panel_hidden then
+            if not m_self._zen_tab_item then
+                m_self._zen_tab_item = zen_settings.build(_zen_plugin_ref).sub_item_table
+                m_self._zen_tab_item.id = "zen_ui"
+            end
+            m_self._zen_tab_item.icon = zen_updater.has_update() and "zen_ui_update" or "zen_settings"
+        end
+        remove_zen_menu_tabs(m_self)
+        insert_zen_menu_tabs(m_self, panel_hidden)
+    end
+
     local function inject_zen_tab(menu_class)
         if not menu_class or menu_class.__zen_ui_tab_patched then return end
         menu_class.__zen_ui_tab_patched = true
@@ -413,23 +508,12 @@ function ZenUI:init()
                 end
             end
             _zen_menu_instances[m_self] = true
-            -- Insert Zen UI tab right after quicksettings.
-            local zen_items = zen_settings.build(_zen_plugin_ref).sub_item_table
-            -- Hide the zen tab if lockdown hides the settings panel.
-            local _lc = _zen_plugin_ref.config and _zen_plugin_ref.config.lockdown
-            local _ft = _zen_plugin_ref.config and _zen_plugin_ref.config.features
-            local _panel_hidden = type(_lc) == "table" and _lc.disable_settings_panel == true
-                and type(_ft) == "table" and _ft.lockdown_mode == true
+            local _panel_hidden = zen_panel_hidden()
             if not _panel_hidden then
-                zen_items.icon = zen_updater.has_update() and "zen_ui_update" or "zen_settings"
-                -- store so onShowMenu can refresh the icon on every open
-                m_self._zen_tab_item = zen_items
-                local qs_pos = find_quicksettings_pos(m_self.tab_item_table)
-                local insert_pos = qs_pos and (qs_pos + 1) or 1
-                table.insert(m_self.tab_item_table, insert_pos, zen_items)
+                m_self._zen_tab_item = zen_settings.build(_zen_plugin_ref).sub_item_table
+                m_self._zen_tab_item.id = "zen_ui"
             end
-            -- Append Home tab at the far right (stretched position).
-            local home_tab = { icon = "library", remember = false }
+            local home_tab = { id = "zen_library_home", icon = library_home_icon(), remember = false }
             home_tab.callback = function()
                 require("ui/uimanager"):scheduleIn(0, function()
                     local UIManager = require("ui/uimanager")
@@ -443,37 +527,43 @@ function ZenUI:init()
                     local restore = type(_feat) == "table" and _feat.restore_library_view == true
                     if ui.document then
                         local file = ui.document.file
+                        local outside_home = file and not paths.isInHomeDir(file)
                         ui:handleEvent(require("ui/event"):new("CloseConfigMenu"))
                         ui:onClose()
                         if type(ui.showFileManager) == "function" then
+                            if not restore and not outside_home then
+                                _G.__ZEN_UI_FORCE_DEFAULT_LIBRARY_TAB = true
+                            end
+                            if outside_home then
+                                _G.__ZEN_UI_KEEP_BOOK_LOCATION = true
+                            end
                             ui:showFileManager(file)
                         end
                     else
                         local fm = require("apps/filemanager/filemanager").instance
                         if fm then require("common/utils").closeWidgetsAbove(fm) end
-                        if not restore then
-                            -- Go to library root (page 1), ignoring current folder depth.
+                        local open_default = rawget(_G, "__ZEN_UI_NAVBAR_OPEN_DEFAULT_TAB")
+                        if type(open_default) == "function" then
+                            open_default()
+                        else
                             local home_dir = require("common/paths").getHomeDir()
                             if fm and fm.file_chooser and home_dir then
                                 fm.file_chooser.path_items[home_dir] = nil
                                 fm.file_chooser:changeToPath(home_dir)
                             end
-                        elseif type(ui.onHome) == "function" then
-                            ui:onHome()
                         end
                     end
                 end)
             end
-            table.insert(m_self.tab_item_table, home_tab)
+            m_self._zen_home_tab_item = home_tab
+            refresh_zen_menu_tabs(m_self)
         end
         -- Refresh the zen tab icon on every menu open so it reflects the
         -- current update state without needing a full tab_item_table rebuild.
         local orig_show = menu_class.onShowMenu
         if type(orig_show) == "function" then
             menu_class.onShowMenu = function(m_self, ...)
-                if m_self._zen_tab_item then
-                    m_self._zen_tab_item.icon = zen_updater.has_update() and "zen_ui_update" or "zen_settings"
-                end
+                refresh_zen_menu_tabs(m_self)
                 return orig_show(m_self, ...)
             end
         end
@@ -526,7 +616,21 @@ function ZenUI:onSuspend()
     zen_updater.cancel_wakeup_check()
 end
 
+local function close_zen_standalone_views(shared)
+    if type(shared) ~= "table" then return end
+    for _i, key in ipairs({ "group_view", "home" }) do
+        local view = shared[key]
+        if view and type(view.closeAll) == "function" then
+            local ok, err = pcall(view.closeAll)
+            if not ok then
+                logger.warn("zen-ui: failed to close standalone view", key, err)
+            end
+        end
+    end
+end
+
 function ZenUI:onCloseWidget()
+    close_zen_standalone_views(self._zen_shared)
     i18n.uninstall()
 end
 
@@ -536,18 +640,19 @@ function ZenUI:deletePluginSettings()
     zen_updater.cancel_wakeup_check()
     zen_updater._on_update_found = nil
 
+    -- Delete the dedicated settings folder.
+    pcall(function()
+        require("config/preset_store").removeAll()
+    end)
+
+    -- Also clean up any legacy G_reader_settings key left from before the
+    -- file-based migration completed (e.g., plugin disabled mid-boot).
     local gs = rawget(_G, "G_reader_settings")
-    if not gs or type(gs.delSetting) ~= "function" then
-        return true
+    if gs and type(gs.delSetting) == "function" then
+        pcall(gs.delSetting, gs, ConfigManager.key())
+        pcall(gs.flush, gs)
     end
 
-    local function remove_key(key_name)
-        if type(key_name) ~= "string" or key_name == "" then return end
-        pcall(gs.delSetting, gs, key_name)
-    end
-
-    remove_key(ConfigManager.key())
-    pcall(gs.flush, gs)
     logger.info("ZenUI: deletePluginSettings completed")
     return true
 end

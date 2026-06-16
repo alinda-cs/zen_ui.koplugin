@@ -11,7 +11,7 @@
 local function apply_menu_font()
     local logger = require("logger")
     local Font = require("ui/font")
-    local library_font = require("common/library_font")
+    local library_font = require("modules/filebrowser/patches/library_font")
     local font_name = library_font.getFontName()
 
     logger.dbg("ZenUI menu_font: library_font.getFontName() =", font_name)

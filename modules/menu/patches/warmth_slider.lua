@@ -20,8 +20,8 @@ local TextWidget      = require("ui/widget/textwidget")
 local UIManager       = require("ui/uimanager")
 local VerticalGroup   = require("ui/widget/verticalgroup")
 local VerticalSpan    = require("ui/widget/verticalspan")
-local ZenSlider       = require("common/zen_slider")
-local library_font    = require("common/library_font")
+local ZenSlider       = require("common/ui/zen_slider")
+local library_font    = require("modules/filebrowser/patches/library_font")
 local _               = require("gettext")
 local Screen          = Device.screen
 

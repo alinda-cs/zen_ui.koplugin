@@ -35,11 +35,10 @@ function M.isHomeRoot(path)
     local home = M.getHomeDir()
     if home and norm == home then return true end
 
-    local g = rawget(_G, "G_reader_settings")
-    local zen_cfg = g and g:readSetting("zen_ui_config")
+    local zen_cfg = require("config/manager").get()
     local extra = type(zen_cfg) == "table" and zen_cfg.additional_home_dirs
     if type(extra) == "table" then
-        for _, dir in ipairs(extra) do
+        for _i, dir in ipairs(extra) do
             local d = M.normPath(dir:gsub("/*$", ""))
             if d ~= "" and norm == d then return true end
         end
@@ -60,11 +59,10 @@ function M.isInHomeDir(path)
     end
 
     -- Check additional home dirs from zen config.
-    local g = rawget(_G, "G_reader_settings")
-    local zen_cfg = g and g:readSetting("zen_ui_config")
+    local zen_cfg = require("config/manager").get()
     local extra = type(zen_cfg) == "table" and zen_cfg.additional_home_dirs
     if type(extra) == "table" then
-        for _, dir in ipairs(extra) do
+        for _i, dir in ipairs(extra) do
             local d = M.normPath(dir:gsub("/*$", ""))
             if d ~= "" and (norm == d or norm:sub(1, #d + 1) == d .. "/") then
                 return true

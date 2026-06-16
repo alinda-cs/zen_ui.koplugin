@@ -75,15 +75,19 @@ local defaults = {
             collections = false,
             authors = true,
             series = true,
+            home = true,
             stats = false,
             exit = false,
             page_left = false,
             page_right = false,
             menu = false,
         },
-        tab_order = { "page_left", "books", "manga", "news", "authors", "series", "continue", "favorites", "history", "collections", "stats", "exit", "page_right", "menu" },
+        tab_order = { "page_left", "books", "manga", "news", "authors", "series", "home", "continue", "favorites", "history", "collections", "stats", "exit", "page_right", "menu" },
+        show_icons = true,
         show_labels = true,
         books_label = "Library",
+        home_label = "Home",
+        default_tab = "home",
         manga_action = "rakuyomi",
         manga_folder = "",
         news_action = "quickrss",
@@ -94,7 +98,7 @@ local defaults = {
         active_tab_bold = false,
         active_tab_underline = true,
         underline_above = false,
-        show_top_border = true,
+        show_top_border = false,
     },
     quick_settings = {
         button_order = { "wifi", "night", "rotate", "zen", "lockdown", "usb", "search", "quickrss", "cloud", "zlibrary", "calibre", "notion", "streak", "opds", "filebrowser", "restart", "exit", "sleep" },
@@ -120,6 +124,8 @@ local defaults = {
         },
         show_frontlight = true,
         show_warmth = true,
+        flip_lh_rh_icon = false,
+        rotate_action = "cycle",
     },
     status_bar = {
         custom_text = " ",
@@ -188,11 +194,11 @@ local defaults = {
         separator_key    = "small-space",
         custom_separator = "  ",
         custom_text      = "",
+        show_bottom_border = false,
     },
     reader_footer = {
         verbose_chapter_time = false,
         hide_in_cbz = false,
-        backup_preset = nil,
     },
     highlight_lookup = {
         allow_unknown_items = false,
@@ -221,10 +227,6 @@ local defaults = {
         night_h     = 20,
         night_m     = 0,
         night_value = 5,
-    },
-    sleep_screen = {
-        presets = {},           -- { { name=…, screensaver_type=…, … }, … }
-        active_preset = nil,   -- name of currently active preset, or nil
     },
     stats_page = {
         rows = { "today", "this_month", "this_year", "all_time", "library" },

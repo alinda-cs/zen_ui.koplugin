@@ -61,7 +61,7 @@ local function apply_mosaic_title_strip()
     local Blitbuffer = require("ffi/blitbuffer")
     local TextWidget = require("ui/widget/textwidget")
     local BD         = require("ui/bidi")
-    local library_font = require("common/library_font")
+    local library_font = require("modules/filebrowser/patches/library_font")
 
     local TITLE_FONT  = library_font.scaleValue(16)
     local AUTHOR_FONT = library_font.scaleValue(13)
@@ -120,6 +120,10 @@ local function apply_mosaic_title_strip()
             self._zen_strip_bb:free()
             self._zen_strip_bb = nil
         end
+        if self._zen_strip_tw then
+            self._zen_strip_tw:free()
+            self._zen_strip_tw = nil
+        end
         orig_update(self)
         if not _in_init then
             self.height = self.height + STRIP_H
@@ -165,27 +169,23 @@ local function apply_mosaic_title_strip()
             if self.is_directory then
                 local folder_name = self.text and self.text:gsub("/$", "") or ""
                 if folder_name == "" then return end
-                -- Render and cache the directory name strip on first paint.
-                if not self._zen_strip_bb then
-                    local strip_w  = self.width
-                    local strip_bb = Blitbuffer.new(strip_w, STRIP_H, bb:getType())
-                    strip_bb:fill(Blitbuffer.COLOR_WHITE)
-                    local tw = TextWidget:new{
+                -- Render folder name directly to avoid white strip covering cover border.
+                if not self._zen_strip_tw then
+                    self._zen_strip_tw = TextWidget:new{
                         text                   = BD.auto(folder_name),
                         face                   = library_font.getFace(TITLE_FONT),
                         bold                   = true,
                         padding                = 0,
                         fgcolor                = Blitbuffer.COLOR_BLACK,
-                        max_width              = strip_w - 2 * PAD_H,
+                        max_width              = self.width - 2 * PAD_H,
                         truncate_with_ellipsis = true,
                     }
-                    local tsz = tw:getSize()
-                    tw:paintTo(strip_bb, math.floor((strip_w - tsz.w) / 2),
-                        math.floor((STRIP_H - tsz.h) / 2))
-                    tw:free()
-                    self._zen_strip_bb = strip_bb
                 end
-                bb:blitFrom(self._zen_strip_bb, x, y + self.height - STRIP_H, 0, 0, self.width, STRIP_H)
+                local tsz = self._zen_strip_tw:getSize()
+                local strip_y = y + self.height - STRIP_H
+                self._zen_strip_tw:paintTo(bb,
+                    x + math.floor((self.width - tsz.w) / 2),
+                    strip_y + math.floor((STRIP_H - tsz.h) / 2))
                 return
             end
 

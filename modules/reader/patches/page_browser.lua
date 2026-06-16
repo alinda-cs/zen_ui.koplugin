@@ -84,6 +84,273 @@ local function apply_page_browser()
         return G_reader_settings:readSetting("substring_search") ~= false  -- default: substring (whole-word off)
     end
 
+    rawset(_G, "__ZEN_UI_BUILD_PAGE_BROWSER_PREVIEW", function(slot_w, slot_h)
+        local Blitbuffer      = require("ffi/blitbuffer")
+        local Device          = require("device")
+        local Font            = require("ui/font")
+        local Geom            = require("ui/geometry")
+        local IconWidget      = require("ui/widget/iconwidget")
+        local TextWidget      = require("ui/widget/textwidget")
+        local FrameContainer  = require("ui/widget/container/framecontainer")
+        local CenterContainer = require("ui/widget/container/centercontainer")
+        local HorizontalGroup = require("ui/widget/horizontalgroup")
+        local VerticalGroup   = require("ui/widget/verticalgroup")
+        local VerticalSpan    = require("ui/widget/verticalspan")
+        local OverlapGroup    = require("ui/widget/overlapgroup")
+        local LineWidget      = require("ui/widget/linewidget")
+        local ZenSlider       = require("common/ui/zen_slider")
+        local Screen          = Device.screen
+
+        local canvas = Blitbuffer.new(slot_w, slot_h, Blitbuffer.TYPE_BB8)
+        canvas:fill(Blitbuffer.COLOR_WHITE)
+
+        local function paint_icon(icon_name, file_path, x, y, size)
+            local icon = IconWidget:new{
+                file   = file_path,
+                icon   = file_path and nil or icon_name,
+                width  = size,
+                height = size,
+            }
+            icon:paintTo(canvas, x, y)
+            icon:free()
+        end
+
+        local title_h = Screen:scaleBySize(54)
+        local btn_sz  = Screen:scaleBySize(32)
+        local btn_pad = Screen:scaleBySize(11)
+        local slot_btn_w = btn_sz + btn_pad * 2
+        local title_y = math.floor((title_h - btn_sz) / 2)
+        canvas:paintRect(0, title_h - 1, slot_w, 1, Blitbuffer.COLOR_LIGHT_GRAY)
+        paint_icon("chevron.left", nil, btn_pad, title_y, btn_sz)
+
+        local toc_icon_path = _icons_dir and utils.resolveIcon(_icons_dir, "toc")
+        local right_icons = {
+            { icon = "appbar.search" },
+            { icon = "appbar.textsize" },
+            { icon = "bookmark" },
+            { icon = "appbar.navigation", file = toc_icon_path },
+        }
+        for _i, def in ipairs(right_icons) do
+            local x = slot_w - slot_btn_w * _i + btn_pad
+            paint_icon(def.icon, def.file, x, title_y, btn_sz)
+        end
+
+        local icon_size            = Screen:scaleBySize(24)
+        local skip_icon_size       = Screen:scaleBySize(36)
+        local icon_pad_h           = Screen:scaleBySize(20)
+        local icon_pad_v           = Screen:scaleBySize(10)
+        local panel_pad_v          = Screen:scaleBySize(6)
+        local panel_pad_btn        = Screen:scaleBySize(12)
+        local panel_pad_top        = Screen:scaleBySize(6)
+        local panel_pad_bottom     = Screen:scaleBySize(12)
+        local knob_r               = Screen:scaleBySize(16.5)
+        local slider_h             = knob_r * 2 + Screen:scaleBySize(6)
+        local label_face           = Font:getFace("cfont", 18)
+        local measure_label        = TextWidget:new{ text = "Chapter 1", face = label_face, padding = 0 }
+        local label_h              = measure_label:getSize().h
+        measure_label:free()
+        local btn_toggle_h         = icon_size + icon_pad_v * 2 + Screen:scaleBySize(2) * 2
+        local btn_skip_h           = skip_icon_size + icon_pad_v * 2
+        local btn_h                = math.max(btn_toggle_h, btn_skip_h)
+        local panel_h              = panel_pad_top + panel_pad_v + panel_pad_btn
+            + label_h + slider_h + btn_h + panel_pad_bottom
+
+        local top_pad = Screen:scaleBySize(6)
+        local grid_top = title_h + top_pad
+        local panel_top = math.max(grid_top, slot_h - panel_h)
+        local grid_h = math.max(Screen:scaleBySize(80), panel_top - grid_top)
+        local layout = get_page_browser_layout()
+
+        local badge_face = Font:getFace("cfont", 13)
+        local function paint_pill(bx, by, bw, bh, color)
+            local r = bh / 2
+            for row = 0, bh - 1 do
+                local dy = math.abs(row + 0.5 - r)
+                local dx = math.sqrt(math.max(0, r * r - dy * dy))
+                local x0 = math.ceil(bx + r - dx)
+                local x1 = math.floor(bx + bw - r + dx)
+                local w  = x1 - x0
+                if w > 0 then canvas:paintRect(x0, by + row, w, 1, color) end
+            end
+        end
+        local function paint_badge(page_num, bx, by, bw, bh)
+            local label = TextWidget:new{
+                text    = tostring(page_num),
+                face    = badge_face,
+                fgcolor = Blitbuffer.COLOR_WHITE,
+                padding = 0,
+            }
+            local sz = label:getSize()
+            local pv = Screen:scaleBySize(2)
+            local ph = Screen:scaleBySize(4)
+            local h = sz.h + 2 * pv
+            local w = math.max(sz.w + 2 * ph, h)
+            local x = bx + math.floor((bw - w) / 2)
+            local y = by + bh - h - Screen:scaleBySize(3)
+            paint_pill(x, y, w, h, Blitbuffer.gray(0x33))
+            label:paintTo(canvas, x + math.floor((w - sz.w) / 2), y + math.floor((h - sz.h) / 2))
+            label:free()
+        end
+        local function paint_page(page_num, cell_x, cell_y, cell_w, cell_h)
+            local page_h = math.floor(cell_h * 0.92)
+            local page_w = math.floor(page_h * 0.70)
+            if page_w > cell_w * 0.86 then
+                page_w = math.floor(cell_w * 0.86)
+                page_h = math.floor(page_w / 0.70)
+            end
+            local x = cell_x + math.floor((cell_w - page_w) / 2)
+            local y = cell_y + math.floor((cell_h - page_h) / 2)
+            canvas:paintRect(x, y, page_w, page_h, Blitbuffer.COLOR_WHITE)
+            canvas:paintBorder(x, y, page_w, page_h, Screen:scaleBySize(1), Blitbuffer.COLOR_DARK_GRAY, 0)
+            local line_h = math.max(1, Screen:scaleBySize(2))
+            local line_gap = Screen:scaleBySize(8)
+            local text_w = math.floor(page_w * 0.62)
+            local text_x = x + math.floor(page_w * 0.18)
+            local text_y = y + math.floor(page_h * 0.18)
+            for i = 0, 5 do
+                local w = (i % 3 == 2) and math.floor(text_w * 0.72) or text_w
+                canvas:paintRect(text_x, text_y + i * line_gap, w, line_h, Blitbuffer.COLOR_LIGHT_GRAY)
+            end
+            paint_badge(page_num, x, y, page_w, page_h)
+        end
+
+        if layout == "single" then
+            paint_page(42, 0, grid_top, slot_w, grid_h)
+        else
+            local cols, rows = 3, 2
+            local gap = Screen:scaleBySize(8)
+            local margin_x = Screen:scaleBySize(14)
+            local cell_w = math.floor((slot_w - 2 * margin_x - (cols - 1) * gap) / cols)
+            local cell_h = math.floor((grid_h - (rows - 1) * gap) / rows)
+            local first_page = 40
+            for row = 0, rows - 1 do
+                for col = 0, cols - 1 do
+                    local idx = row * cols + col
+                    paint_page(first_page + idx, margin_x + col * (cell_w + gap),
+                        grid_top + row * (cell_h + gap), cell_w, cell_h)
+                end
+            end
+        end
+
+        local slider_w = math.floor(slot_w * 0.70)
+        local chapter_label = TextWidget:new{
+            text      = "Chapter 1",
+            face      = label_face,
+            max_width = slider_w,
+            padding   = 0,
+        }
+        local slider = ZenSlider:new{
+            width     = slider_w,
+            value     = 42,
+            value_min = 1,
+            value_max = 240,
+        }
+
+        local grid_slide_path = _icons_dir and utils.resolveIcon(_icons_dir, "grid_slide")
+        local grid_path       = _icons_dir and utils.resolveIcon(_icons_dir, "grid")
+        local skip_left_path  = _icons_dir and utils.resolveIcon(_icons_dir, "skip_left")
+        local skip_right_path = _icons_dir and utils.resolveIcon(_icons_dir, "skip_right")
+        local is_single_page = layout == "single"
+
+        local function make_toggle_icon(icon_name, file_path, active)
+            local icon = IconWidget:new{
+                file   = file_path,
+                icon   = file_path and nil or icon_name,
+                width  = icon_size,
+                height = icon_size,
+                alpha  = not active,
+            }
+            if active then
+                icon:_render()
+                if icon._bb then
+                    local bb_copy = icon._bb:copy()
+                    bb_copy:invertRect(0, 0, bb_copy:getWidth(), bb_copy:getHeight())
+                    icon._bb = bb_copy
+                end
+            end
+            return CenterContainer:new{ dimen = Geom:new{ w = icon_size, h = icon_size }, icon }
+        end
+        local btn_view_frame = FrameContainer:new{
+            padding_top = icon_pad_v, padding_bottom = icon_pad_v,
+            padding_left = icon_pad_h, padding_right = icon_pad_h,
+            bordersize = 0,
+            background = is_single_page and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_WHITE,
+            make_toggle_icon("grid_slide", grid_slide_path, is_single_page),
+        }
+        local btn_grid_frame = FrameContainer:new{
+            padding_top = icon_pad_v, padding_bottom = icon_pad_v,
+            padding_left = icon_pad_h, padding_right = icon_pad_h,
+            bordersize = 0,
+            background = is_single_page and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_BLACK,
+            make_toggle_icon("grid", grid_path, not is_single_page),
+        }
+        local divider = LineWidget:new{
+            dimen = Geom:new{ w = Screen:scaleBySize(1), h = icon_size + icon_pad_v * 2 },
+            background = Blitbuffer.COLOR_DARK_GRAY,
+            direction = "vert",
+        }
+        local btn_row = FrameContainer:new{
+            padding = 0, margin = 0, bordersize = Screen:scaleBySize(2),
+            background = Blitbuffer.COLOR_WHITE,
+            radius = Screen:scaleBySize(4),
+            HorizontalGroup:new{ align = "center", btn_view_frame, divider, btn_grid_frame },
+        }
+        local function make_skip_btn(file_path, fallback_icon)
+            return FrameContainer:new{
+                padding_top = icon_pad_v, padding_bottom = icon_pad_v,
+                padding_left = icon_pad_h, padding_right = icon_pad_h,
+                bordersize = 0,
+                background = Blitbuffer.COLOR_WHITE,
+                IconWidget:new{
+                    file = file_path,
+                    icon = file_path and nil or fallback_icon,
+                    width = skip_icon_size,
+                    height = skip_icon_size,
+                },
+            }
+        end
+        local skip_left_btn = make_skip_btn(skip_left_path, "chevron.left")
+        local skip_right_btn = make_skip_btn(skip_right_path, "chevron.right")
+        local btn_row_sz = btn_row:getSize()
+        local skip_sz = skip_left_btn:getSize()
+        local row_h = math.max(btn_row_sz.h, skip_sz.h)
+        local skip_side_gap = Screen:scaleBySize(40)
+        skip_left_btn.overlap_offset = { skip_side_gap, math.floor((row_h - skip_sz.h) / 2) }
+        skip_right_btn.overlap_offset = {
+            slot_w - skip_side_gap - skip_sz.w,
+            math.floor((row_h - skip_sz.h) / 2),
+        }
+        local btn_and_skip = OverlapGroup:new{
+            dimen = Geom:new{ w = slot_w, h = row_h },
+            allow_mirroring = false,
+            CenterContainer:new{ dimen = Geom:new{ w = slot_w, h = row_h }, btn_row },
+            skip_left_btn,
+            skip_right_btn,
+        }
+
+        local panel = FrameContainer:new{
+            width = slot_w,
+            height = panel_h,
+            padding = 0,
+            margin = 0,
+            bordersize = 0,
+            background = Blitbuffer.COLOR_WHITE,
+            VerticalGroup:new{
+                align = "center",
+                VerticalSpan:new{ width = panel_pad_top },
+                CenterContainer:new{ dimen = Geom:new{ w = slot_w, h = chapter_label:getSize().h }, chapter_label },
+                VerticalSpan:new{ width = panel_pad_v },
+                CenterContainer:new{ dimen = Geom:new{ w = slot_w, h = slider:getSize().h }, slider },
+                VerticalSpan:new{ width = panel_pad_btn },
+                btn_and_skip,
+                VerticalSpan:new{ width = panel_pad_bottom },
+            },
+        }
+        panel:paintTo(canvas, 0, panel_top)
+        if panel.free then panel:free() end
+        return canvas
+    end)
+
     -- -----------------------------------------------------------------------
     -- Zen UI customisations applied once to PageBrowserWidget
     -- -----------------------------------------------------------------------
@@ -110,8 +377,8 @@ local function apply_page_browser()
         local Size            = require("ui/size")
         local Screen          = Device.screen
         local GestureRange    = require("ui/gesturerange")
-        local ZenSlider       = require("common/zen_slider")
-        local ZenIconButton   = require("common/zen_icon_button")
+        local ZenSlider       = require("common/ui/zen_slider")
+        local ZenIconButton   = require("common/ui/zen_icon_button")
         local logger          = require("logger")
 
         -- ----------------------------------------------------------------
@@ -945,7 +1212,7 @@ local function apply_page_browser()
             local function skip_to_next_chapter()
                 if not pbw.ui or not pbw.ui.toc or not pbw.ui.toc.toc then return end
                 local cur = pbw.focus_page or pbw.cur_page or 1
-                for _, e in ipairs(pbw.ui.toc.toc) do
+                for _i, e in ipairs(pbw.ui.toc.toc) do
                     if e.page and e.page > cur then
                         if pbw:updateFocusPage(e.page, false) then pbw:update() end
                         return
@@ -1653,7 +1920,7 @@ local function apply_page_browser()
             -- Only apply whole-word filtering when substring mode is NOT enabled
             if not is_substring_enabled() and self._zen_whole_word and not_cached and self.findall_results then
                 local filtered = {}
-                for _, item in ipairs(self.findall_results) do
+                for _i, item in ipairs(self.findall_results) do
                     local pre = item.matched_word_prefix or ""
                     local suf = item.matched_word_suffix or ""
                     if pre == "" and suf == "" then

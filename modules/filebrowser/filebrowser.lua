@@ -17,6 +17,7 @@ local FEATURES = {
 local PATCH_MODULES = {
     add_sort_title_natural = "modules/filebrowser/patches/add_sort_title_natural",
     coverbrowser_check = "modules/filebrowser/patches/coverbrowser_check",
+    coverbrowser_subprocess_compat = "modules/filebrowser/patches/coverbrowser_subprocess_compat",
     context_menu = "modules/filebrowser/patches/context_menu",
     browser_folder_sort = "modules/filebrowser/patches/browser_folder_sort",
     disable_modal_drag = "modules/filebrowser/patches/disable_modal_drag",
@@ -24,7 +25,7 @@ local PATCH_MODULES = {
     partial_page_repaint = "modules/filebrowser/patches/partial_page_repaint",
     navbar = "modules/filebrowser/patches/navbar",
     status_bar = "modules/filebrowser/patches/status_bar",
-    zen_scroll_bar = "common/zen_scroll_bar",
+    zen_scroll_bar = "common/ui/zen_scroll_bar",
     browser_folder_cover = "modules/filebrowser/patches/browser_folder_cover",
     browser_list_item_layout = "modules/filebrowser/patches/browser_list_item_layout",
     browser_hide_underline = "modules/filebrowser/patches/browser_hide_underline",
@@ -42,6 +43,7 @@ local PATCH_MODULES = {
     browser_display_mode_by_path = "modules/filebrowser/patches/browser_display_mode_by_path",
     search = "modules/filebrowser/patches/search",
     group_view = "modules/filebrowser/patches/group_view",
+    home_page = "modules/filebrowser/patches/home_page",
     status_on_open = "modules/filebrowser/patches/status_on_open",
 }
 
@@ -94,6 +96,11 @@ function M.init(logger, plugin)
     local coverbrowser_check_fn = load_patch("coverbrowser_check")
     if coverbrowser_check_fn then
         run_feature(logger, plugin, "coverbrowser_check", coverbrowser_check_fn)
+    end
+
+    local coverbrowser_subprocess_compat_fn = load_patch("coverbrowser_subprocess_compat")
+    if coverbrowser_subprocess_compat_fn then
+        run_feature(logger, plugin, "coverbrowser_subprocess_compat", coverbrowser_subprocess_compat_fn)
     end
 
     local disable_modal_drag_fn = load_patch("disable_modal_drag")
@@ -182,6 +189,11 @@ function M.init(logger, plugin)
     local group_view_fn = load_patch("group_view")
     if group_view_fn then
         run_feature(logger, plugin, "group_view", group_view_fn)
+    end
+
+    local home_page_fn = load_patch("home_page")
+    if home_page_fn then
+        run_feature(logger, plugin, "home_page", home_page_fn)
     end
 
     local status_on_open_fn = load_patch("status_on_open")

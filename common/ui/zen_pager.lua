@@ -7,7 +7,7 @@ local Font       = require("ui/font")
 local IconWidget = require("ui/widget/iconwidget")
 local RenderText = require("ui/rendertext")
 local Screen     = require("device").screen
-local library_font = require("common/library_font")
+local library_font = require("modules/filebrowser/patches/library_font")
 
 local M = {}
 

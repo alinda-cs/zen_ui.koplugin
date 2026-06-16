@@ -5,7 +5,7 @@ Extends KOReader's IconButton to accept a `file` parameter for custom icon paths
 allowing direct loading of icons without global registration.
 
 Usage:
-    local ZenIconButton = require("common/zen_icon_button")
+    local ZenIconButton = require("common/ui/zen_icon_button")
     local btn = ZenIconButton:new{
         file = "/path/to/icon.svg",  -- Custom icon file path (takes precedence)
         icon = "fallback",            -- Fallback icon name if file is nil

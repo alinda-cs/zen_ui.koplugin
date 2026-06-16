@@ -1228,7 +1228,7 @@ local function validate_plugin_tree(root)
     local required = {
         "_meta.lua",
         "main.lua",
-        "common/zen_screen.lua",
+        "common/ui/zen_screen.lua",
         "modules/settings/zen_updater.lua",
     }
     for _i, rel in ipairs(required) do
@@ -1530,7 +1530,7 @@ end
 --- Called from both the settings banner and the About > Check for updates item.
 local function _show_update_screen_and_install(plugin)
     local UIManager = require("ui/uimanager")
-    local ZenScreen = require("common/zen_screen")
+    local ZenScreen = require("common/ui/zen_screen")
 
     local plugin_root = PLUGIN_ROOT
         or (plugin and type(plugin.path) == "string" and plugin.path ~= "" and plugin.path)
@@ -1611,7 +1611,7 @@ function M.build_update_now_item(plugin)
         keep_menu_open = true,
         callback = function()
             local UIManager  = require("ui/uimanager")
-            local ZenScreen  = require("common/zen_screen")
+            local ZenScreen  = require("common/ui/zen_screen")
             local ok_nm, NetworkMgr = pcall(require, "ui/network/manager")
 
             -- Reset throttle so this check always goes to the network.
@@ -1711,7 +1711,7 @@ function M.build_changelog_item()
         keep_menu_open = true,
         callback = function()
             local UIManager = require("ui/uimanager")
-            local ZenScreen = require("common/zen_screen")
+            local ZenScreen = require("common/ui/zen_screen")
             local ok_nm, NetworkMgr = pcall(require, "ui/network/manager")
 
             local function open_viewer()

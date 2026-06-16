@@ -6,6 +6,7 @@ local updater        = require("modules/settings/zen_updater")
 local utils          = require("modules/settings/zen_settings_utils")
 
 local lib_section      = require("modules/settings/sections/library_settings")
+local home_section = require("modules/settings/sections/library_settings/home_settings")
 local navbar_section   = require("modules/settings/sections/library_settings/navbar_settings")
 local menu_section     = require("modules/settings/sections/menu_settings")
 local reader_section   = require("modules/settings/sections/reader_settings")
@@ -18,6 +19,9 @@ local M = {}
 function M.build(plugin)
     -- Load cached update state for the banner; background check runs after resume.
     updater.init_banner()
+    if settings_apply.set_plugin then
+        settings_apply.set_plugin(plugin)
+    end
 
     local config = plugin.config
 
@@ -40,6 +44,7 @@ function M.build(plugin)
     }
 
     local filebrowser_items    = lib_section.build(ctx)
+    local home_item       = home_section.build(ctx)
     local navbar_item          = navbar_section.build(ctx)
     local quick_settings_item  = menu_section.build(ctx)
     local reader_items         = reader_section.build(ctx)
@@ -84,15 +89,14 @@ function M.build(plugin)
     })
 
     utils.reorder_nested_items_by_text({ navbar_item }, _("Navbar"), {
-        _("Tabs"),
+        _("Tab settings"),
         _("Styling"),
         _("Show labels"),
     })
 
-    utils.reorder_nested_items_by_text({ navbar_item }, _("Tabs"), {
-        _("Visibility"),
+    utils.reorder_nested_items_by_text({ navbar_item }, _("Tab settings"), {
+        _("Tabs") .. " \u{25B8}",
         _("Custom tabs"),
-        _("Arrange tabs"),
     })
 
     utils.reorder_nested_items_by_text({ navbar_item }, _("Styling"), {
@@ -110,6 +114,8 @@ function M.build(plugin)
     -- Root menu assembly
     -- -------------------------------------------------------------------------
 
+    home_item.text = _("Home")
+
     local root_items = {
         {
             text = _("Zen Mode"),
@@ -123,6 +129,7 @@ function M.build(plugin)
         },
         quick_settings_item,
         { text = _("Library"),  sub_item_table = filebrowser_items },
+        home_item,
         navbar_item,
         { text = _("Reader"),   sub_item_table = reader_items      },
         { text = _("Global"),   sub_item_table = global_items      },

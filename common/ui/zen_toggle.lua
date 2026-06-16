@@ -3,7 +3,7 @@
 -- container via hitTest() and the supplied callback.
 --
 -- Usage:
---   local ZenToggle = require("common/zen_toggle")
+--   local ZenToggle = require("common/ui/zen_toggle")
 --   local toggle = ZenToggle:new{
 --       width      = 56,          -- optional; default Screen:scaleBySize(56)
 --       height     = 28,          -- optional; default Screen:scaleBySize(28)

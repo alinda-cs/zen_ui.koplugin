@@ -1,7 +1,7 @@
 -- settings/sections/library/navbar.lua
 -- Navbar settings item for Zen UI.
 -- Returns a single menu-item table: { text = _("Navbar"), sub_item_table = {...} }
--- Receives ctx: { config, save_and_apply, apply_feature }
+-- Receives ctx: { config, save_and_apply, apply_feature, settings_apply }
 
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -26,6 +26,50 @@ function M.build(ctx)
         else
             save_and_apply("navbar")
         end
+    end
+
+    local pending_navbar_refresh = false
+    local pending_navbar_poll_active = false
+
+    local function is_filemanager_menu_open()
+        local ok_fm, FileManager = pcall(require, "apps/filemanager/filemanager")
+        if not ok_fm or not FileManager or not FileManager.instance then return false end
+        local fm = FileManager.instance
+        return fm.menu ~= nil and fm.menu.menu_container ~= nil
+    end
+
+    local function refresh_navbar_after_menu_close()
+        if is_filemanager_menu_open() then
+            UIManager:scheduleIn(0.25, refresh_navbar_after_menu_close)
+            return
+        end
+        pending_navbar_poll_active = false
+        if not pending_navbar_refresh then return end
+        pending_navbar_refresh = false
+        local reinject = rawget(_G, "__ZEN_UI_REINJECT_NAVBARS")
+            or rawget(_G, "__ZEN_UI_REINJECT_FM_NAVBAR")
+        if reinject then
+            reinject()
+        else
+            save_and_apply("navbar")
+        end
+    end
+
+    local function save_and_defer_navbar_refresh()
+        ctx.plugin:saveConfig()
+        pending_navbar_refresh = true
+        if not pending_navbar_poll_active then
+            pending_navbar_poll_active = true
+            UIManager:scheduleIn(0.25, refresh_navbar_after_menu_close)
+        end
+    end
+
+    local function save_and_reinit_navbar()
+        save_and_defer_navbar_refresh()
+    end
+
+    if type(config.navbar.default_tab) ~= "string" or config.navbar.default_tab == "" then
+        config.navbar.default_tab = "books"
     end
 
     -- -------------------------------------------------------------------------
@@ -59,8 +103,21 @@ function M.build(ctx)
     -- Tab definitions
     -- -------------------------------------------------------------------------
 
+    local function get_books_tab_label()
+        local label = config.navbar.books_label
+        if label == nil or label == "" or label == "Library" then return _("Library") end
+        return label
+    end
+
+    local function get_home_tab_label()
+        local label = config.navbar.home_label
+        if label == nil or label == "" then return _("Home") end
+        return label
+    end
+
     local navbar_tab_items = {
-        { id = "books",       text = _("Books")         },
+        { id = "books",       text_func = get_books_tab_label },
+        { id = "home",        text_func = get_home_tab_label  },
         { id = "manga",       text = _("Manga")         },
         { id = "news",        text = _("News")          },
         { id = "continue",    text = _("Continue")      },
@@ -80,37 +137,104 @@ function M.build(ctx)
         { id = "menu",        text = _("Menu")          },
     }
 
+    if config.navbar.show_tabs.books == nil then
+        config.navbar.show_tabs.books = true
+    end
+
+    local function get_tab_item_text(tab)
+        if tab.text_func then return tab.text_func() end
+        return tab.text
+    end
+
+    local tab_item_by_id = {}
+    for i, tab in ipairs(navbar_tab_items) do
+        tab_item_by_id[tab.id] = tab
+    end
+
+    local default_tab_ids = {
+        "home", "books", "manga", "news", "history", "favorites",
+        "collections", "authors", "series", "tags", "to_be_read",
+    }
+
+    local function get_builtin_tab_label(tab_id)
+        local tab = tab_item_by_id[tab_id]
+        if tab then return get_tab_item_text(tab) end
+    end
+
+    local function get_default_tab_label(tab_id)
+        local label = get_builtin_tab_label(tab_id)
+        if label then return label end
+        if type(config.navbar.custom_tabs) == "table" then
+            for i, ct in ipairs(config.navbar.custom_tabs) do
+                if ct.id == tab_id then
+                    if ct.label and ct.label ~= "" then return ct.label end
+                    return _("Custom")
+                end
+            end
+        end
+        return _("Library")
+    end
+
     local navbar_max_tabs = 7
 
+    local function is_known_custom_tab(id)
+        if type(config.navbar.custom_tabs) ~= "table" then return false end
+        for _i, ct in ipairs(config.navbar.custom_tabs) do
+            if ct.id == id then return true end
+        end
+        return false
+    end
+
+    local function is_known_tab(id)
+        return tab_item_by_id[id] ~= nil or is_known_custom_tab(id)
+    end
+
     local function countEnabledTabs()
-        local count = 1 -- books is always shown
+        local count = 0
         for id, v in pairs(config.navbar.show_tabs) do
-            if id ~= "books" and v == true then
+            if v == true and is_known_tab(id) then
                 count = count + 1
             end
         end
         return count
     end
 
-    local navbar_tab_toggle_items = {}
-    for i, tab in ipairs(navbar_tab_items) do
-        if tab.id ~= "books" then
-            local tab_id = tab.id
-            table.insert(navbar_tab_toggle_items, {
-                text = tab.text,
-                checked_func = function()
-                    return config.navbar.show_tabs[tab_id] == true
-                end,
-                enabled_func = function()
-                    return config.navbar.show_tabs[tab_id] == true
-                        or countEnabledTabs() < navbar_max_tabs
-                end,
-                callback = function()
-                    config.navbar.show_tabs[tab_id] = config.navbar.show_tabs[tab_id] ~= true
-                    save_and_apply_navbar()
-                end,
-            })
+    local function showTabLimitMessage(text)
+        local InfoMessage = require("ui/widget/infomessage")
+        UIManager:show(InfoMessage:new{ text = text })
+    end
+
+    local function toggleNavbarTab(id)
+        if config.navbar.show_tabs[id] == true then
+            if countEnabledTabs() <= 1 then
+                showTabLimitMessage(_("At least one tab must be visible"))
+                return false
+            end
+            config.navbar.show_tabs[id] = false
+        else
+            if countEnabledTabs() >= navbar_max_tabs then
+                showTabLimitMessage(_("Maximum 7 tabs allowed"))
+                return false
+            end
+            config.navbar.show_tabs[id] = true
         end
+        save_and_defer_navbar_refresh()
+        return true
+    end
+
+    local function shouldDimTab(id)
+        if config.navbar.show_tabs[id] == true then
+            return countEnabledTabs() <= 1
+        end
+        return countEnabledTabs() >= navbar_max_tabs
+    end
+
+    local function getCustomTabById(id)
+        if type(config.navbar.custom_tabs) ~= "table" then return nil end
+        for _i, ct in ipairs(config.navbar.custom_tabs) do
+            if ct.id == id then return ct end
+        end
+        return nil
     end
 
     -- -------------------------------------------------------------------------
@@ -138,7 +262,7 @@ function M.build(ctx)
         return CUSTOM_TAB_ICONS
     end
 
-    local _icon_picker = require("common/zen_icon_picker")
+    local _icon_picker = require("common/ui/zen_icon_picker")
     local function showTabIconPicker(ct, on_select)
         _icon_picker(getCustomTabIcons(), ct.icon, on_select)
     end
@@ -158,7 +282,7 @@ function M.build(ctx)
             callback = function()
                 local cur = config.navbar.show_tabs[ct.id]
                 config.navbar.show_tabs[ct.id] = (cur == false)
-                save_and_apply_navbar()
+                save_and_defer_navbar_refresh()
             end,
         })
 
@@ -243,7 +367,7 @@ function M.build(ctx)
                 end
                 config.navbar.show_tabs[ct.id] = nil
                 local new_order = {}
-                for _, id in ipairs(config.navbar.tab_order) do
+                for _i, id in ipairs(config.navbar.tab_order) do
                     if id ~= ct.id then new_order[#new_order + 1] = id end
                 end
                 config.navbar.tab_order = new_order
@@ -255,6 +379,77 @@ function M.build(ctx)
         return items
     end
 
+    local function showTabsArrange()
+        local ZenArrangeList = require("common/ui/zen_arrange_list")
+        local sort_items = {}
+
+        local function updateDimStates()
+            for _i, sort_item in ipairs(sort_items) do
+                sort_item.dim = shouldDimTab(sort_item.orig_item)
+            end
+        end
+
+        local function addTabItem(id)
+            local tab = tab_item_by_id[id]
+            local ct = getCustomTabById(id)
+            if not tab and not ct then return false end
+            table.insert(sort_items, {
+                text_func = function()
+                    if ct then return get_ct_label(ct) end
+                    return get_tab_item_text(tab)
+                end,
+                orig_item = id,
+                dim = shouldDimTab(id),
+                checked_func = function()
+                    return config.navbar.show_tabs[id] == true
+                end,
+                callback = function()
+                    if toggleNavbarTab(id) then
+                        updateDimStates()
+                    end
+                end,
+            })
+            return true
+        end
+
+        local in_sort = {}
+        for _i, id in ipairs(config.navbar.tab_order) do
+            if not in_sort[id] and addTabItem(id) then
+                in_sort[id] = true
+            end
+        end
+        for _i, tab in ipairs(navbar_tab_items) do
+            if not in_sort[tab.id] and addTabItem(tab.id) then
+                in_sort[tab.id] = true
+            end
+        end
+        if type(config.navbar.custom_tabs) == "table" then
+            for _i, ct in ipairs(config.navbar.custom_tabs) do
+                if not in_sort[ct.id] and addTabItem(ct.id) then
+                    in_sort[ct.id] = true
+                end
+            end
+        end
+
+        ZenArrangeList.show{
+            title = _("Tabs"),
+            item_table = sort_items,
+            callback = function()
+                local new_order = {}
+                local ordered = {}
+                for _i, item in ipairs(sort_items) do
+                    new_order[#new_order + 1] = item.orig_item
+                    ordered[item.orig_item] = true
+                end
+                for _i, id in ipairs(config.navbar.tab_order) do
+                    if not ordered[id] then new_order[#new_order + 1] = id end
+                end
+                config.navbar.tab_order = new_order
+                save_and_defer_navbar_refresh()
+            end,
+        }
+    end
+
     -- -------------------------------------------------------------------------
     -- Navbar item
     -- -------------------------------------------------------------------------
@@ -263,11 +458,12 @@ function M.build(ctx)
         text = _("Navbar"),
         sub_item_table = {
             {
-                text = _("Tabs"),
+                text = _("Tab settings"),
                 sub_item_table = {
                     {
-                        text = _("Visibility"),
-                        sub_item_table = navbar_tab_toggle_items,
+                        text = _("Tabs") .. " \u{25B8}",
+                        keep_menu_open = true,
+                        callback = showTabsArrange,
                     },
                     {
                         text = _("Custom tabs"),
@@ -335,47 +531,78 @@ function M.build(ctx)
                         end,
                     },
                     {
-                        text = _("Arrange tabs"),
+                        text_func = function()
+                            local current = config.navbar.default_tab or "books"
+                            return _("Default tab: ") .. get_default_tab_label(current)
+                        end,
+                        keep_menu_open = true,
+                        sub_item_table_func = function()
+                            local items = {}
+                            for i, tab_id in ipairs(default_tab_ids) do
+                                local tid = tab_id
+                                local label = get_default_tab_label(tid)
+                                items[#items + 1] = {
+                                    text = label,
+                                    radio = true,
+                                    checked_func = function()
+                                        return (config.navbar.default_tab or "books") == tid
+                                    end,
+                                    callback = function()
+                                        config.navbar.default_tab = tid
+                                        save_and_apply_navbar()
+                                    end,
+                                }
+                            end
+                            if type(config.navbar.custom_tabs) == "table" then
+                                for i, ct in ipairs(config.navbar.custom_tabs) do
+                                    local tid = ct.id
+                                    local label = get_default_tab_label(tid)
+                                    items[#items + 1] = {
+                                        text = label,
+                                        radio = true,
+                                        checked_func = function()
+                                            return (config.navbar.default_tab or "books") == tid
+                                        end,
+                                        callback = function()
+                                            config.navbar.default_tab = tid
+                                            save_and_apply_navbar()
+                                        end,
+                                    }
+                                end
+                            end
+                            return items
+                        end,
+                    },
+                    {
+                        text_func = function()
+                            local label = config.navbar.home_label
+                            if label == nil or label == "" then label = "Home" end
+                            return _("Home tab label: ") .. label
+                        end,
                         separator = true,
                         keep_menu_open = true,
                         callback = function()
-                            local SortWidget = require("ui/widget/sortwidget")
-                            local sort_items = {}
-                            for _, tab in ipairs(navbar_tab_items) do
-                                local is_visible = tab.id == "books" or config.navbar.show_tabs[tab.id] == true
-                                table.insert(sort_items, {
-                                    text = tab.text,
-                                    orig_item = tab.id,
-                                    dim = not is_visible,
-                                })
-                            end
-                            if type(config.navbar.custom_tabs) == "table" then
-                                for _i, ct in ipairs(config.navbar.custom_tabs) do
-                                    table.insert(sort_items, {
-                                        text = get_ct_label(ct),
-                                        orig_item = ct.id,
-                                        dim = config.navbar.show_tabs[ct.id] ~= true,
-                                    })
-                                end
-                            end
-                            UIManager:show(SortWidget:new{
-                                title = _("Arrange navbar tabs"),
-                                item_table = sort_items,
-                                callback = function()
-                                    local new_order = {}
-                                    local in_sort = {}
-                                    for _, item in ipairs(sort_items) do
-                                        new_order[#new_order + 1] = item.orig_item
-                                        in_sort[item.orig_item] = true
-                                    end
-                                    -- Preserve any IDs not in the sort widget
-                                    for _, id in ipairs(config.navbar.tab_order) do
-                                        if not in_sort[id] then new_order[#new_order + 1] = id end
-                                    end
-                                    config.navbar.tab_order = new_order
-                                    save_and_apply_navbar()
-                                end,
-                            })
+                            local InputDialog = require("ui/widget/inputdialog")
+                            local dialog
+                            dialog = InputDialog:new{
+                                title = _("Home tab label"),
+                                input = config.navbar.home_label or "Home",
+                                input_hint = _("Default: Home"),
+                                buttons = {{
+                                    { text = _("Cancel"), callback = function() UIManager:close(dialog) end },
+                                    {
+                                        text = _("Set"),
+                                        is_enter_default = true,
+                                        callback = function()
+                                            local text = dialog:getInputText()
+                                            config.navbar.home_label = (text and text ~= "") and text or "Home"
+                                            UIManager:close(dialog)
+                                            save_and_apply_navbar()
+                                        end,
+                                    },
+                                }},
+                            }
+                            UIManager:show(dialog)
                         end,
                     },
                     {
@@ -642,7 +869,7 @@ function M.build(ctx)
                         checked_func = function() return config.navbar.show_top_border == true end,
                         callback = function()
                             config.navbar.show_top_border = config.navbar.show_top_border ~= true
-                            save_and_apply("navbar")
+                            save_and_reinit_navbar()
                         end,
                     },
                     {
@@ -723,9 +950,33 @@ function M.build(ctx)
             {
                 text = _("Show labels"),
                 checked_func = function() return config.navbar.show_labels == true end,
+                enabled_func = function()
+                    return config.navbar.show_labels ~= true
+                        or config.navbar.show_icons ~= false
+                end,
                 callback = function()
+                    if config.navbar.show_labels == true
+                            and config.navbar.show_icons == false then
+                        return
+                    end
                     config.navbar.show_labels = config.navbar.show_labels ~= true
-                    save_and_apply("navbar")
+                    save_and_reinit_navbar()
+                end,
+            },
+            {
+                text = _("Show icons"),
+                checked_func = function() return config.navbar.show_icons ~= false end,
+                enabled_func = function()
+                    return config.navbar.show_icons == false
+                        or config.navbar.show_labels == true
+                end,
+                callback = function()
+                    if config.navbar.show_icons ~= false
+                            and config.navbar.show_labels ~= true then
+                        return
+                    end
+                    config.navbar.show_icons = config.navbar.show_icons == false
+                    save_and_reinit_navbar()
                 end,
             },
         },

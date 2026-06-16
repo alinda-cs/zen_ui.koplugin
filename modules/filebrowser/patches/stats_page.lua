@@ -14,12 +14,11 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
-local Menu = require("ui/widget/menu")
 local TextWidget = require("ui/widget/textwidget")
-local TitleBar = require("ui/widget/titlebar")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local StandalonePage = require("modules/filebrowser/patches/standalone_page")
 local Screen = Device.screen
 local _ = require("gettext")
 
@@ -414,81 +413,16 @@ function StatsPage.create(createStatusRow, repaintTitleBar)
     local stats      = queryStats()
     local rows_config = loadRowsConfig()
 
-    -- Hook TitleBar.new to create a minimal bar (same pattern as history.lua).
-    local orig_tb_new = TitleBar.new
-    TitleBar.new = function(cls, t)
-        if type(t) == "table" then
-            t.subtitle                 = nil
-            t.subtitle_fullwidth       = nil
-            t.left_icon                = nil
-            t.left_icon_tap_callback   = nil
-            t.left_icon_hold_callback  = nil
-            t.right_icon               = nil
-            t.right_icon_tap_callback  = nil
-            t.right_icon_hold_callback = nil
-            t.close_callback           = nil
-            t.title_tap_callback       = nil
-            t.title_hold_callback      = nil
-            t.bottom_v_padding         = 0
-            t.title                    = " "
-        end
-        return orig_tb_new(cls, t)
-    end
-
-    local menu = Menu:new{
-        name              = "stats",
-        covers_fullscreen = true,
-        is_borderless     = true,
-        is_popout         = false,
-        no_title          = false,
-        title             = " ",
-        item_table        = {},
+    local menu = StandalonePage.create_menu{
+        name = "stats",
+        title = " ",
     }
-
-    TitleBar.new = orig_tb_new
-
-    menu.updateItems = function() end
-
-    local page_arrow = menu.page_return_arrow
-    if page_arrow then
-        page_arrow:hide()
-        page_arrow.show     = function() end
-        page_arrow.showHide = function() end
-        page_arrow.dimen    = Geom:new{ w = 0, h = 0 }
-    end
-
-    -- Clean nav: status row + remove icons
+    StandalonePage.prepare_shell(menu)
+    StandalonePage.apply_status_row(menu, {
+        createStatusRow = createStatusRow,
+        repaintTitleBar = repaintTitleBar,
+    })
     local tb = menu.title_bar
-    if tb and createStatusRow then
-        local FileManager = require("apps/filemanager/filemanager")
-
-        local function remove_from_overlap(group, widget)
-            if not widget then return end
-            for i = #group, 1, -1 do
-                if rawequal(group[i], widget) then
-                    table.remove(group, i)
-                    return
-                end
-            end
-        end
-        remove_from_overlap(tb, tb.left_button)
-        remove_from_overlap(tb, tb.right_button)
-        tb.has_left_icon  = false
-        tb.has_right_icon = false
-
-        if tb.title_group and #tb.title_group >= 2 then
-            tb.title_group[2] = createStatusRow(nil, FileManager.instance)
-            tb.title_group:resetLayout()
-        end
-
-        menu._zen_status_refresh = function()
-            if tb.title_group and #tb.title_group >= 2 then
-                tb.title_group[2] = createStatusRow(nil, FileManager.instance)
-                tb.title_group:resetLayout()
-                if repaintTitleBar then repaintTitleBar(tb) end
-            end
-        end
-    end
 
     -- Layout dimensions (fixed for the lifetime of this page)
     local tb_h      = tb and tb:getSize().h or 0
@@ -533,10 +467,7 @@ function StatsPage.create(createStatusRow, repaintTitleBar)
             new_content:resetLayout()
         end
 
-        while #menu.item_group > 0 do table.remove(menu.item_group) end
-        menu.item_group[1] = new_content
-        menu.item_group:resetLayout()
-        if menu.content_group then menu.content_group:resetLayout() end
+        StandalonePage.mount_body(menu, new_content)
 
         row_hits = new_row_hits
         UIManager:setDirty(menu, "ui")
@@ -599,10 +530,7 @@ function StatsPage.create(createStatusRow, repaintTitleBar)
     end
 
     -- ── Populate item_group ───────────────────────────────────────────
-    while #menu.item_group > 0 do table.remove(menu.item_group) end
-    menu.item_group[1] = content
-    menu.item_group:resetLayout()
-    if menu.content_group then menu.content_group:resetLayout() end
+    StandalonePage.mount_body(menu, content)
 
     if menu.page_info then
         while #menu.page_info > 0 do table.remove(menu.page_info) end

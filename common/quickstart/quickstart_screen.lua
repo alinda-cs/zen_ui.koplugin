@@ -21,7 +21,7 @@ local Input          = require("device/input")
 local TextBoxWidget  = require("ui/widget/textboxwidget")
 local TextWidget     = require("ui/widget/textwidget")
 local UIManager      = require("ui/uimanager")
-local ZenButton      = require("common/zen_button")
+local ZenButton      = require("common/ui/zen_button")
 local Screen         = Device.screen
 local _              = require("gettext")
 
@@ -358,7 +358,9 @@ function QuickstartScreen:paintTo(bb, x, y)
         if has_icon then
             pcall(function()
                 local max_h  = L.img_h - Screen:scaleBySize(8)
-                local icon_sz = math.min(L.sw - L.pad * 2, max_h)
+                local requested_sz = page.icon_size and Screen:scaleBySize(page.icon_size)
+                local icon_sz = requested_sz and math.min(requested_sz, max_h)
+                    or math.min(L.sw - L.pad * 2, max_h)
                 local ico = IconWidget:new{
                     icon   = page.icon,
                     width  = icon_sz,

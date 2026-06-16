@@ -1,0 +1,410 @@
+local Blitbuffer = require("ffi/blitbuffer")
+local Geom = require("ui/geometry")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
+local TextBoxWidget = require("ui/widget/textboxwidget")
+local TextWidget = require("ui/widget/textwidget")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local TopContainer = require("ui/widget/container/topcontainer")
+local GestureRange = require("ui/gesturerange")
+local Device = require("device")
+local Font = require("ui/font")
+local util = require("util")
+local zen_utils = require("common/utils")
+local cover_common = require("modules/filebrowser/patches/home/widgets/cover_common")
+local logger = require("logger")
+local _ = require("gettext")
+
+local M = {}
+M.SIZE = { preferred_pct = 0.36, min_pct = 0.22, max_pct = 0.50, grow_priority = 1 }
+
+local function clamp(v, min_v, max_v)
+    if v < min_v then return min_v end
+    if v > max_v then return max_v end
+    return v
+end
+
+local function paint_pill(bb, x, y, w, h, color)
+    if w <= 0 or h <= 0 then return end
+    if h <= 1 then
+        bb:paintRect(x, y, w, h, color)
+        return
+    end
+    local r = math.floor(h / 2)
+    if w <= h then
+        local cx = x + math.floor(w / 2)
+        for row = 0, h - 1 do
+            local dy = row - r + 0.5
+            local half = math.floor(math.sqrt(math.max(0, r * r - dy * dy)) + 0.5)
+            local x0 = math.max(x, cx - half)
+            local rw = math.min(w, half * 2)
+            if rw > 0 then bb:paintRect(x0, y + row, rw, 1, color) end
+        end
+        return
+    end
+    for row = 0, h - 1 do
+        local dy = row - r + 0.5
+        local inset = math.floor(r - math.sqrt(math.max(0, r * r - dy * dy)) + 0.5)
+        local rw = w - inset * 2
+        if rw > 0 then bb:paintRect(x + inset, y + row, rw, 1, color) end
+    end
+end
+
+local function render_progress(percent, w, h)
+    local pct = percent or 0
+    if pct < 0 then pct = 0 end
+    if pct > 1 then pct = 1 end
+
+    local fill_w = math.floor(w * pct)
+    return {
+        dimen = Geom:new{ w = w, h = h },
+        getSize = function(self)
+            return self.dimen
+        end,
+        handleEvent = function()
+            return false
+        end,
+        paintTo = function(_self, bb, x, y)
+            paint_pill(bb, x, y, w, h, Blitbuffer.COLOR_LIGHT_GRAY)
+            if fill_w > 0 then
+                paint_pill(bb, x, y, math.min(w, math.max(fill_w, h)), h, Blitbuffer.COLOR_DARK_GRAY)
+            end
+        end,
+    }
+end
+
+local function fmt_duration(secs)
+    secs = math.floor(tonumber(secs) or 0)
+    if secs <= 0 then return "" end
+    local hours = math.floor(secs / 3600)
+    local mins = math.floor((secs % 3600) / 60)
+    if hours > 0 then
+        return tostring(hours) .. "h " .. tostring(mins) .. "m"
+    end
+    return tostring(math.max(1, mins)) .. "m"
+end
+
+local function build_progress_text(book, pct, progress_meta)
+    progress_meta = type(progress_meta) == "table" and progress_meta or {}
+    local left = {}
+    local right = {}
+    local total_pages = tonumber(book.pages)
+    local current_page = tonumber(book.current_page)
+    local time_left = fmt_duration(book.time_left_secs)
+    local entries = {
+        total_pages = total_pages and zen_utils.formatPageCount(total_pages, true) or "",
+        current_total = total_pages and current_page and (tostring(current_page) .. " / " .. tostring(total_pages)) or "",
+        percent = tostring(pct) .. "%",
+        time_left = time_left ~= "" and string.format(_("%s left"), time_left) or "",
+    }
+    local order = { "total_pages", "current_total", "percent", "time_left" }
+    for _i, key in ipairs(order) do
+        local text = entries[key]
+        if text and text ~= "" then
+            if progress_meta.left == key then
+                left[#left + 1] = text
+            end
+            if progress_meta.right == key then
+                right[#right + 1] = text
+            end
+        end
+    end
+    return table.concat(left, "  \194\183  "), table.concat(right, "  \194\183  ")
+end
+
+function M.build(ctx, source_key)
+    local width = ctx.width
+    local height = ctx.height
+    local module_cfg = type(ctx.module_cfg) == "table" and ctx.module_cfg or {}
+    local interactive = module_cfg.interactive ~= false
+    local source = source_key or "recently_read"
+    local order = module_cfg.order or "default"
+    local book = ctx.data:getFeaturedBook(source, order)
+    local Screen = Device.screen
+    local show_description = module_cfg.show_description ~= false
+    local show_status_bar = module_cfg.show_status_bar == true and type(ctx.buildStatusRow) == "function"
+
+    local col_top_pad = math.max(1, math.floor(height * 0.015))
+    local col_bottom_pad = math.max(3, math.floor(height * 0.02))
+    local gap = math.max(4, math.floor(width * 0.025))
+
+    if not book then
+        return FrameContainer:new{
+            width = width,
+            height = height,
+            padding = 0,
+            bordersize = 0,
+            background = Blitbuffer.COLOR_WHITE,
+            CenterContainer:new{
+                dimen = Geom:new{ w = width, h = height },
+                TextWidget:new{ text = "No books found", face = ctx.face_label },
+            },
+        }
+    end
+
+    -- Both columns share this height so tops and bottoms align
+    local col_h = math.max(1, height - col_top_pad - col_bottom_pad)
+
+    -- Left column: cover fills col_h, width is natural (aspect ratio driven)
+    local cover_max_w = math.max(1, math.floor(col_h * 0.80))
+    local cover_widget, cover_w, cover_actual_h = cover_common.make_cover_widget(
+        book, cover_max_w, col_h,
+        { border = 1, background = Blitbuffer.COLOR_LIGHT_GRAY }
+    )
+    -- Right column must match the actual rendered cover height exactly
+    local cover_col_w = math.max(1, cover_w or cover_max_w)
+    col_h = math.max(1, cover_actual_h or col_h)
+    gap = math.min(gap, math.max(0, width - cover_col_w - 1))
+    local text_w = math.max(1, width - cover_col_w - gap)
+
+    -- Fonts
+    local scale = clamp(col_h / 300, 0.55, 1.28)
+    local title_face = Font:getFace("smallinfofont", Screen:scaleBySize(math.floor(11 * scale + 0.5)))
+    local meta_face = Font:getFace("smallinfofont", Screen:scaleBySize(math.floor(9 * scale + 0.5)))
+    local desc_face = Font:getFace("smallinfofont", Screen:scaleBySize(math.floor(7 * scale + 0.5)))
+    local stats_face = Font:getFace("smallinfofont", Screen:scaleBySize(math.floor(6.5 * scale + 0.5)))
+
+    -- Optional status bar (top of right column)
+    local status_widget = show_status_bar and ctx.buildStatusRow(text_w, {
+        padding = 0,
+        font_name = "xx_smallinfofont",
+        font_size_delta = -2,
+        row_height = 14,
+        bold_text = module_cfg.status_bar_bold_text ~= false,
+        show_bottom_border = module_cfg.status_bar_show_bottom_border ~= false,
+    }) or nil
+    local status_h = status_widget and (status_widget:getSize().h or 0) or 0
+    local status_gap = status_h > 0 and math.max(1, math.floor(col_h * 0.015)) or 0
+
+    -- Progress bar anchored to bottom of right column
+    local pct = math.floor((book.percent or 0) * 100 + 0.5)
+    local left_progress_text, right_progress_text = build_progress_text(book, pct, module_cfg.progress_meta)
+    local has_progress_text = left_progress_text ~= "" or right_progress_text ~= ""
+    local progress_h = math.max(1, math.floor(height * 0.022))
+    local stats_text_h = has_progress_text and (TextWidget:new{ text = "A", face = stats_face }:getSize().h or 8) or 0
+    local bar_h = math.max(progress_h, stats_text_h)
+
+    local progress_row
+    if bar_h > 0 then
+        if has_progress_text then
+            local lw = TextWidget:new{ text = left_progress_text, face = stats_face, fgcolor = Blitbuffer.COLOR_GRAY_3 }
+            local rw = TextWidget:new{ text = right_progress_text, face = stats_face, fgcolor = Blitbuffer.COLOR_GRAY_3 }
+            local tgap = math.max(4, math.floor(text_w * 0.02))
+            local bar_w = math.max(20, text_w - lw:getSize().w - rw:getSize().w - tgap * 2)
+            progress_row = HorizontalGroup:new{
+                align = "center",
+                lw,
+                HorizontalSpan:new{ width = tgap },
+                render_progress(book.percent, bar_w, progress_h),
+                HorizontalSpan:new{ width = tgap },
+                rw,
+            }
+        else
+            progress_row = render_progress(book.percent, text_w, progress_h)
+        end
+    end
+    local bottom_h = progress_row and bar_h or 0
+
+    -- Title: up to 2 lines before truncating
+    local title_line_h = math.max(1, math.floor((tonumber(title_face.size) or 12) * 1.05 + 0.5))
+    local author_line_h = math.max(1, math.floor((tonumber(meta_face.size) or 10) * 1.05 + 0.5))
+    local probe = TextWidget:new{ text = book.title or "", face = title_face, bold = true }
+    local title_needs_2_lines = probe:getSize().w > text_w
+    probe:free()
+    local title_h = title_line_h * (title_needs_2_lines and 2 or 1)
+
+    local author_text = (book.authors or ""):gsub("%s*\n%s*", ", "):gsub("%s+", " ")
+    local has_author = author_text ~= ""
+    local author_h = 0
+    if has_author then
+        local author_probe = TextWidget:new{ text = author_text, face = meta_face }
+        local lines = author_probe:getSize().w > text_w and 2 or 1
+        author_probe:free()
+        author_h = author_line_h * lines
+    end
+    local title_author_gap = has_author and math.max(1, Screen:scaleBySize(1)) or 0
+
+    -- Build top block widgets first so we can measure actual heights
+    local top_items = {}
+    local top_budget = col_h - bottom_h
+
+    if status_widget and status_h > 0 then
+        if top_budget >= status_h then
+            table.insert(top_items, status_widget)
+            if status_gap > 0 then
+                table.insert(top_items, VerticalSpan:new{ width = status_gap })
+            end
+            top_budget = top_budget - status_h - status_gap
+        end
+    end
+
+    -- Clamp title/author to remaining budget
+    if title_h + title_author_gap + author_h > top_budget then
+        if has_author and top_budget >= author_line_h then
+            if top_budget < title_h + title_author_gap + author_h then
+                author_h = author_line_h
+            end
+            title_h = math.min(title_h, math.max(0, top_budget - title_author_gap - author_h))
+        else
+            author_h = 0
+            title_author_gap = 0
+            title_h = math.min(title_h, math.max(0, top_budget))
+        end
+    end
+    if title_h <= 0 then title_author_gap = 0 end
+
+    if title_h > 0 then
+        table.insert(top_items, TextBoxWidget:new{
+            text = book.title or "",
+            width = text_w,
+            height = title_h,
+            face = title_face,
+            bold = true,
+            line_height = 0,
+            height_overflow_show_ellipsis = true,
+        })
+    end
+    if title_author_gap > 0 then
+        table.insert(top_items, VerticalSpan:new{ width = title_author_gap })
+    end
+    if has_author and author_h > 0 then
+        table.insert(top_items, TextBoxWidget:new{
+            text = author_text,
+            width = text_w,
+            height = author_h,
+            face = meta_face,
+            line_height = 0,
+            fgcolor = Blitbuffer.COLOR_GRAY_3,
+            height_overflow_show_ellipsis = true,
+        })
+    end
+
+    -- Measure actual rendered top height (TextBoxWidget snaps to line boundaries)
+    local actual_top_h = 0
+    for _i, w in ipairs(top_items) do
+        actual_top_h = actual_top_h + w:getSize().h
+    end
+    local actual_bottom_h = progress_row and progress_row:getSize().h or 0
+    local spacer_h = math.max(0, col_h - actual_top_h - actual_bottom_h)
+
+    -- Description fills the middle space
+    local desc_line_h_probe = TextBoxWidget:new{ text = "A\nA", width = text_w, face = desc_face }
+    local desc_line_h = math.max(1, math.ceil(desc_line_h_probe:getSize().h / 2))
+    desc_line_h_probe:free()
+
+    local v_pad = math.max(2, math.floor(col_h * 0.02))
+    local desc_available = math.max(0, spacer_h - v_pad * 2)
+    local desc_text = book.description and util.htmlToPlainTextIfHtml(book.description) or ""
+    local can_show_desc = show_description and desc_text ~= "" and desc_available >= desc_line_h
+    local desc_h = 0
+    if can_show_desc then
+        desc_h = math.floor(desc_available / desc_line_h) * desc_line_h
+    end
+
+    logger.dbg("[featured_common] col_h=", col_h, "actual_top_h=", actual_top_h, "spacer_h=", spacer_h, "actual_bottom_h=", actual_bottom_h, "desc_h=", desc_h)
+
+    -- Assemble right column: title/author top, desc middle, progress bottom
+    local detail_children = { align = "left" }
+    for _i, w in ipairs(top_items) do
+        table.insert(detail_children, w)
+    end
+
+    if can_show_desc and desc_h > 0 then
+        local desc_widget = TextBoxWidget:new{
+            text = desc_text,
+            width = text_w,
+            height = desc_h,
+            face = desc_face,
+            fgcolor = Blitbuffer.COLOR_GRAY_3,
+            height_overflow_show_ellipsis = true,
+        }
+        local actual_desc_h = desc_widget:getSize().h
+        local after = math.max(0, spacer_h - v_pad - actual_desc_h)
+        table.insert(detail_children, VerticalSpan:new{ width = v_pad })
+        table.insert(detail_children, desc_widget)
+        if after > 0 then
+            table.insert(detail_children, VerticalSpan:new{ width = after })
+        end
+    elseif spacer_h > 0 then
+        table.insert(detail_children, VerticalSpan:new{ width = spacer_h })
+    end
+
+    -- Progress anchored at bottom
+    if progress_row then
+        table.insert(detail_children, progress_row)
+    end
+
+    local detail = FrameContainer:new{
+        width = text_w,
+        height = col_h,
+        padding = 0,
+        bordersize = 0,
+        background = Blitbuffer.COLOR_WHITE,
+        VerticalGroup:new(detail_children),
+    }
+
+    local body = HorizontalGroup:new{
+        align = "top",
+        cover_widget,
+        HorizontalSpan:new{ width = gap },
+        detail,
+    }
+
+    local frame = FrameContainer:new{
+        width = width,
+        height = height,
+        padding = 0,
+        bordersize = 0,
+        background = Blitbuffer.COLOR_WHITE,
+        TopContainer:new{
+            dimen = Geom:new{ w = width, h = height },
+            VerticalGroup:new{
+                align = "center",
+                VerticalSpan:new{ width = col_top_pad },
+                body,
+            },
+        },
+    }
+
+    if not Device:isTouchDevice() or not interactive then
+        return frame
+    end
+    local tap = InputContainer:new{
+        dimen = Geom:new{ w = width, h = height },
+        ges_events = {
+            TapFeatured = {
+                GestureRange:new{ ges = "tap", range = Geom:new{
+                    x = 0, y = 0,
+                    w = Screen:getWidth(), h = Screen:getHeight(),
+                } },
+            },
+            HoldFeatured = {
+                GestureRange:new{ ges = "hold", range = Geom:new{
+                    x = 0, y = 0,
+                    w = Screen:getWidth(), h = Screen:getHeight(),
+                } },
+            },
+        },
+    }
+    tap.onTapFeatured = function(tap_self, _arg, ges)
+        if not tap_self.dimen or not ges or not ges.pos then return false end
+        if ctx.openTopMenu and ctx.openTopMenu(ges) then return true end
+        if not tap_self.dimen:contains(ges.pos) then return false end
+        ctx.openBook(book.path)
+        return true
+    end
+    tap.onHoldFeatured = function(tap_self, _arg, ges)
+        if not tap_self.dimen or not ges or not ges.pos then return false end
+        if not tap_self.dimen:contains(ges.pos) then return false end
+        if ctx.showBookMenu then return ctx.showBookMenu(book.path) end
+        return false
+    end
+    tap[1] = frame
+    return tap
+end
+
+return M

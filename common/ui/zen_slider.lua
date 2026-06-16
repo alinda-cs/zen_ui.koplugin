@@ -3,7 +3,7 @@
 -- by the parent container via applyPosition() and hitTest().
 --
 -- Usage:
---   local ZenSlider = require("common/zen_slider")
+--   local ZenSlider = require("common/ui/zen_slider")
 --   local slider = ZenSlider:new{
 --       width      = 300,
 --       value      = 50,

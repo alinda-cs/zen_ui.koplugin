@@ -7,7 +7,7 @@ local function apply_zen_scroll_bar()
     local Menu    = require("ui/widget/menu")
     local Screen  = Device.screen
     local UIManager = require("ui/uimanager")
-    local pager   = require("common/zen_pager")
+    local pager   = require("common/ui/zen_pager")
     pager.setPlugin(rawget(_G, "__ZEN_UI_PLUGIN"))
     local target_menus = {
         filemanager = true,
@@ -80,6 +80,10 @@ local function apply_zen_scroll_bar()
         local rz_y        = footer_y / scr_h
         local rz_h        = foot_h / scr_h
 
+        local function canUsePageNumber()
+            return pager.getStyle() == "page_number" and (menu.page_num or 0) > 1
+        end
+
         self:registerTouchZones({
             -- Left chevron — tap: prev page.
             {
@@ -87,8 +91,9 @@ local function apply_zen_scroll_bar()
                 ges = "tap",
                 screen_zone = { ratio_x = rz_left_x,   ratio_y = rz_y, ratio_w = rz_chev_w,   ratio_h = rz_h },
                 handler = function()
-                    if pager.getStyle() ~= "page_number" then return end
-                    local target = menu.page > 1 and (menu.page - 1) or menu.page_num
+                    if not canUsePageNumber() then return end
+                    local page = menu.page or 1
+                    local target = page > 1 and (page - 1) or menu.page_num
                     menu:onGotoPage(target)
                     return true
                 end,
@@ -99,8 +104,9 @@ local function apply_zen_scroll_bar()
                 ges = "tap",
                 screen_zone = { ratio_x = rz_right_x,  ratio_y = rz_y, ratio_w = rz_chev_w,   ratio_h = rz_h },
                 handler = function()
-                    if pager.getStyle() ~= "page_number" then return end
-                    local target = menu.page < menu.page_num and (menu.page + 1) or 1
+                    if not canUsePageNumber() then return end
+                    local page = menu.page or 1
+                    local target = page < menu.page_num and (page + 1) or 1
                     menu:onGotoPage(target)
                     return true
                 end,
@@ -111,8 +117,8 @@ local function apply_zen_scroll_bar()
                 ges = "tap",
                 screen_zone = { ratio_x = rz_center_x, ratio_y = rz_y, ratio_w = rz_center_w, ratio_h = rz_h },
                 handler = function()
-                    if pager.getStyle() ~= "page_number" then return end
-                    local createZenDialog = require("common/zen_dialog")
+                    if not canUsePageNumber() then return end
+                    local createZenDialog = require("common/ui/zen_dialog")
                     local nb     = menu.page_num or 1
                     local dialog = createZenDialog{
                         title           = _("Go to page"),
@@ -139,11 +145,12 @@ local function apply_zen_scroll_bar()
                 ges = "hold",
                 screen_zone = { ratio_x = rz_left_x,  ratio_y = rz_y, ratio_w = rz_chev_w, ratio_h = rz_h },
                 handler = function()
-                    if pager.getStyle() ~= "page_number" then return end
+                    if not canUsePageNumber() then return end
                     local skip   = pager.getHoldSkip()
+                    local page   = menu.page or 1
                     local target = skip == "ends"
                         and 1
-                        or  math.max(1, menu.page - (tonumber(skip) or 10))
+                        or  math.max(1, page - (tonumber(skip) or 10))
                     menu:onGotoPage(target)
                     return true
                 end,
@@ -154,11 +161,12 @@ local function apply_zen_scroll_bar()
                 ges = "hold",
                 screen_zone = { ratio_x = rz_right_x, ratio_y = rz_y, ratio_w = rz_chev_w, ratio_h = rz_h },
                 handler = function()
-                    if pager.getStyle() ~= "page_number" then return end
+                    if not canUsePageNumber() then return end
                     local skip   = pager.getHoldSkip()
+                    local page   = menu.page or 1
                     local target = skip == "ends"
                         and menu.page_num
-                        or  math.min(menu.page_num, menu.page + (tonumber(skip) or 10))
+                        or  math.min(menu.page_num, page + (tonumber(skip) or 10))
                     menu:onGotoPage(target)
                     return true
                 end,

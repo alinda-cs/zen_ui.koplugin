@@ -1,6 +1,7 @@
 local function apply_history()
     local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
     local Menu = require("ui/widget/menu")
+    local SharedState = require("common/shared_state")
     local _ = require("gettext")
 
     local zen_plugin = rawget(_G, "__ZEN_UI_PLUGIN")
@@ -11,6 +12,10 @@ local function apply_history()
     local function is_enabled()
         local features = zen_plugin.config and zen_plugin.config.features
         return type(features) == "table" and features.history == true
+    end
+
+    local function get_shared(key)
+        return SharedState.get(zen_plugin, key)
     end
 
     -- Returns true when status_bar is enabled AND hide_browser_bar is true
@@ -170,8 +175,7 @@ local function apply_history()
         if not tb then return end
 
         -- === Title-bar content ===
-        local createStatusRow = zen_plugin._zen_shared
-            and zen_plugin._zen_shared.createStatusRow
+        local createStatusRow = get_shared("createStatusRow")
 
         if createStatusRow and tb.title_group and #tb.title_group >= 2 then
             local FileManager = require("apps/filemanager/filemanager")
@@ -194,8 +198,7 @@ local function apply_history()
             tb.has_right_icon = false
 
             -- Periodic and event-driven refresh (charging, wifi, clock tick, etc.)
-            local repaintTitleBar = zen_plugin._zen_shared
-                and zen_plugin._zen_shared.repaintTitleBar
+            local repaintTitleBar = get_shared("repaintTitleBar")
             menu._zen_status_refresh = function()
                 if tb.title_group and #tb.title_group >= 2 then
                     tb.title_group[2] = createStatusRow(nil, FileManager.instance)

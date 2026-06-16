@@ -8,6 +8,184 @@ local DBConn = require("common/db_connection")
 
 local StatsDB = {}
 
+local function get_stats_plugin()
+    local ok_loader, PluginLoader = pcall(require, "pluginloader")
+    if not ok_loader or not PluginLoader or type(PluginLoader.getPluginInstance) ~= "function" then
+        return nil
+    end
+    local stats_plugin = PluginLoader:getPluginInstance("statistics")
+    if type(stats_plugin) ~= "table" then return nil end
+    return stats_plugin
+end
+
+local function flush_pending_stats()
+    local stats_plugin = get_stats_plugin()
+    if not stats_plugin or type(stats_plugin.insertDB) ~= "function" then return end
+    if type(stats_plugin.isEnabled) == "function" and not stats_plugin:isEnabled() then return end
+    pcall(stats_plugin.insertDB, stats_plugin)
+end
+
+local function period_starts()
+    local one_day = 86400
+    local now_t = os.date("*t")
+    local from_begin_day = now_t.hour * 3600 + now_t.min * 60 + now_t.sec
+    local now_ts = os.time()
+    return {
+        one_day = one_day,
+        start_today = now_ts - from_begin_day,
+        period_begin = now_ts - 6 * one_day - from_begin_day,
+        start_month = os.time({
+            year = now_t.year, month = now_t.month, day = 1,
+            hour = 0, min = 0, sec = 0,
+        }),
+        start_year = os.time({
+            year = now_t.year, month = 1, day = 1,
+            hour = 0, min = 0, sec = 0,
+        }),
+    }
+end
+
+local function query_period_stats(conn, start_time, need_pages, need_duration)
+    if need_pages and need_duration then
+        local sql = [[
+            SELECT count(*), sum(sum_duration)
+            FROM (
+                SELECT sum(duration) AS sum_duration
+                FROM page_stat
+                WHERE start_time >= %d
+                GROUP BY id_book, page
+            );
+        ]]
+        local pages, duration = conn:rowexec(string.format(sql, start_time))
+        return tonumber(pages) or 0, tonumber(duration) or 0
+    end
+    if need_pages then
+        local sql = [[
+            SELECT count(*)
+            FROM (
+                SELECT 1
+                FROM page_stat
+                WHERE start_time >= %d
+                GROUP BY id_book, page
+            );
+        ]]
+        return tonumber(conn:rowexec(string.format(sql, start_time))) or 0, 0
+    end
+    if need_duration then
+        local sql = [[
+            SELECT sum(sum_duration)
+            FROM (
+                SELECT sum(duration) AS sum_duration
+                FROM page_stat
+                WHERE start_time >= %d
+                GROUP BY id_book, page
+            );
+        ]]
+        return 0, tonumber(conn:rowexec(string.format(sql, start_time))) or 0
+    end
+    return 0, 0
+end
+
+local function query_streak(conn, one_day)
+    local sql_streak = [[
+        SELECT DISTINCT strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime') AS day
+        FROM page_stat
+        WHERE duration > 0
+        ORDER BY day DESC;
+    ]]
+    local ok_streak, streak_result = pcall(conn.exec, conn, sql_streak)
+    if not ok_streak then
+        logger.warn("zen-ui db_stats: streak query error:", streak_result)
+        return 0
+    end
+    if not (streak_result and streak_result.day) then return 0 end
+
+    local today_str = os.date("%Y-%m-%d")
+    local yesterday_str = os.date("%Y-%m-%d", os.time() - one_day)
+    local most_recent = streak_result.day[1]
+    if most_recent ~= today_str and most_recent ~= yesterday_str then return 0 end
+
+    local streak = 0
+    local expected = most_recent
+    for i = 1, #streak_result.day do
+        if streak_result.day[i] ~= expected then break end
+        streak = streak + 1
+        local y, mo, dd = expected:match("(%d+)-(%d+)-(%d+)")
+        local noon = os.time({
+            year = tonumber(y),
+            month = tonumber(mo),
+            day = tonumber(dd),
+            hour = 12, min = 0, sec = 0,
+        })
+        expected = os.date("%Y-%m-%d", noon - one_day)
+    end
+    return streak
+end
+
+local function field_set(fields)
+    local set = {}
+    if type(fields) == "table" then
+        for key, value in pairs(fields) do
+            if type(key) == "string" and value == true then
+                set[key] = true
+            elseif type(value) == "string" then
+                set[value] = true
+            end
+        end
+    end
+    if next(set) == nil then
+        set.today_pages = true
+        set.today_duration = true
+        set.week_pages = true
+        set.week_duration = true
+        set.streak = true
+    end
+    return set
+end
+
+function StatsDB.queryHomeStats(fields)
+    local stats = {
+        today_pages = 0,
+        today_duration = 0,
+        week_pages = 0,
+        week_duration = 0,
+        streak = 0,
+    }
+    local requested = field_set(fields)
+
+    flush_pending_stats()
+
+    local db_path = DBConn.getStatsDbPath()
+    local conn, err = DBConn.open(db_path)
+    if not conn then
+        logger.warn("zen-ui db_stats: cannot open DB:", err)
+        return stats
+    end
+
+    local starts = period_starts()
+    local ok, query_err = pcall(function()
+        if requested.today_pages or requested.today_duration then
+            stats.today_pages, stats.today_duration =
+                query_period_stats(conn, starts.start_today,
+                    requested.today_pages, requested.today_duration)
+        end
+        if requested.week_pages or requested.week_duration then
+            stats.week_pages, stats.week_duration =
+                query_period_stats(conn, starts.period_begin,
+                    requested.week_pages, requested.week_duration)
+        end
+        if requested.streak then
+            stats.streak = query_streak(conn, starts.one_day)
+        end
+    end)
+    if not ok then
+        logger.warn("zen-ui db_stats: home query failed:", query_err)
+    end
+
+    conn:close()
+    return stats
+end
+
 -- Returns a stats table:
 -- {
 --   today_pages        number
@@ -50,6 +228,8 @@ function StatsDB.queryStats()
         books_this_year     = 0,
     }
 
+    flush_pending_stats()
+
     local db_path = DBConn.getStatsDbPath()
     local conn, err = DBConn.open(db_path)
     if not conn then
@@ -63,8 +243,17 @@ function StatsDB.queryStats()
         -- Time boundaries
         local now_t = os.date("*t")
         local from_begin_day = now_t.hour * 3600 + now_t.min * 60 + now_t.sec
-        local start_today    = os.time() - from_begin_day
-        local period_begin   = os.time() - 6 * one_day - from_begin_day
+        local now_ts = os.time()
+        local start_today = now_ts - from_begin_day
+        local period_begin = now_ts - 6 * one_day - from_begin_day
+        local start_month = os.time({
+            year = now_t.year, month = now_t.month, day = 1,
+            hour = 0, min = 0, sec = 0,
+        })
+        local start_year = os.time({
+            year = now_t.year, month = 1, day = 1,
+            hour = 0, min = 0, sec = 0,
+        })
 
         -- Today
         local sql_today = [[
@@ -251,15 +440,6 @@ function StatsDB.queryStats()
                     "peak_month=", stats.peak_month_duration)
 
         -- ── Month and Year aggregates ─────────────────────────────────────────
-        local now_t_my = os.date("*t")
-        local start_month = os.time({
-            year = now_t_my.year, month = now_t_my.month, day = 1,
-            hour = 0, min = 0, sec = 0,
-        })
-        local start_year = os.time({
-            year = now_t_my.year, month = 1, day = 1,
-            hour = 0, min = 0, sec = 0,
-        })
 
         local sql_month_agg = [[
             SELECT count(*), sum(sum_duration)
@@ -304,6 +484,10 @@ function StatsDB.queryStats()
             "SELECT count(DISTINCT id_book) FROM page_stat_data WHERE start_time >= %d;",
             start_year))
         stats.books_this_year = ok_by and (tonumber(by_v) or 0) or 0
+
+        logger.info("zen-ui db_stats: page totals:",
+            "today=", stats.today_pages,
+            "week=", stats.week_pages)
         logger.info("zen-ui db_stats: month_pages=", stats.month_pages,
                     "year_pages=", stats.year_pages,
                     "books_this_week=", stats.books_this_week,

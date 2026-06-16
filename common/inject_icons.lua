@@ -8,7 +8,7 @@ local _plugin_root = require("common/plugin_root")
 if _plugin_root then
     utils.registerPluginIcons(_plugin_root .. "/icons/", {
         -- App / settings UI
-        ["zen_settings"]        = "settings.svg",
+        ["zen_settings"]        = "zen_ui.svg",
         ["quicksettings"]       = "quicksettings.svg",
         ["zen_ui"]              = "zen_ui.svg",
         ["zen_ui_light"]        = "zen_ui_light.svg",

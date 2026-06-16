@@ -337,7 +337,7 @@ function M.show_time_picker(title, h, m, callback)
 end
 
 function M.show_value_picker(title, value, callback, min, max)
-    UIManager:show(require("common/zen_slider_dialog"):new{
+    UIManager:show(require("common/ui/zen_slider_dialog"):new{
         title     = title,
         value     = value,
         value_min = min or 0,
