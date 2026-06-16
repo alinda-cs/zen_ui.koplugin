@@ -80,6 +80,10 @@ jobs:
           BETA_VERSION="${{ steps.version_check.outputs.version }}"
           sed -i "s/version = \"[^\"]*\"/version = \"${BETA_VERSION}\"/" _meta.lua
 
+      - name: Install fonttools
+        if: steps.version_check.outputs.skip == 'false'
+        run: pip install fonttools
+
       - name: Build plugin zip
         if: steps.version_check.outputs.skip == 'false'
         run: bash build.sh
