@@ -166,8 +166,20 @@ function M.build(ctx, source_key)
     local scale = clamp(col_h / 300, 0.55, 1.28) * library_font.getScale(18)
     local title_face = Font:getFace("smallinfofont", Screen:scaleBySize(math.floor(11 * scale + 0.5)))
     local meta_face = Font:getFace("smallinfofont", Screen:scaleBySize(math.floor(9 * scale + 0.5)))
-    local desc_face = Font:getFace("smallinfofont", Screen:scaleBySize(math.floor(7 * scale + 0.5)))
     local stats_face = Font:getFace("smallinfofont", Screen:scaleBySize(math.floor(6.5 * scale + 0.5)))
+    -- Match the "Details" TextViewer (text_type = "book_info") description font so the
+    -- home featured description renders at the same size. Don't apply the cover-size
+    -- `scale` shrink here: keep a fixed size even when the description is long.
+    local desc_font_size = 20
+    local g_settings = rawget(_G, "G_reader_settings")
+    if g_settings then
+        local tt = g_settings:readSetting("textviewer_text_types")
+        local bi = tt and tt.book_info
+        if bi and tonumber(bi.font_size) then
+            desc_font_size = tonumber(bi.font_size)
+        end
+    end
+    local desc_face = Font:getFace("x_smallinfofont", desc_font_size)
 
     -- Optional status bar (top of right column)
     local status_widget = show_status_bar and ctx.buildStatusRow(text_w, {

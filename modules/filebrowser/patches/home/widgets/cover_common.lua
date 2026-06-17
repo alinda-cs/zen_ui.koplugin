@@ -137,6 +137,10 @@ function M.make_cover_widget(book, max_w, max_h, opts)
     local child
     if book and book.cover_bb then
         local scaled = book.cover_bb:scale(target_w, target_h)
+        -- :scale() returns a new BlitBuffer; the source copy (made in get_book)
+        -- is no longer needed. Free it now so it doesn't leak FFI memory.
+        if book.cover_bb.free then book.cover_bb:free() end
+        book.cover_bb = nil
         if scaled then
             child = ImageWidget:new{
                 image = scaled,

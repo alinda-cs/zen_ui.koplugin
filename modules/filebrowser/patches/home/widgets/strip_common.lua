@@ -344,7 +344,7 @@ function M.build_strip(ctx, source_key)
     local row_top_pad = math.max(4, Screen:scaleBySize(4))
     local row_bottom_pad = math.max(4, Screen:scaleBySize(4))
     local row_inner_bottom_pad = two_rows and math.max(2, Screen:scaleBySize(4)) or 0
-    local strip_title_face = Font:getFace("smallinfofont", library_font.scaleValue(Screen:scaleBySize(10), 18))
+    local strip_title_face = library_font.getFace(library_font.scaleValue(16))
     -- Measure the real rendered single-line height: TextBoxWidget renders at
     -- round((1+line_height)*face.size) and bumps a too-small height up to that,
     -- so a guessed title_h underreserves and the title overflows into the navbar.
@@ -354,6 +354,7 @@ function M.build_strip(ctx, source_key)
             text = "Ag",
             width = width,
             face = strip_title_face,
+            bold = true,
         }
         title_h = probe:getSize().h
         if probe.free then probe:free() end
@@ -460,6 +461,7 @@ function M.build_strip(ctx, source_key)
                         width = item_w,
                         height = title_h,
                         face = strip_title_face,
+                        bold = true,
                         alignment = "center",
                         fgcolor = Blitbuffer.COLOR_GRAY_3,
                         height_overflow_show_ellipsis = true,
@@ -498,7 +500,7 @@ function M.build_strip(ctx, source_key)
                 tap.onHoldCover = function(tap_self, _, ges)
                     if not tap_self.dimen or not ges or not ges.pos then return false end
                     if not tap_self.dimen:contains(ges.pos) then return false end
-                    if ctx.showBookMenu then return ctx.showBookMenu(path) end
+                    if ctx.showBookMenu then return ctx.showBookMenu(path, source) end
                     return false
                 end
                 tap[1] = content

@@ -1522,6 +1522,7 @@ local function apply_context_menu()
                 })
             end
 
+
             if is_file then
                 local ReadCollection = require("readcollection")
 
@@ -1956,6 +1957,35 @@ local function apply_context_menu()
                 for _i, row in ipairs(item._zen_extra_buttons) do
                     table.insert(buttons, row)
                 end
+            end
+
+            if is_file and item._zen_is_history then
+                table.insert(buttons, {
+                    {
+                        text = icons.delete .. "  " .. _("Remove from history"),
+                        align = "left",
+                        callback = function()
+                            close_dialog()
+                            local ConfirmBox = require("ui/widget/confirmbox")
+                            UIManager:show(ConfirmBox:new{
+                                text = _("Remove this book from history?"),
+                                ok_text = _("Remove"),
+                                ok_callback = function()
+                                    local ReadHistory = require("readhistory")
+                                    ReadHistory:removeItemByPath(file)
+                                    local SharedState = require("common/shared_state")
+                                    local plug = zen_plugin or rawget(_G, "__ZEN_UI_PLUGIN")
+                                    local home = plug and SharedState.get(plug, "home")
+                                    if home and home.rebuildActive then
+                                        UIManager:nextTick(function()
+                                            home.rebuildActive()
+                                        end)
+                                    end
+                                end,
+                            })
+                        end,
+                    },
+                })
             end
 
             local dlg_title = dialog_cover_widget and "" or dialog_title
