@@ -192,35 +192,32 @@ function M.build(ctx)
             UIManager:show(InfoMessage:new{ text = _("No launchable plugin menus found") })
             return
         end
-        local ButtonDialog = require("ui/widget/buttondialog")
-        local dialog
-        local buttons = {}
+        local picker_items = {}
         for _i, plugin in ipairs(found) do
-            buttons[#buttons + 1] = {{
+            picker_items[#picker_items + 1] = {
                 text = plugin.title,
-                callback = function()
-                    UIManager:close(dialog)
-                    local entry = {
-                        id = Model.next_id(cfg),
-                        type = "plugin",
-                        label = plugin.title,
-                        icon = DEFAULT_ENTRY_ICON,
-                        plugin = { key = plugin.key, method = plugin.method },
-                    }
-                    insert_entry(entry, folder)
-                    UIManager:nextTick(function()
-                        open_entry_settings(touch_menu, entry, folder)
-                    end)
-                end,
-            }}
+                plugin = plugin,
+            }
         end
-        dialog = ButtonDialog:new{
+        local show_menu_picker = require("common/ui/zen_menu_picker")
+        show_menu_picker{
             title = _("Choose plugin menu"),
-            title_align = "center",
-            width_factor = 0.85,
-            buttons = buttons,
+            items = picker_items,
+            on_select = function(item)
+                local plugin = item.plugin
+                local entry = {
+                    id = Model.next_id(cfg),
+                    type = "plugin",
+                    label = plugin.title,
+                    icon = DEFAULT_ENTRY_ICON,
+                    plugin = { key = plugin.key, method = plugin.method },
+                }
+                insert_entry(entry, folder)
+                UIManager:nextTick(function()
+                    open_entry_settings(touch_menu, entry, folder)
+                end)
+            end,
         }
-        UIManager:show(dialog)
     end
 
     local function add_items(folder)

@@ -27,33 +27,42 @@ local function showIconPickerDialog(icons_list, current_icon, on_select)
 
     local sw, sh   = Screen:getWidth(), Screen:getHeight()
     local icon_sz  = Screen:scaleBySize(42)
-    local label_h  = Screen:scaleBySize(18)
+    local label_size = math.max(Screen:scaleBySize(8),
+        (Font.sizemap and Font.sizemap["xx_smallinfofont"] or Screen:scaleBySize(18))
+        - Screen:scaleBySize(2))
+    local label_face = Font:getFace("smallinfofont", label_size)
+    local label_probe = TW:new{ text = "Wg", face = label_face, padding = 0 }
+    local label_h  = label_probe:getSize().h
+    label_probe:free()
     local cell_pad = Screen:scaleBySize(4)
+    local max_cell_brd = Screen:scaleBySize(2)
     local pad      = Size.padding.default
     local span     = Size.span.vertical_default
 
     -- Always reserve the tallest bar style height so the layout never resizes on style changes.
     local bar_area_h = pager.PN_FOOTER_H
 
-    -- Close button.
-    local close_sz  = Screen:scaleBySize(24)
-    local close_gap = Screen:scaleBySize(6)
-    local close_iw  = IW:new{ icon = "close", width = close_sz, height = close_sz }
+    -- Back button.
+    local back_sz  = Screen:scaleBySize(24)
+    local back_gap = Screen:scaleBySize(6)
+    local back_iw  = IW:new{ icon = "chevron.left", width = back_sz, height = back_sz }
 
     local content_w = sw - 2 * pad
     local cols      = math.max(4, math.floor(content_w / Screen:scaleBySize(78)))
     local cell_w    = math.floor(content_w / cols)
-    local cell_h    = icon_sz + label_h + cell_pad * 2
+    local cell_h    = icon_sz + label_h + cell_pad * 2 + max_cell_brd * 2
+    local label_max_w = cell_w - cell_pad * 2 - max_cell_brd * 2
 
-    -- Title: close icon on the left, label to its right.
-    local title_text_w = content_w - close_sz - close_gap
+    -- Title: back icon on the left, label to its right.
+    local title_text_w = content_w - back_sz - back_gap
     local title_tw = TW:new{
         text  = _("Select icon"),
         face  = Font:getFace("smallinfofont"),
+        bold  = true,
         width = title_text_w,
     }
     local title_text_h = title_tw:getSize().h
-    local title_h      = math.max(close_sz, title_text_h)
+    local title_h      = math.max(back_sz, title_text_h)
 
     -- Fit as many rows as possible within the available vertical space.
     local overhead      = 2 * pad + title_h + span + span + bar_area_h
@@ -99,8 +108,9 @@ local function showIconPickerDialog(icons_list, current_icon, on_select)
                         IW:new{ file = item.file or nil, icon = item.file and nil or name, width = icon_sz, height = icon_sz, alpha = true },
                         TW:new{
                             text      = short,
-                            face      = Font:getFace("xx_smallinfofont"),
-                            max_width = cell_w - cell_pad * 2,
+                            face      = label_face,
+                            max_width = label_max_w,
+                            padding   = 0,
                         },
                     },
                 },
@@ -212,8 +222,7 @@ local function showIconPickerDialog(icons_list, current_icon, on_select)
                 screen_zone = { ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1 },
                 handler     = function(ges)
                     local gx, gy = ges.pos.x, ges.pos.y
-                    -- Close button (top-left of content area).
-                    if gx >= content_x and gx < content_x + close_sz
+                    if gx >= content_x and gx < content_x + back_sz
                        and gy >= content_y and gy < content_y + title_h then
                         closeDialog()
                         return true
@@ -280,10 +289,9 @@ local function showIconPickerDialog(icons_list, current_icon, on_select)
         self.dimen.x = x
         self.dimen.y = y
         bb:paintRect(0, 0, sw, sh, Blitbuffer.COLOR_WHITE)
-        -- Close icon (vertically centred in title row).
-        close_iw:paintTo(bb, content_x, content_y + math.floor((title_h - close_sz) / 2))
-        -- Title text (offset right of close icon, vertically centred).
-        title_tw:paintTo(bb, content_x + close_sz + close_gap,
+        back_iw:paintTo(bb, content_x, content_y + math.floor((title_h - back_sz) / 2))
+        -- Title text (offset right of back icon, vertically centred).
+        title_tw:paintTo(bb, content_x + back_sz + back_gap,
                          content_y + math.floor((title_h - title_text_h) / 2))
         -- Current page grid.
         page_vgs[cur_page]:paintTo(bb, grid_x, grid_y)
