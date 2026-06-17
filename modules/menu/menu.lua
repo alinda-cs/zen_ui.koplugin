@@ -3,11 +3,13 @@ local initialized = false
 
 local FEATURES = {
     "quick_settings",
+    "app_launcher",
     "zen_mode",
 }
 
 local PATCH_MODULES = {
     quick_settings = "modules/menu/patches/quick_settings",
+    app_launcher = "modules/menu/patches/app_launcher",
     zen_mode = "modules/menu/patches/zen_mode",
     disable_top_menu_swipe_zones = "modules/menu/patches/disable_top_menu_swipe_zones",
     touch_menu_footer = "modules/menu/patches/touch_menu_footer",
@@ -55,7 +57,18 @@ function M.init(logger, plugin)
         _G.__ZEN_UI_RUNTIME_PATCHES = runtime_patches
     end
 
-    for _, feature in ipairs(FEATURES) do
+    if is_feature_enabled(plugin, "app_launcher")
+            and not is_feature_enabled(plugin, "quick_settings") then
+        local panel_fn = load_patch("quick_settings")
+        if panel_fn then
+            local ok = run_feature(logger, plugin, "quick_settings_panel_support", panel_fn)
+            if ok then
+                runtime_patches.quick_settings = true
+            end
+        end
+    end
+
+    for _i, feature in ipairs(FEATURES) do
         if is_feature_enabled(plugin, feature) then
             local fn = load_patch(feature)
             if fn then

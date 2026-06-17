@@ -11,6 +11,7 @@ local active_plugin
 local PATCH_MODULES = {
     navbar = "modules/filebrowser/patches/navbar",
     quick_settings = "modules/menu/patches/quick_settings",
+    app_launcher = "modules/menu/patches/app_launcher",
     zen_mode = "modules/menu/patches/zen_mode",
     status_bar = "modules/filebrowser/patches/status_bar",
     disable_top_menu_swipe_zones = "modules/menu/patches/disable_top_menu_swipe_zones",
@@ -30,6 +31,7 @@ local RESTART_REQUIRED = {
 local APPLY_MODE = {
     navbar = "filemanager_layout",
     quick_settings = "menu_refresh",
+    app_launcher = "menu_refresh",
     zen_mode = "menu_refresh",
     status_bar = "filemanager_reinit",
     disable_top_menu_swipe_zones = "menu_refresh",
@@ -55,6 +57,16 @@ end
 local function ensure_patch_loaded(plugin, feature)
     if RUNTIME_PATCHES[feature] then
         return true
+    end
+
+    if feature == "app_launcher" and not RUNTIME_PATCHES.quick_settings then
+        local ok_panel_require, panel_fn = pcall(require, PATCH_MODULES.quick_settings)
+        if ok_panel_require and type(panel_fn) == "function" then
+            local ok_panel = with_plugin(plugin, panel_fn)
+            if ok_panel then
+                RUNTIME_PATCHES.quick_settings = true
+            end
+        end
     end
 
     local module_name = PATCH_MODULES[feature]

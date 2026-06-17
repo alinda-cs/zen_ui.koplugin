@@ -415,6 +415,15 @@ function ZenUI:init()
         return qs_pos, table.remove(tab_table, qs_pos)
     end
 
+    local function take_tab_by_id(tab_table, id)
+        for i, tab in ipairs(tab_table) do
+            if tab.id == id then
+                return i, table.remove(tab_table, i)
+            end
+        end
+        return nil, nil
+    end
+
     local function zen_panel_hidden()
         local _cfg = _zen_plugin_ref and _zen_plugin_ref.config
         local _lc = _cfg and _cfg.lockdown
@@ -454,6 +463,12 @@ function ZenUI:init()
         return true
     end
 
+    local function app_launcher_enabled()
+        local _cfg = _zen_plugin_ref and _zen_plugin_ref.config
+        local _ft = _cfg and _cfg.features
+        return type(_ft) == "table" and _ft.app_launcher == true
+    end
+
     local function remove_zen_menu_tabs(m_self)
         for i = #m_self.tab_item_table, 1, -1 do
             local tab = m_self.tab_item_table[i]
@@ -465,6 +480,10 @@ function ZenUI:init()
 
     local function insert_zen_menu_tabs(m_self, panel_hidden)
         local qs_pos, qs_tab = take_quicksettings_tab(m_self.tab_item_table)
+        local _app_pos, app_tab = take_tab_by_id(m_self.tab_item_table, "app_launcher")
+        if not app_launcher_enabled() then
+            app_tab = nil
+        end
         if qs_pos and not m_self._zen_qs_insert_pos then
             m_self._zen_qs_insert_pos = qs_pos
         end
@@ -475,6 +494,9 @@ function ZenUI:init()
             if not panel_hidden then
                 table.insert(m_self.tab_item_table, insert_pos + 1, m_self._zen_tab_item)
             end
+            if app_tab then
+                table.insert(m_self.tab_item_table, app_tab)
+            end
             if qs_tab then
                 -- Last tab is pushed to far-right by TouchMenuBar's stretch spacer.
                 table.insert(m_self.tab_item_table, qs_tab)
@@ -483,9 +505,16 @@ function ZenUI:init()
             if qs_tab then
                 table.insert(m_self.tab_item_table, insert_pos, qs_tab)
             end
+            if app_tab then
+                table.insert(m_self.tab_item_table,
+                    qs_tab and (insert_pos + 1) or insert_pos, app_tab)
+            end
             if not panel_hidden then
                 table.insert(m_self.tab_item_table,
-                    qs_tab and (insert_pos + 1) or insert_pos, m_self._zen_tab_item)
+                    (qs_tab and app_tab) and (insert_pos + 2)
+                        or (qs_tab or app_tab) and (insert_pos + 1)
+                        or insert_pos,
+                    m_self._zen_tab_item)
             end
             -- Last tab is pushed to far-right by TouchMenuBar's stretch spacer.
             table.insert(m_self.tab_item_table, m_self._zen_home_tab_item)

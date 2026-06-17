@@ -9,6 +9,7 @@ local lib_section      = require("modules/settings/sections/library_settings")
 local home_section = require("modules/settings/sections/library_settings/home_settings")
 local navbar_section   = require("modules/settings/sections/library_settings/navbar_settings")
 local menu_section     = require("modules/settings/sections/menu_settings")
+local app_launcher_section = require("modules/settings/sections/app_launcher_settings")
 local reader_section   = require("modules/settings/sections/reader_settings")
 local global_section   = require("modules/settings/sections/global_settings")
 local advanced_section = require("modules/settings/sections/advanced_settings")
@@ -47,6 +48,7 @@ function M.build(plugin)
     local home_item       = home_section.build(ctx)
     local navbar_item          = navbar_section.build(ctx)
     local quick_settings_item  = menu_section.build(ctx)
+    local app_launcher_item = app_launcher_section.build(ctx)
     local reader_items         = reader_section.build(ctx)
     local global_items      = global_section.build(ctx)
     local advanced_items    = advanced_section.build(ctx)
@@ -128,6 +130,7 @@ function M.build(plugin)
             end,
         },
         quick_settings_item,
+        app_launcher_item,
         { text = _("Library"),  sub_item_table = filebrowser_items },
         home_item,
         navbar_item,

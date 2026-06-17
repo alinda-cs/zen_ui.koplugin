@@ -50,6 +50,12 @@ local function apply_quick_settings()
         return type(features) == "table" and features.quick_settings == true
     end
 
+    local function panel_support_enabled()
+        local features = zen_plugin.config and zen_plugin.config.features
+        return type(features) == "table"
+            and (features.quick_settings == true or features.app_launcher == true)
+    end
+
     local function getQuickSettingsTabIndex(touch_menu)
         local tab_table = touch_menu and touch_menu.tab_item_table
         if type(tab_table) ~= "table" then return 1 end
@@ -1010,7 +1016,7 @@ local function apply_quick_settings()
             end
         end
         -- Register a screen-wide hold gesture for panel button hold_callbacks
-        if is_enabled() then
+        if panel_support_enabled() then
             -- screen_size may be nil on some devices (e.g. KindleBasic5)
             local sw = (self.screen_size and self.screen_size.w) or Screen:getWidth()
             local sh = (self.screen_size and self.screen_size.h) or Screen:getHeight()
@@ -1045,7 +1051,7 @@ local function apply_quick_settings()
     local orig_updateItems = TouchMenu.updateItems
 
     function TouchMenu:updateItems(target_page, target_item_id)
-        if not is_enabled() then
+        if not panel_support_enabled() then
             self._qs_refs = nil
             return orig_updateItems(self, target_page, target_item_id)
         end
@@ -1086,7 +1092,13 @@ local function apply_quick_settings()
         table.insert(self.item_group, panel)
 
         local qs_refs = self._qs_refs
-        if qs_refs and qs_refs.button_layout_row and #qs_refs.button_layout_row > 0 then
+        if qs_refs and type(qs_refs.layout_rows) == "table" then
+            for _i, row in ipairs(qs_refs.layout_rows) do
+                if type(row) == "table" and #row > 0 then
+                    table.insert(self.layout, row)
+                end
+            end
+        elseif qs_refs and qs_refs.button_layout_row and #qs_refs.button_layout_row > 0 then
             table.insert(self.layout, qs_refs.button_layout_row)
         end
 
@@ -1138,7 +1150,7 @@ local function apply_quick_settings()
     local orig_onTapCloseAllMenus = TouchMenu.onTapCloseAllMenus
 
     function TouchMenu:onTapCloseAllMenus(arg, ges_ev)
-        if not is_enabled() then
+        if not panel_support_enabled() then
             return orig_onTapCloseAllMenus(self, arg, ges_ev)
         end
 
@@ -1154,7 +1166,7 @@ local function apply_quick_settings()
 
     -- Hook onHoldCloseAllMenus to intercept holds on panel buttons
     function TouchMenu:onHoldCloseAllMenus(arg, ges_ev)
-        if not is_enabled() then return end
+        if not panel_support_enabled() then return end
 
         if self._qs_refs and self.item_table and self.item_table.panel then
             if not self._qs_slider_locked then
@@ -1166,7 +1178,7 @@ local function apply_quick_settings()
     end
 
     local function close_panel_on_resize(tm)
-        if is_enabled() and tm and tm.item_table and tm.item_table.panel and tm.closeMenu then
+        if panel_support_enabled() and tm and tm.item_table and tm.item_table.panel and tm.closeMenu then
             tm:closeMenu()
         end
         return false
@@ -1209,10 +1221,13 @@ local function apply_quick_settings()
     -- Delegate all slider gesture types to ZenSlider, which owns the logic.
     ZenSlider.installTouchMenuHooks(TouchMenu, {
         in_panel_mode = function(tm)
-            return is_enabled()
-                and tm._qs_refs ~= nil
+            local refs = tm._qs_refs
+            return panel_support_enabled()
+                and refs ~= nil
                 and tm.item_table ~= nil
                 and tm.item_table.panel ~= nil
+                and type(refs.sliders) == "table"
+                and #refs.sliders > 0
         end,
         get_sliders = function(tm)
             local refs = tm._qs_refs
@@ -1258,7 +1273,7 @@ local function apply_quick_settings()
     local orig_onPrevPage = TouchMenu.onPrevPage
     if orig_onPrevPage then
         function TouchMenu:onPrevPage()
-            if is_enabled() and self.item_table and self.item_table.panel then
+            if panel_support_enabled() and self.item_table and self.item_table.panel then
                 return true
             end
             return orig_onPrevPage(self)
@@ -1268,7 +1283,7 @@ local function apply_quick_settings()
     local orig_onNextPage = TouchMenu.onNextPage
     if orig_onNextPage then
         function TouchMenu:onNextPage()
-            if is_enabled() and self.item_table and self.item_table.panel then
+            if panel_support_enabled() and self.item_table and self.item_table.panel then
                 return true
             end
             return orig_onNextPage(self)

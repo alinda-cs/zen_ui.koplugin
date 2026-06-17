@@ -37,6 +37,7 @@ local defaults = {
     features = {
         navbar = true,
         quick_settings = true,
+        app_launcher = true,
         zen_mode = true,
         status_bar = true,
         disable_top_menu_swipe_zones = true,
@@ -126,6 +127,10 @@ local defaults = {
         show_warmth = true,
         flip_lh_rh_icon = false,
         rotate_action = "90",
+    },
+    app_launcher = {
+        entries = {},
+        next_id = 0,
     },
     status_bar = {
         custom_text = " ",
