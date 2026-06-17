@@ -16,23 +16,6 @@ local _home_inject_navbar = nil
 local _zen_shared = nil
 local _zen_plugin = nil
 
--- [ZEN-MEM-DEBUG] temporary instrumentation to track home-page RAM growth
-local _zen_rebuild_count = 0
-local _zen_cover_copy_count = 0
-local function _zen_mem_probe(tag)
-    local util = require("util")
-    local rss_str = "?"
-    local ok, memavail, memtotal = pcall(util.calcFreeMem)
-    if ok and memtotal then
-        local used = (memtotal - (memavail or 0)) / 1024 / 1024
-        rss_str = string.format("%.1fMB used / %.0fMB total", used, memtotal / 1024 / 1024)
-    end
-    local lua_kb = collectgarbage("count")
-    logger.info(string.format(
-        "[ZEN-MEM] %s | rebuilds=%d cover_copies=%d | lua_heap=%.1fMB | sys=%s",
-        tostring(tag), _zen_rebuild_count, _zen_cover_copy_count, lua_kb / 1024, rss_str))
-end
-
 local function refresh_shared_state()
     if _zen_plugin then
         _zen_shared = SharedState.restore(_zen_plugin) or _zen_shared
@@ -546,7 +529,6 @@ local function build_data_provider(cfg, dcfg)
                 description = bi.description
                 if bi.cover_bb and bi.has_cover and bi.cover_fetched and not bi.ignore_cover then
                     cover_bb = bi.cover_bb:copy()
-                    _zen_cover_copy_count = _zen_cover_copy_count + 1 -- [ZEN-MEM-DEBUG]
                 end
             end
         end
@@ -1351,8 +1333,6 @@ function M.showHomeView(injectNavbar)
     menu._zen_home_needs_clock_rebuild = needs_clock_rebuild
 
     local function rebuild(refresh_stats)
-        _zen_rebuild_count = _zen_rebuild_count + 1 -- [ZEN-MEM-DEBUG]
-        _zen_mem_probe("rebuild#" .. _zen_rebuild_count .. " BEGIN clock=" .. tostring(needs_clock_rebuild))
         if data_provider then
             if type(data_provider.prepareStats) == "function" then
                 data_provider:prepareStats(rows, refresh_stats == true)
@@ -1363,8 +1343,6 @@ function M.showHomeView(injectNavbar)
         local content = build_home_content(menu, dcfg, rows, data_provider)
         StandalonePage.mount_body(menu, content)
         UIManager:setDirty(menu, "ui")
-        collectgarbage("collect") -- [ZEN-MEM-DEBUG] force GC so leftover = real FFI/RSS leak
-        _zen_mem_probe("rebuild#" .. _zen_rebuild_count .. " END")
     end
 
     if show_status_bar then
@@ -1420,6 +1398,10 @@ function M.showHomeView(injectNavbar)
         pcall(function()
             require("common/clock_timer").unbind(self)
         end)
+        if self.item_group and type(self.item_group.free) == "function" then
+            pcall(function() self.item_group:free() end)
+            while #self.item_group > 0 do table.remove(self.item_group) end
+        end
         if orig_onCloseWidget then
             return orig_onCloseWidget(self, ...)
         end

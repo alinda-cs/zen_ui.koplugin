@@ -236,38 +236,9 @@ function M.apply_status_row(menu, params)
     ClockTimer.bind(menu, refresh_bound_status_row)
 end
 
--- [ZEN-MEM-DEBUG] count ImageWidgets + raw BlitBuffers held in a widget tree
-local function _zen_count_covers(node, seen, acc, depth)
-    if type(node) ~= "table" or depth > 40 then return end
-    if seen[node] then return end
-    seen[node] = true
-    if node.image ~= nil then acc.images = acc.images + 1 end
-    -- raw BlitBuffer: has getWidth/free and a pixel buffer
-    if type(node.free) == "function" and type(node.getWidth) == "function"
-            and node.image == nil and node.paintTo == nil then
-        acc.bbs = acc.bbs + 1
-    end
-    for k, v in pairs(node) do
-        if type(v) == "table" and k ~= "parent" and k ~= "show_parent" then
-            _zen_count_covers(v, seen, acc, depth + 1)
-        end
-    end
-end
-
 function M.mount_body(menu, body_widget)
     if not menu or not menu.item_group then return end
-    -- [ZEN-MEM-DEBUG] inspect the body being dropped (not freed)
     local old_body = menu.item_group[1]
-    if old_body then
-        local acc = { images = 0, bbs = 0 }
-        pcall(_zen_count_covers, old_body, {}, acc, 0)
-        require("logger").info(string.format(
-            "[ZEN-MEM] mount_body dropping old body: images=%d raw_bbs=%d has_free=%s (NOT calling :free)",
-            acc.images, acc.bbs, tostring(type(old_body.free) == "function")))
-    end
-    -- Free old widget tree (recurses containers, frees disposable BlitBuffers
-    -- held by ImageWidgets). Without this, scaled cover BBs leak FFI memory on
-    -- every rebuild because table.remove only drops the Lua references.
     if old_body and type(old_body.free) == "function" then
         pcall(function() old_body:free() end)
     end
