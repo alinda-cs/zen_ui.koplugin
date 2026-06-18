@@ -2,6 +2,7 @@ local Menu = require("ui/widget/menu")
 local TitleBar = require("ui/widget/titlebar")
 local Geom = require("ui/geometry")
 local ClockTimer = require("common/clock_timer")
+local WidgetResources = require("common/widget_resources")
 
 local M = {}
 
@@ -210,24 +211,23 @@ function M.apply_status_row(menu, params)
         end
     end
 
+    local function set_title_row(row)
+        if not (row and tb.title_group and #tb.title_group >= 2) then return end
+        WidgetResources.replaceChild(tb.title_group, 2, row)
+    end
+
     remove_from_overlap(tb, tb.left_button)
     remove_from_overlap(tb, tb.right_button)
     tb.has_left_icon = false
     tb.has_right_icon = false
 
     if tb.title_group and #tb.title_group >= 2 then
-        local row = build_row()
-        if row then
-            tb.title_group[2] = row
-            tb.title_group:resetLayout()
-        end
+        set_title_row(build_row())
     end
 
     menu._zen_status_refresh = function()
-        local row = build_row()
-        if row and tb.title_group and #tb.title_group >= 2 then
-            tb.title_group[2] = row
-            tb.title_group:resetLayout()
+        if tb.title_group and #tb.title_group >= 2 then
+            set_title_row(build_row())
             if repaintTitleBar then repaintTitleBar(tb) end
         end
     end
@@ -238,10 +238,7 @@ end
 
 function M.mount_body(menu, body_widget)
     if not menu or not menu.item_group then return end
-    local old_body = menu.item_group[1]
-    if old_body and type(old_body.free) == "function" then
-        pcall(function() old_body:free() end)
-    end
+    WidgetResources.free(menu.item_group[1])
     while #menu.item_group > 0 do table.remove(menu.item_group) end
     menu.item_group[1] = body_widget
     menu.item_group:resetLayout()

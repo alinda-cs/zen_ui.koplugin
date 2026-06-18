@@ -9,6 +9,7 @@ local LeftContainer = require("ui/widget/container/leftcontainer")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Font = require("ui/font")
 local Device = require("device")
+local WidgetResources = require("common/widget_resources")
 
 local function paint_pill(bb, x, y, w, h, color)
     if w <= 0 or h <= 0 then return end
@@ -121,8 +122,8 @@ return {
             local right_probe = TextWidget:new{ text = value_probe_text, face = face }
             local lw = left_probe:getSize().w or 0
             local rw = right_probe:getSize().w or 0
-            if left_probe.free then left_probe:free() end
-            if right_probe.free then right_probe:free() end
+            WidgetResources.free(left_probe)
+            WidgetResources.free(right_probe)
             if lw + rw + (gap * 2) + min_bar_w <= content_w then
                 chosen_face = face
                 left_text_w = lw
@@ -136,13 +137,13 @@ return {
             local right_probe = TextWidget:new{ text = value_probe_text, face = chosen_face }
             left_text_w = left_probe:getSize().w or 0
             right_text_w = right_probe:getSize().w or 0
-            if left_probe.free then left_probe:free() end
-            if right_probe.free then right_probe:free() end
+            WidgetResources.free(left_probe)
+            WidgetResources.free(right_probe)
         end
 
         local line_probe = TextWidget:new{ text = "A", face = chosen_face }
         local line_h = line_probe:getSize().h or math.max(10, min_px)
-        if line_probe.free then line_probe:free() end
+        WidgetResources.free(line_probe)
         local bar_h = math.max(3, math.min(6, math.floor(line_h * 0.35)))
 
         local left_w = math.max(1, left_text_w + 2)

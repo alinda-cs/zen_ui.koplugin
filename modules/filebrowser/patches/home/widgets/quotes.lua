@@ -7,6 +7,7 @@ local TextWidget = require("ui/widget/textwidget")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local GestureRange = require("ui/gesturerange")
+local WidgetResources = require("common/widget_resources")
 
 local function get_quote(ctx)
     local q = ctx.data:getCurrentQuote()
@@ -31,7 +32,7 @@ local function fit_quote_face(text, width, max_h)
             height_overflow_show_ellipsis = false,
         }
         local need_h = probe:getSize().h or 0
-        if probe.free then probe:free() end
+        WidgetResources.free(probe)
         if need_h <= max_h then
             chosen = face
             break
@@ -60,7 +61,7 @@ return {
         if show_author and quote.author and quote.author ~= "" then
             local author_probe = TextWidget:new{ text = "A", face = author_face }
             local author_line_h = author_probe:getSize().h or 0
-            if author_probe.free then author_probe:free() end
+            WidgetResources.free(author_probe)
             author_h = author_line_h + 5
         end
         local author_gap = author_h > 0 and 3 or 0
@@ -91,14 +92,9 @@ return {
         end
         local available_h = math.max(0, height - content_h)
         local content_top = math.min(available_h, Screen:scaleBySize(6))
-        local content = {
+        local content = WidgetResources.managedPaintWidget{
             dimen = Geom:new{ w = width, h = height },
-            getSize = function(self)
-                return self.dimen
-            end,
-            handleEvent = function()
-                return false
-            end,
+            resources = { quote_widget, author_widget },
             paintTo = function(_self, bb, x, y)
                 local quote_x = x + math.floor((width - content_w) / 2)
                 local quote_y = y + content_top
@@ -108,6 +104,10 @@ return {
                     local author_y = quote_y + quote_h + author_gap
                     author_widget:paintTo(bb, author_x, author_y)
                 end
+            end,
+            free = function()
+                quote_widget = nil
+                author_widget = nil
             end,
         }
 

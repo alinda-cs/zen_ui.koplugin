@@ -10,6 +10,7 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Device = require("device")
 local Font = require("ui/font")
 local utils = require("common/utils")
+local WidgetResources = require("common/widget_resources")
 
 local _icons_dir
 do
@@ -51,14 +52,9 @@ local function metric_content(width, height, value_widget, label_widget)
     local content_h = value_h - overlap + gap + label_h
     local top = math.floor(math.max(0, height - content_h) / 2)
 
-    return {
+    return WidgetResources.managedPaintWidget{
         dimen = Geom:new{ w = width, h = height },
-        getSize = function(self)
-            return self.dimen
-        end,
-        handleEvent = function()
-            return false
-        end,
+        resources = { value_widget, label_widget },
         paintTo = function(_self, bb, x, y)
             local value_x = x + math.floor((width - (value_size.w or 0)) / 2)
             local value_y = y + top
@@ -66,6 +62,10 @@ local function metric_content(width, height, value_widget, label_widget)
             local label_y = value_y + value_h - overlap + gap
             value_widget:paintTo(bb, value_x, value_y)
             label_widget:paintTo(bb, label_x, label_y)
+        end,
+        free = function()
+            value_widget = nil
+            label_widget = nil
         end,
     }
 end

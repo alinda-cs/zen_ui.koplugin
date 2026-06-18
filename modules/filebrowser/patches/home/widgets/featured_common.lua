@@ -15,9 +15,9 @@ local Device = require("device")
 local Font = require("ui/font")
 local util = require("util")
 local zen_utils = require("common/utils")
+local WidgetResources = require("common/widget_resources")
 local cover_common = require("modules/filebrowser/patches/home/widgets/cover_common")
 local library_font = require("modules/filebrowser/patches/library_font")
-local logger = require("logger")
 local _ = require("gettext")
 
 local M = {}
@@ -196,14 +196,18 @@ function M.build(ctx, source_key)
     local desc_face = get_text_face(description_style, library_font.scaleValue(description_style.font_size))
 
     -- Optional status bar (top of right column)
-    local status_widget = show_status_bar and ctx.buildStatusRow(text_w, {
+    local status_opts = {
         padding = 0,
         font_name = "xx_smallinfofont",
         font_size_delta = -2,
         row_height = 14,
         bold_text = module_cfg.status_bar_bold_text ~= false,
         show_bottom_border = module_cfg.status_bar_show_bottom_border ~= false,
-    }) or nil
+    }
+    local function build_status_widget()
+        return show_status_bar and ctx.buildStatusRow(text_w, status_opts) or nil
+    end
+    local status_widget = build_status_widget()
     local status_h = status_widget and (status_widget:getSize().h or 0) or 0
     local status_gap = status_h > 0 and math.max(1, math.floor(col_h * 0.015)) or 0
 
@@ -212,7 +216,12 @@ function M.build(ctx, source_key)
     local left_progress_text, right_progress_text = build_progress_text(book, pct, module_cfg.progress_meta)
     local has_progress_text = left_progress_text ~= "" or right_progress_text ~= ""
     local progress_h = math.max(1, math.floor(height * 0.022))
-    local stats_text_h = has_progress_text and (TextWidget:new{ text = "A", face = stats_face }:getSize().h or 8) or 0
+    local stats_text_h = 0
+    if has_progress_text then
+        local stats_probe = TextWidget:new{ text = "A", face = stats_face }
+        stats_text_h = (stats_probe:getSize().h or 8)
+        WidgetResources.free(stats_probe)
+    end
     local bar_h = math.max(progress_h, stats_text_h)
 
     local progress_row
@@ -241,7 +250,7 @@ function M.build(ctx, source_key)
     local author_line_h = math.max(1, math.floor((tonumber(meta_face.size) or 10) * 1.05 + 0.5))
     local probe = TextWidget:new{ text = book.title or "", face = title_face, bold = title_style.bold == true }
     local title_needs_2_lines = probe:getSize().w > text_w
-    probe:free()
+    WidgetResources.free(probe)
     local title_h = title_line_h * (title_needs_2_lines and 2 or 1)
 
     local author_text = (book.authors or ""):gsub("%s*\n%s*", ", "):gsub("%s+", " ")
@@ -250,7 +259,7 @@ function M.build(ctx, source_key)
     if has_author then
         local author_probe = TextWidget:new{ text = author_text, face = meta_face, bold = author_style.bold == true }
         local lines = author_probe:getSize().w > text_w and 2 or 1
-        author_probe:free()
+        WidgetResources.free(author_probe)
         author_h = author_line_h * lines
     end
     local title_author_gap = has_author and math.max(1, Screen:scaleBySize(1)) or 0
@@ -261,7 +270,23 @@ function M.build(ctx, source_key)
 
     if status_widget and status_h > 0 then
         if top_budget >= status_h then
-            table.insert(top_items, status_widget)
+            local status_slot = FrameContainer:new{
+                width = text_w,
+                height = status_h,
+                padding = 0,
+                bordersize = 0,
+                background = Blitbuffer.COLOR_WHITE,
+                status_widget,
+            }
+            if type(ctx.registerClockRefresh) == "function" then
+                ctx.registerClockRefresh(function()
+                    local next_widget = build_status_widget()
+                    if not next_widget then return false end
+                    WidgetResources.replaceChild(status_slot, 1, next_widget)
+                    return true
+                end)
+            end
+            table.insert(top_items, status_slot)
             if status_gap > 0 then
                 table.insert(top_items, VerticalSpan:new{ width = status_gap })
             end
@@ -327,7 +352,7 @@ function M.build(ctx, source_key)
         bold = description_style.bold == true,
     }
     local desc_line_h = math.max(1, math.ceil(desc_line_h_probe:getSize().h / 2))
-    desc_line_h_probe:free()
+    WidgetResources.free(desc_line_h_probe)
 
     local v_pad = math.max(2, math.floor(col_h * 0.02))
     local desc_available = math.max(0, spacer_h - v_pad * 2)
@@ -337,8 +362,6 @@ function M.build(ctx, source_key)
     if can_show_desc then
         desc_h = math.floor(desc_available / desc_line_h) * desc_line_h
     end
-
-    logger.dbg("[featured_common] col_h=", col_h, "actual_top_h=", actual_top_h, "spacer_h=", spacer_h, "actual_bottom_h=", actual_bottom_h, "desc_h=", desc_h)
 
     -- Assemble right column: title/author top, desc middle, progress bottom
     local detail_children = { align = "left" }

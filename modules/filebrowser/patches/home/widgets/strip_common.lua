@@ -16,6 +16,7 @@ local library_font = require("modules/filebrowser/patches/library_font")
 local Font = require("ui/font")
 local Device = require("device")
 local utils = require("common/utils")
+local WidgetResources = require("common/widget_resources")
 
 local M = {}
 M.SIZE = { preferred_pct = 0.20, min_pct = 0.12, max_pct = 0.50, grow_priority = 1 }
@@ -102,7 +103,7 @@ local function apply_strip_badges(frame, book, plugin)
         if _cached_fav_mark and _cached_fav_size == size and _cached_fav_dark == is_dark then
             return _cached_fav_mark
         end
-        if _cached_fav_mark and _cached_fav_mark.free then _cached_fav_mark:free() end
+        WidgetResources.free(_cached_fav_mark)
         _cached_fav_mark = TextWidget:new{
             text    = "\u{2606}",
             face    = Font:getFace("cfont", math.max(6, math.floor(size * 0.45))),
@@ -113,6 +114,17 @@ local function apply_strip_badges(frame, book, plugin)
         _cached_fav_dark = is_dark
         return _cached_fav_mark
     end
+
+    local function free_badge_cache()
+        WidgetResources.free(_cached_pct_tw)
+        WidgetResources.free(_cached_pause_tw)
+        WidgetResources.free(_cached_pages_tw)
+        WidgetResources.free(_cached_series_tw)
+        WidgetResources.free(_cached_fav_mark)
+        _cached_pct_tw, _cached_pause_tw, _cached_pages_tw, _cached_series_tw, _cached_fav_mark = nil, nil, nil, nil, nil
+    end
+
+    WidgetResources.wrapFree(frame, free_badge_cache)
 
     frame.paintTo = function(self, bb, x, y)
         orig_paintTo(self, bb, x, y)
@@ -196,7 +208,7 @@ local function apply_strip_badges(frame, book, plugin)
             elseif do_pause then
                 local fs = math.max(7, math.floor(base_sz * 0.40))
                 if not _cached_pause_tw or _cached_pause_fs ~= fs or _cached_pause_dark ~= is_dark then
-                    if _cached_pause_tw and _cached_pause_tw.free then _cached_pause_tw:free() end
+                    WidgetResources.free(_cached_pause_tw)
                     _cached_pause_tw   = TextWidget:new{ text="\u{F0150}", face=Font:getFace("cfont",fs), fgcolor=badge_fg, padding=0 }
                     _cached_pause_fs   = fs
                     _cached_pause_dark = is_dark
@@ -207,7 +219,7 @@ local function apply_strip_badges(frame, book, plugin)
                 local pct_str = math.floor(100 * pct) .. "%"
                 local fs = math.max(7, math.floor(base_sz * 0.24))
                 if not _cached_pct_tw or _cached_pct_str ~= pct_str or _cached_pct_fs ~= fs or _cached_pct_dark ~= is_dark then
-                    if _cached_pct_tw and _cached_pct_tw.free then _cached_pct_tw:free() end
+                    WidgetResources.free(_cached_pct_tw)
                     _cached_pct_tw   = TextWidget:new{ text=pct_str, face=Font:getFace("cfont",fs), bold=true, fgcolor=badge_fg, padding=0 }
                     _cached_pct_str  = pct_str
                     _cached_pct_fs   = fs
@@ -223,7 +235,7 @@ local function apply_strip_badges(frame, book, plugin)
             local page_str = utils.formatPageCount(book.pages)
             local fs = math.max(7, math.floor(base_sz * 0.24))
             if not _cached_pages_tw or _cached_pages_str ~= page_str or _cached_pages_fs ~= fs or _cached_pages_dark ~= is_dark then
-                if _cached_pages_tw and _cached_pages_tw.free then _cached_pages_tw:free() end
+                WidgetResources.free(_cached_pages_tw)
                 _cached_pages_tw   = TextWidget:new{ text=page_str, face=Font:getFace("cfont",fs), bold=true, fgcolor=badge_fg, padding=0 }
                 _cached_pages_str  = page_str
                 _cached_pages_fs   = fs
@@ -257,25 +269,25 @@ local function apply_strip_badges(frame, book, plugin)
                     local r    = math.floor(base_sz / 2)
                     local fs   = math.max(7, math.floor(base_sz * 0.26))
                     if not _cached_series_tw or _cached_series_idx ~= series_idx or _cached_series_fs ~= fs or _cached_series_dark ~= is_dark then
-                        if _cached_series_tw and _cached_series_tw.free then _cached_series_tw:free() end
+                        WidgetResources.free(_cached_series_tw)
                         local inner_w = math.floor(r * 1.30)
                         local function make_tw(label, sz)
                             return TextWidget:new{ text=label, face=Font:getFace("cfont",sz), bold=true, fgcolor=badge_fg, padding=0 }
                         end
                         local tw = make_tw(idx_str, fs)
                         if tw:getSize().w > inner_w then
-                            if tw.free then tw:free() end
+                            WidgetResources.free(tw)
                             local no_hash = idx_str:sub(1,1) == "#" and idx_str:sub(2) or idx_str
                             local tw2 = make_tw(no_hash, fs)
                             if tw2:getSize().w <= inner_w then
                                 tw = tw2
                             else
-                                if tw2.free then tw2:free() end
+                                WidgetResources.free(tw2)
                                 local sz = fs
                                 while sz > 7 do
                                     local t = make_tw(no_hash, sz)
                                     if t:getSize().w <= inner_w then tw = t; break end
-                                    if t.free then t:free() end
+                                    WidgetResources.free(t)
                                     sz = sz - 1
                                 end
                                 if not tw then tw = make_tw(no_hash, 7) end
@@ -357,7 +369,7 @@ function M.build_strip(ctx, source_key)
             bold = true,
         }
         title_h = probe:getSize().h
-        if probe.free then probe:free() end
+        WidgetResources.free(probe)
         if title_h < 1 then title_h = math.max(14, Screen:scaleBySize(12)) end
     end
     local title_gap = show_strip_titles and math.max(1, Screen:scaleBySize(2)) or 0

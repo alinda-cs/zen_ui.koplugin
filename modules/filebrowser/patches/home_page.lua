@@ -8,6 +8,7 @@ local PresetStore = require("config/preset_store")
 local Registry = require("modules/filebrowser/patches/home/components/registry")
 local StandalonePage = require("modules/filebrowser/patches/standalone_page")
 local SharedState = require("common/shared_state")
+local WidgetResources = require("common/widget_resources")
 
 local M = {}
 
@@ -1217,6 +1218,7 @@ local function build_home_content(menu, dcfg, rows, data_provider)
     local children = { align = "left" }
     local used_h = 0
     local top_pad = page_pad + extra_top_pad
+    menu._zen_home_clock_refreshers = {}
     if top_pad > 0 then
         table.insert(children, VerticalSpan:new{ width = top_pad })
         used_h = used_h + top_pad
@@ -1262,6 +1264,11 @@ local function build_home_content(menu, dcfg, rows, data_provider)
             shiftStrip = shift_strip,
             openTopMenu = open_top_menu,
             buildStatusRow = _zen_shared and _zen_shared.buildStatusRow,
+            registerClockRefresh = function(refresh)
+                if type(refresh) == "function" then
+                    table.insert(menu._zen_home_clock_refreshers, refresh)
+                end
+            end,
             face_title = face_title,
             face_value = face_value,
             face_label = face_label,
@@ -1319,14 +1326,15 @@ local function build_home_content(menu, dcfg, rows, data_provider)
     }
 end
 
-local function rows_need_clock_rebuild(rows, dcfg)
+local function rows_have_clock_refreshers(rows, dcfg)
+    local modules = type(dcfg) == "table" and type(dcfg.modules) == "table" and dcfg.modules or {}
     for _i, comp in ipairs(rows or {}) do
         if comp.id == "datetime" then
             return true
         end
         if comp.id == "featured_recent" or comp.id == "featured_custom" or comp.id == "featured_tbr" then
-            local mcfg = type(dcfg.modules) == "table" and dcfg.modules[comp.id] or nil
-            if mcfg and mcfg.show_status_bar == true then
+            local mcfg = modules[comp.id]
+            if type(mcfg) == "table" and mcfg.show_status_bar == true then
                 return true
             end
         end
@@ -1365,8 +1373,8 @@ function M.showHomeView(injectNavbar)
 
     local rows = resolve_rows(dcfg)
     local data_provider = build_data_provider(cfg, dcfg)
-    local needs_clock_rebuild = rows_need_clock_rebuild(rows, dcfg)
-    menu._zen_home_needs_clock_rebuild = needs_clock_rebuild
+    local has_clock_refreshers = rows_have_clock_refreshers(rows, dcfg)
+    menu._zen_home_has_clock_refreshers = has_clock_refreshers
 
     local function rebuild(refresh_stats)
         if data_provider then
@@ -1381,6 +1389,23 @@ function M.showHomeView(injectNavbar)
         UIManager:setDirty(menu, "ui")
     end
 
+    function menu:_zen_home_refresh_clock_widgets()
+        local refreshed = 0
+        for _i, refresh in ipairs(self._zen_home_clock_refreshers or {}) do
+            if type(refresh) == "function" then
+                local ok, did_refresh = pcall(refresh)
+                if ok and did_refresh then
+                    refreshed = refreshed + 1
+                elseif not ok then
+                    logger.warn("zen-ui home: embedded clock refresh failed:", tostring(did_refresh))
+                end
+            end
+        end
+        if refreshed > 0 then
+            UIManager:setDirty(self, "ui")
+        end
+    end
+
     if show_status_bar then
         local status_refresh = menu._zen_status_refresh
         menu._zen_status_refresh = function(self, ...)
@@ -1388,18 +1413,18 @@ function M.showHomeView(injectNavbar)
             if status_refresh then
                 status_refresh(target, ...)
             end
-            if needs_clock_rebuild and target and target._home_rebuild then
-                target:_home_rebuild()
+            if target and target._zen_home_refresh_clock_widgets then
+                target:_zen_home_refresh_clock_widgets()
             end
         end
     else
         menu._zen_status_refresh = nil
     end
-    if not show_status_bar and needs_clock_rebuild then
+    if not show_status_bar and has_clock_refreshers then
         pcall(function()
             require("common/clock_timer").bind(menu, function(target)
-                if target and target._home_rebuild then
-                    target:_home_rebuild()
+                if target and target._zen_home_refresh_clock_widgets then
+                    target:_zen_home_refresh_clock_widgets()
                 end
             end)
         end)
@@ -1416,8 +1441,8 @@ function M.showHomeView(injectNavbar)
             end
         end
         rows = resolve_rows(dcfg)
-        needs_clock_rebuild = rows_need_clock_rebuild(rows, dcfg)
-        self._zen_home_needs_clock_rebuild = needs_clock_rebuild
+        has_clock_refreshers = rows_have_clock_refreshers(rows, dcfg)
+        self._zen_home_has_clock_refreshers = has_clock_refreshers
         rebuild(refresh_stats == true)
     end
 
@@ -1435,7 +1460,7 @@ function M.showHomeView(injectNavbar)
             require("common/clock_timer").unbind(self)
         end)
         if self.item_group and type(self.item_group.free) == "function" then
-            pcall(function() self.item_group:free() end)
+            WidgetResources.free(self.item_group)
             while #self.item_group > 0 do table.remove(self.item_group) end
         end
         if orig_onCloseWidget then
@@ -1467,12 +1492,14 @@ function M.rebuildActive()
         local cfg = load_zen_config()
         local dcfg = type(cfg) == "table" and ensure_home_cfg() or nil
         local show_status_bar = not dcfg or dcfg.show_status_bar ~= false
-        local needs_clock_rebuild = false
+        local has_clock_refreshers = false
         if dcfg then
-            needs_clock_rebuild = rows_need_clock_rebuild(resolve_rows(dcfg), dcfg)
+            local active_rows = resolve_rows(dcfg)
+            has_clock_refreshers = rows_have_clock_refreshers(active_rows, dcfg)
         end
         if _home_menu._zen_home_show_status_bar ~= show_status_bar
-                or _home_menu._zen_home_needs_clock_rebuild ~= needs_clock_rebuild then
+                or (not show_status_bar
+                    and _home_menu._zen_home_has_clock_refreshers ~= has_clock_refreshers) then
             local UIManager = require("ui/uimanager")
             UIManager:close(_home_menu)
             _home_menu = nil
