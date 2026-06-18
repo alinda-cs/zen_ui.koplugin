@@ -562,6 +562,42 @@ local function migrate_settings_files()
     return changed
 end
 
+local function migrate_changed_defaults(cfg)
+    if type(cfg) ~= "table" then
+        return cfg, false
+    end
+
+    local changed = false
+    if type(cfg._meta) ~= "table" then
+        cfg._meta = {}
+        changed = true
+    end
+
+    if cfg._meta.reader_footer_hide_cbz_default_migrated ~= true then
+        if type(cfg.reader_footer) ~= "table" then
+            cfg.reader_footer = {}
+        end
+        if cfg.reader_footer.hide_in_cbz ~= true then
+            cfg.reader_footer.hide_in_cbz = true
+        end
+        cfg._meta.reader_footer_hide_cbz_default_migrated = true
+        changed = true
+    end
+
+    if cfg._meta.context_menu_allow_delete_default_migrated ~= true then
+        if type(cfg.context_menu) ~= "table" then
+            cfg.context_menu = {}
+        end
+        if cfg.context_menu.allow_delete ~= true then
+            cfg.context_menu.allow_delete = true
+        end
+        cfg._meta.context_menu_allow_delete_default_migrated = true
+        changed = true
+    end
+
+    return cfg, changed
+end
+
 function M.get()
     return _current_config
 end
@@ -596,9 +632,11 @@ function M.load()
     cfg, migrated_bim     = migrate_bim_folder_cover_keys(cfg)
     local migrated_reader_backup = migrate_reader_footer_backup(cfg)
     local migrated_settings_files = migrate_settings_files()
+    local migrated_changed_defaults
+    cfg, migrated_changed_defaults = migrate_changed_defaults(cfg)
     if migrated_renamed or migrated_group or migrated_updater or migrated_fbc or migrated_bim
             or migrated_reader_backup or migrated_qs or migrated_file_config
-            or migrated_settings_files then
+            or migrated_settings_files or migrated_changed_defaults then
         M.save(cfg)
     end
     if migrated_file_config then

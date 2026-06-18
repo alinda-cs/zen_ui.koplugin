@@ -440,6 +440,20 @@ function ZenUI:init()
         return (type(icon) == "string" and icon ~= "") and icon or "library"
     end
 
+    local function return_to_rakuyomi_reader(restore)
+        if not restore and not G_reader_settings:isTrue("allow_commaneer_filemanager") then
+            return false
+        end
+        local ok, MangaReader = pcall(require, "MangaReader")
+        if not ok or type(MangaReader) ~= "table"
+                or MangaReader.is_showing ~= true
+                or type(MangaReader.onReturn) ~= "function" then
+            return false
+        end
+        MangaReader:onReturn()
+        return true
+    end
+
     local function remove_zen_menu_tabs(m_self)
         for i = #m_self.tab_item_table, 1, -1 do
             local tab = m_self.tab_item_table[i]
@@ -529,6 +543,9 @@ function ZenUI:init()
                         local file = ui.document.file
                         local outside_home = file and not paths.isInHomeDir(file)
                         ui:handleEvent(require("ui/event"):new("CloseConfigMenu"))
+                        if return_to_rakuyomi_reader(restore) then
+                            return
+                        end
                         ui:onClose()
                         if type(ui.showFileManager) == "function" then
                             if not restore and not outside_home then

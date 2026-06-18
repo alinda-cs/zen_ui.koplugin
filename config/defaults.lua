@@ -8,6 +8,8 @@ local defaults = {
         quickstart_shown_for_version = false,
         sort_defaults_applied = false,
         bim_fbc_migrated = false,
+        reader_footer_hide_cbz_default_migrated = false,
+        context_menu_allow_delete_default_migrated = false,
     },
     updater = {
         just_updated_version = "",
@@ -196,7 +198,7 @@ local defaults = {
     },
     reader_footer = {
         verbose_chapter_time = false,
-        hide_in_cbz = false,
+        hide_in_cbz = true,
     },
     highlight_lookup = {
         allow_unknown_items = false,

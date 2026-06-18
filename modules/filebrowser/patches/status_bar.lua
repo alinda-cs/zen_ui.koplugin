@@ -968,12 +968,21 @@ local function apply_status_bar()
     -- Holds the current autoRefresh callback so resume can rebind it after
     -- pausing the shared heartbeat during suspend.
     local _fm_autoRefresh = nil
+    local rakuyomi_view_names = {
+        chapter_listing = true,
+        library_view = true,
+    }
 
-    local function is_home_without_status_on_top()
+    local function suppresses_status_bar(widget)
+        return widget and (widget._zen_home_show_status_bar == false
+            or rakuyomi_view_names[widget.name] == true)
+    end
+
+    local function is_status_suppressed_on_top()
         local stack = UIManager._window_stack
         local top = stack and stack[#stack]
         local top_widget = top and top.widget
-        return top_widget and top_widget._zen_home_show_status_bar == false
+        return suppresses_status_bar(top_widget)
     end
 
     local function refreshVisibleStatusBar(fm, clock_tick)
@@ -982,10 +991,10 @@ local function apply_status_bar()
         local top = stack and stack[#stack]
         local top_widget = top and top.widget
 
+        if suppresses_status_bar(top_widget) then return end
         if top_widget == fm or top_widget == fm.show_parent then
             fm:_updateStatusBar()
         elseif top_widget and top_widget._zen_status_refresh then
-            if top_widget._zen_home_show_status_bar == false then return end
             if clock_tick and top_widget._zen_status_clock_bound then return end
             top_widget._zen_status_refresh(top_widget)
         end
@@ -1039,7 +1048,7 @@ local function apply_status_bar()
         -- Defer again after all plugins (coverbrowser etc.) finish init
         local fm = self
         UIManager:nextTick(function()
-            fm:_updateStatusBar()
+            refreshVisibleStatusBar(fm, false)
             -- Restore subtitle path only when subtitle widget exists
             if not config.hide_browser_bar and fm.file_chooser and fm.file_chooser.path then
                 fm:updateTitleBarPath(fm.file_chooser.path)
@@ -1167,7 +1176,7 @@ local function apply_status_bar()
             local fm = FileManager.instance
             if fm and is_enabled() then
                 UIManager:nextTick(function()
-                    if FileManager.instance == fm and not is_home_without_status_on_top() then
+                    if FileManager.instance == fm and not is_status_suppressed_on_top() then
                         fm:_updateStatusBar()
                     end
                 end)
