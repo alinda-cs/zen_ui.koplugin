@@ -48,8 +48,17 @@ msgstr "12 heures  (3:30 PM)"
 msgid "12-hour time"
 msgstr "Format 12 heures"
 
+msgid "180°"
+msgstr "180°"
+
 msgid "24-hour  (15:30)"
 msgstr "24 heures  (15:30)"
+
+msgid "270°"
+msgstr "270°"
+
+msgid "90°"
+msgstr "90°"
 
 msgid "< 1 min left in chapter"
 msgstr "< 1 min restant dans le chapitre"
@@ -60,11 +69,11 @@ msgstr "Une interface minimale, épurée et simple pour votre liseuse.\n\nBalaye
 msgid "A short summary of what went wrong"
 msgstr "Un bref résumé de ce qui s'est mal passé"
 
-msgid "A simple tab-based bar at the bottom of your library.\nFully customizable to make it your own"
-msgstr "Une barre à onglets simple en bas de votre bibliothèque.\nEntièrement personnalisable à votre guise."
-
 msgid "About"
 msgstr "À propos"
+
+msgid "Action"
+msgstr "Action"
 
 msgid "Action: %1"
 msgstr "Action : %1"
@@ -87,6 +96,12 @@ msgstr "Style de l'onglet actif"
 msgid "Active tab underline"
 msgstr "Soulignement de l'onglet actif"
 
+msgid "Add"
+msgstr "Ajouter"
+
+msgid "Add action"
+msgstr "Ajouter une action"
+
 msgid "Add book"
 msgstr "Ajouter un livre"
 
@@ -99,11 +114,20 @@ msgstr "Ajouter un catalogue"
 msgid "Add custom button"
 msgstr "Ajouter un bouton personnalisé"
 
+msgid "Add custom buttons for other plugins or actions."
+msgstr "Ajoutez des boutons personnalisés pour d'autres plugins ou actions."
+
 msgid "Add custom tab"
 msgstr "Ajouter un onglet personnalisé"
 
+msgid "Add folder"
+msgstr "Ajouter un dossier"
+
 msgid "Add folder…"
 msgstr "Ajouter un dossier…"
+
+msgid "Add plugin"
+msgstr "Ajouter un plugin"
 
 msgid "Add to collection"
 msgstr "Ajouter à la collection"
@@ -123,8 +147,8 @@ msgstr "Alexandre Dumas"
 msgid "All"
 msgstr "Tout"
 
-msgid "All settings in one unified tab.\nCheck for and install Zen UI updates directly from your e-reader."
-msgstr "Tous les paramètres dans un seul onglet unifié.\nRecherchez et installez les mises à jour de Zen UI directement depuis votre liseuse."
+msgid "All settings are in one unified tab. This icon with the dot indicates an update is available.\n\nInstall Zen UI updates directly from your device."
+msgstr "Tous les réglages se trouvent dans un seul onglet unifié. Cette icône avec le point indique qu'une mise à jour est disponible.\n\nInstallez les mises à jour de Zen UI directement depuis votre appareil."
 
 msgid "All Time"
 msgstr "Tout le temps"
@@ -132,8 +156,8 @@ msgstr "Tout le temps"
 msgid "Allow custom icons"
 msgstr "Autoriser les icônes personnalisées"
 
-msgid "Allow delete in context menu"
-msgstr "Autoriser la suppression dans le menu contextuel"
+msgid "Allow delete"
+msgstr "Autoriser la suppression"
 
 msgid "Amber"
 msgstr "Ambre"
@@ -141,8 +165,8 @@ msgstr "Ambre"
 msgid "An item with that name already exists."
 msgstr "Un élément portant ce nom existe déjà."
 
-msgid "An unobtrusive reader view with customizable top clock and bottom progress bar."
-msgstr "Vue de lecture discrète avec horloge en haut et barre de progression en bas personnalisables."
+msgid "App"
+msgstr "Appli"
 
 msgid "Apply"
 msgstr "Appliquer"
@@ -165,23 +189,14 @@ msgstr "Organiser les éléments du centre"
 msgid "Arrange left items"
 msgstr "Organiser les éléments de gauche"
 
-msgid "Arrange navbar tabs"
-msgstr "Organiser les onglets de la barre de navigation"
-
-msgid "Arrange quick settings buttons"
-msgstr "Organiser les boutons des réglages rapides"
-
 msgid "Arrange right items"
 msgstr "Organiser les éléments de droite"
 
-msgid "Arrange tabs"
-msgstr "Organiser les onglets"
-
-msgid "Arrange widgets"
-msgstr "Organiser les widgets"
-
 msgid "Ascending"
 msgstr "Croissant"
+
+msgid "At least one tab must be visible"
+msgstr "Au moins un onglet doit être visible"
 
 msgid "Author"
 msgstr "Auteur"
@@ -191,9 +206,6 @@ msgstr "Auteurs"
 
 msgid "authors"
 msgstr "auteurs"
-
-msgid "Authors & Series"
-msgstr "Auteurs et séries"
 
 msgid "Automatic suspend"
 msgstr "Mise en veille automatique"
@@ -206,6 +218,9 @@ msgstr "temps moy./livre"
 
 msgid "avg time/day"
 msgstr "temps moy./jour"
+
+msgid "Back"
+msgstr "Retour"
 
 msgid "Badge color RGB"
 msgstr "RVB du badge"
@@ -252,6 +267,9 @@ msgstr "Bleu"
 msgid "Bold"
 msgstr "Gras"
 
+msgid "bold"
+msgstr "gras"
+
 msgid "Bold active tab"
 msgstr "Onglet actif en gras"
 
@@ -266,9 +284,6 @@ msgstr "livre"
 
 msgid "Book added to download list"
 msgstr "Livre ajouté à la liste de téléchargement"
-
-msgid "Book cover - black background"
-msgstr "Couverture — fond noir"
 
 msgid "Book information"
 msgstr "Informations sur le livre"
@@ -323,9 +338,6 @@ msgstr "Luminosité"
 
 msgid "Brightness schedule"
 msgstr "Planification de la luminosité"
-
-msgid "Browse your entire library organized by author or series.\nAccess these views anytime from the navigation bar."
-msgstr "Parcourez votre bibliothèque organisée par auteur ou série.\nAccédez à ces vues à tout moment depuis la barre de navigation."
 
 msgid "Bug description (optional)"
 msgstr "Description du bug (optionnelle)"
@@ -402,14 +414,17 @@ msgstr "Choisir un autre dossier"
 msgid "Choose a preset for your reading progress bar."
 msgstr "Choisissez un préréglage pour votre barre de progression de lecture."
 
+msgid "Choose item"
+msgstr "Choisir un élément"
+
+msgid "Choose plugin menu"
+msgstr "Choisir un menu de plugin"
+
 msgid "Choose which tabs appear in your navigation bar.\nYou can rearrange or adjust these anytime in Settings."
 msgstr "Choisissez les onglets qui apparaissent dans votre barre de navigation.\nVous pouvez les réorganiser ou les ajuster à tout moment dans les Paramètres."
 
 msgid "Classic (filename only)"
 msgstr "Classique (nom de fichier uniquement)"
-
-msgid "Clean, minimal library with mosaic cover art and list views, reduced clutter, and a streamlined context menu."
-msgstr "Bibliothèque propre et minimale avec vue mosaïque de couvertures et vue liste, moins d'encombrement et un menu contextuel simplifié."
 
 msgid "Clear"
 msgstr "Effacer"
@@ -534,8 +549,14 @@ msgstr "Texte personnalisé : "
 msgid "Custom: "
 msgstr "Personnalisé : "
 
+msgid "Customizable top status bar and bottom progress bar."
+msgstr "Barre d'état supérieure et barre de progression inférieure personnalisables."
+
 msgid "Cut"
 msgstr "Couper"
+
+msgid "Cycle"
+msgstr "Parcourir"
 
 msgid "Daily pages goal"
 msgstr "Objectif quotidien de pages"
@@ -548,15 +569,6 @@ msgstr "Objectif quotidien de temps (min)"
 
 msgid "Daily time goal (min): "
 msgstr "Objectif quotidien de temps (min) : "
-
-msgid "Home page"
-msgstr "Tableau de bord"
-
-msgid "Home page preset"
-msgstr "Préréglage du tableau de bord"
-
-msgid "date modified"
-msgstr "date de modification"
 
 msgid "Day brightness"
 msgstr "Luminosité diurne"
@@ -618,6 +630,12 @@ msgstr "Supprimer le catalogue OPDS ?"
 msgid "Delete preset?"
 msgstr "Supprimer le préréglage ?"
 
+msgid "Delete this button?"
+msgstr "Supprimer ce bouton ?"
+
+msgid "Delete this folder and its buttons?"
+msgstr "Supprimer ce dossier et ses boutons ?"
+
 msgid "Descending"
 msgstr "Décroissant"
 
@@ -662,6 +680,9 @@ msgstr "Désactiver le panneau de paramètres"
 
 msgid "Disable word search on hold"
 msgstr "Désactiver la recherche de mot au maintien"
+
+msgid "Disable zen mode to access default KOReader menus."
+msgstr "Désactivez le mode zen pour accéder aux menus par défaut de KOReader."
 
 msgid "Disk space"
 msgstr "Espace disque"
@@ -756,9 +777,6 @@ msgstr "Favoris"
 msgid "Featured widgets"
 msgstr "Widgets à la une"
 
-msgid "File Browser"
-msgstr "Navigateur de fichiers"
-
 msgid "File search"
 msgstr "Recherche de fichiers"
 
@@ -786,8 +804,14 @@ msgstr "Firmware : "
 msgid "First cover image"
 msgstr "Première image de couverture"
 
+msgid "Flip LH/RH icon"
+msgstr "Inverser l'icône gauche/droite"
+
 msgid "Folder"
 msgstr "Dossier"
+
+msgid "Folder buttons"
+msgstr "Boutons du dossier"
 
 msgid "Folder name"
 msgstr "Nom du dossier"
@@ -801,14 +825,17 @@ msgstr "Préréglages de dossier"
 msgid "Folders"
 msgstr "Dossiers"
 
-msgid "Folders and files mixed"
-msgstr "Dossiers et fichiers mélangés"
-
 msgid "Font"
 msgstr "Police"
 
+msgid "font"
+msgstr "police"
+
 msgid "Font size"
 msgstr "Taille de police"
+
+msgid "font size"
+msgstr "taille de police"
 
 msgid "Font size:"
 msgstr "Taille de police :"
@@ -864,6 +891,9 @@ msgstr "Gris"
 msgid "Green"
 msgstr "Vert"
 
+msgid "Group book series into folders"
+msgstr "Regrouper les séries de livres dans des dossiers"
+
 msgid "Hide in CBZ/PDF files"
 msgstr "Masquer dans les fichiers CBZ/PDF"
 
@@ -890,6 +920,9 @@ msgstr "Dossier racine"
 
 msgid "Home folder"
 msgstr "Dossier personnel"
+
+msgid "Home page preset"
+msgstr "Préréglage du tableau de bord"
 
 msgid "Home tab label"
 msgstr "Étiquette de l'onglet Accueil"
@@ -927,9 +960,6 @@ msgstr "Éléments par page"
 msgid "Keep existing settings"
 msgstr "Conserver les réglages actuels"
 
-msgid "Keywords"
-msgstr "Mots-clés"
-
 msgid "KOReader: "
 msgstr "KOReader : "
 
@@ -945,14 +975,23 @@ msgstr "Mosaïque paysage : "
 msgid "Large"
 msgstr "Grand"
 
-msgid "last read date"
-msgstr "date de dernière lecture"
-
 msgid "Later"
 msgstr "Plus tard"
 
 msgid "latest"
 msgstr "plus récent"
+
+msgid "Launcher"
+msgstr "Lanceur"
+
+msgid "Launcher entry is unavailable"
+msgstr "L'entrée du lanceur n'est pas disponible"
+
+msgid "Launcher label"
+msgstr "Libellé du lanceur"
+
+msgid "Layout"
+msgstr "Disposition"
 
 msgid "Leave empty to use action title"
 msgstr "Laisser vide pour utiliser le titre de l'action"
@@ -962,9 +1001,6 @@ msgstr "Gauche"
 
 msgid "Left items"
 msgstr "Éléments de gauche"
-
-msgid "Launcher"
-msgstr "Lanceur"
 
 msgid "Library"
 msgstr "Bibliothèque"
@@ -1023,11 +1059,17 @@ msgstr "Action de l'onglet manga : "
 msgid "Match whole words"
 msgstr "Mots entiers uniquement"
 
+msgid "Maximum 5 widgets allowed"
+msgstr "Maximum 5 widgets autorisés"
+
+msgid "Maximum 7 tabs allowed"
+msgstr "Maximum 7 onglets autorisés"
+
+msgid "Maximum 9 buttons allowed"
+msgstr "Maximum 9 boutons autorisés"
+
 msgid "Menu"
 msgstr "Menu"
-
-msgid "Minimal status bar in the library view.\nCustomizable - show only what you need: time, battery, etc."
-msgstr "Barre d'état minimale dans la vue bibliothèque.\nPersonnalisable : affichez uniquement ce dont vous avez besoin : heure, batterie, etc."
 
 msgid "Minute"
 msgstr "Minute"
@@ -1053,23 +1095,20 @@ msgstr "Déplacer"
 msgid "Move failed."
 msgstr "Déplacement échoué."
 
+msgid "Move out of folder"
+msgstr "Déplacer hors du dossier"
+
+msgid "Move to folder"
+msgstr "Déplacer vers le dossier"
+
 msgid "Move to…"
 msgstr "Déplacer vers…"
-
-msgid "name"
-msgstr "nom"
-
-msgid "name (natural sorting)"
-msgstr "nom (tri naturel)"
 
 msgid "Navbar"
 msgstr "Barre de navigation"
 
 msgid "Navbar Tabs"
 msgstr "Onglets de navigation"
-
-msgid "Navigation Bar"
-msgstr "Barre de navigation"
 
 msgid "New"
 msgstr "Nouveau"
@@ -1143,6 +1182,9 @@ msgstr "Chaleur nocturne : "
 msgid "No books found"
 msgstr "Aucun livre trouvé"
 
+msgid "No buttons"
+msgstr "Aucun bouton"
+
 msgid "No changelog entries found.\n\nNo releases are available for this channel."
 msgstr "Aucune entrée du journal des modifications trouvée.\n\nAucune version n'est disponible pour ce canal."
 
@@ -1151,6 +1193,9 @@ msgstr "Aucun journal des modifications fourni."
 
 msgid "No description."
 msgstr "Aucune description."
+
+msgid "No launchable plugin menus found"
+msgstr "Aucun menu de plugin lançable trouvé"
 
 msgid "No network connection. Please connect to Wi-Fi and try again."
 msgstr "Pas de connexion réseau. Connectez-vous au Wi-Fi et réessayez."
@@ -1215,6 +1260,9 @@ msgstr "Ordre"
 msgid "Outlined boxes"
 msgstr "Boîtes encadrées"
 
+msgid "Page %1 of %2"
+msgstr "Page %1 sur %2"
+
 msgid "Page Browser"
 msgstr "Navigateur de pages"
 
@@ -1251,15 +1299,6 @@ msgstr "Coller"
 msgid "Percent"
 msgstr "Pourcentage"
 
-msgid "percent - unopened - finished last"
-msgstr "pourcentage - non ouvert - terminé en dernier"
-
-msgid "percent - unopened first"
-msgstr "pourcentage - non ouvert en premier"
-
-msgid "percent - unopened last"
-msgstr "pourcentage - non ouvert en dernier"
-
 msgid "Personal Records"
 msgstr "Records personnels"
 
@@ -1283,9 +1322,6 @@ msgstr "Nom du préréglage"
 
 msgid "Presets"
 msgstr "Préréglages"
-
-msgid "Zen Presets"
-msgstr "Zen Presets"
 
 msgid "Prev"
 msgstr "Précédent"
@@ -1383,6 +1419,9 @@ msgstr "Actualiser"
 msgid "Refresh navbar"
 msgstr "Actualiser la barre de navigation"
 
+msgid "regular"
+msgstr "normal"
+
 msgid "Regular Oxford English"
 msgstr "Regular Oxford English"
 
@@ -1403,6 +1442,9 @@ msgstr "Retirer de la collection"
 
 msgid "Remove from history"
 msgstr "Supprimer de l'historique"
+
+msgid "Remove this book from history?"
+msgstr "Supprimer ce livre de l'historique ?"
 
 msgid "Remove this button"
 msgstr "Supprimer ce bouton"
@@ -1434,17 +1476,14 @@ msgstr "Recommencer le livre"
 msgid "Restart now"
 msgstr "Redémarrer maintenant"
 
-msgid "Restore library view on return"
-msgstr "Restaurer la vue bibliothèque au retour"
+msgid "Restore library location on exit"
+msgstr "Restaurer l'emplacement de la bibliothèque à la sortie"
 
 msgid "Resume from page"
 msgstr "Reprendre depuis la page"
 
 msgid "Reverse"
 msgstr "Inverser"
-
-msgid "Reverse sorting"
-msgstr "Tri inversé"
 
 msgid "Review"
 msgstr "Critique"
@@ -1457,6 +1496,9 @@ msgstr "Éléments de droite"
 
 msgid "Rotate"
 msgstr "Rotation"
+
+msgid "Rotate: %1"
+msgstr "Rotation : %1"
 
 msgid "Rounded cover corners"
 msgstr "Coins arrondis des couvertures"
@@ -1485,8 +1527,8 @@ msgstr "Capture d'écran"
 msgid "Screenshot saved to:"
 msgstr "Capture enregistrée dans :"
 
-msgid "Scroll bar style"
-msgstr "Style de la barre de défilement"
+msgid "Scroll bar"
+msgstr "Barre de défilement"
 
 msgid "Search"
 msgstr "Rechercher"
@@ -1569,6 +1611,15 @@ msgstr "Afficher l'auteur"
 msgid "Show author below cover (mosaic)"
 msgstr "Show author below cover (mosaic)"
 
+msgid "Show badges"
+msgstr "Afficher les badges"
+
+msgid "Show Book cover"
+msgstr "Afficher la couverture du livre"
+
+msgid "Show book titles"
+msgstr "Afficher les titres des livres"
+
 msgid "Show bottom border"
 msgstr "Afficher la bordure inférieure"
 
@@ -1586,6 +1637,9 @@ msgstr "Afficher le nom du dossier"
 
 msgid "Show hidden files"
 msgstr "Afficher les fichiers cachés"
+
+msgid "Show icons"
+msgstr "Afficher les icônes"
 
 msgid "Show in navbar"
 msgstr "Afficher dans la barre de navigation"
@@ -1629,9 +1683,6 @@ msgstr "Afficher le numéro de série sur les couvertures"
 msgid "Show spine lines"
 msgstr "Afficher les lignes de dos"
 
-msgid "Show strip item titles"
-msgstr "Afficher les titres des éléments de bande"
-
 msgid "Show title below cover (mosaic)"
 msgstr "Show title below cover (mosaic)"
 
@@ -1650,8 +1701,11 @@ msgstr "Afficher le titre du widget"
 msgid "Show Wikipedia"
 msgstr "Afficher Wikipédia"
 
-msgid "size"
-msgstr "taille"
+msgid "Show Zen icon - black background"
+msgstr "Afficher l'icône Zen - fond noir"
+
+msgid "Show Zen icon - white background"
+msgstr "Afficher l'icône Zen - fond blanc"
 
 msgid "Skip"
 msgstr "Ignorer"
@@ -1682,9 +1736,6 @@ msgstr "Trier les livres par"
 
 msgid "Sort by"
 msgstr "Trier par"
-
-msgid "Sort by: "
-msgstr "Trier par : "
 
 msgid "Sort folder"
 msgstr "Trier le dossier"
@@ -1734,9 +1785,6 @@ msgstr "Stats : Progression"
 msgid "Status bar"
 msgstr "Barre d'état"
 
-msgid "Status Bar"
-msgstr "Barre d'état"
-
 msgid "Status bar items"
 msgstr "Éléments de la barre d'état"
 
@@ -1761,8 +1809,8 @@ msgstr "Envoyer"
 msgid "Submitting report…"
 msgstr "Envoi du rapport…"
 
-msgid "Swipe down to reach quick settings like brightness, Wi-Fi, night mode, zen mode and more."
-msgstr "Balayez vers le bas pour accéder aux réglages rapides : luminosité, Wi-Fi, mode nuit, mode zen, etc."
+msgid "Swipe down from the top to reach quick settings like brightness, Wi-Fi, night mode, zen mode and more."
+msgstr "Balayez vers le bas depuis le haut pour accéder aux réglages rapides comme la luminosité, le Wi-Fi, le mode nuit, le mode zen et plus encore."
 
 msgid "Swipe up from the bottom while reading to open the Page Browser.\n\nSkim through pages or skip chapters, browse the table of contents, manage bookmarks, adjust fonts and more."
 msgstr "Balayez vers le haut depuis le bas pendant la lecture pour ouvrir le Navigateur de pages.\n\nParcourez les pages ou sautez des chapitres, consultez la table des matières, gérez les signets, ajustez les polices, etc."
@@ -1772,6 +1820,9 @@ msgstr "Synchroniser"
 
 msgid "Sync all catalogs"
 msgstr "Synchroniser tous les catalogues"
+
+msgid "Tab settings"
+msgstr "Réglages des onglets"
 
 msgid "Tabs"
 msgstr "Onglets"
@@ -1785,8 +1836,14 @@ msgstr "étiquettes"
 msgid "Tap and hold any book or folder in your library to reveal details."
 msgstr "Appuyez longuement sur un livre ou un dossier de votre bibliothèque pour afficher les détails."
 
+msgid "Text styles"
+msgstr "Styles de texte"
+
 msgid "The best interface is the one you forget is there.\nNow go get lost in a good book."
 msgstr "La meilleure interface est celle qu'on oublie.\nMaintenant, allez vous perdre dans un bon livre."
+
+msgid "The default KOReader reader menu is inside the Aa icon."
+msgstr "Le menu de lecture par défaut de KOReader se trouve dans l'icône Aa."
 
 msgid "The place for all your books %1"
 msgstr "Le dossier pour tous vos livres %1"
@@ -1821,6 +1878,9 @@ msgstr "Temps jusqu’à la fin du livre"
 msgid "Title"
 msgstr "Titre"
 
+msgid "Title natural"
+msgstr "Titre naturel"
+
 msgid "To Be Read"
 msgstr "À lire"
 
@@ -1832,6 +1892,12 @@ msgstr "Widget bande À lire"
 
 msgid "Today"
 msgstr "Aujourd'hui"
+
+msgid "Toggle Lockdown Mode"
+msgstr "Activer/désactiver le mode verrouillage"
+
+msgid "Toggle Zen Mode"
+msgstr "Activer/désactiver le mode Zen"
 
 msgid "Too many requests. Please try again later."
 msgstr "Trop de requêtes. Veuillez réessayer plus tard."
@@ -1860,8 +1926,8 @@ msgstr "temps total"
 msgid "Turn on Zen mode to strip KOReader down to its bare essentials.\n\nRemove visual clutter for a focused, distraction-free reading experience. Exit at anytime from Settings."
 msgstr "Activez le mode Zen pour réduire KOReader à l'essentiel.\n\nSupprimez l'encombrement visuel pour une expérience de lecture concentrée, sans distraction. Quittez à tout moment depuis les Paramètres."
 
-msgid "type"
-msgstr "type"
+msgid "Two rows"
+msgstr "Deux lignes"
 
 msgid "Underline above icon"
 msgstr "Soulignement au-dessus de l'icône"
@@ -1965,6 +2031,9 @@ msgstr "Utiliser le dossier actuel"
 msgid "Use default font"
 msgstr "Utiliser la police par défaut"
 
+msgid "Use default style"
+msgstr "Utiliser le style par défaut"
+
 msgid "Use home folder"
 msgstr "Utiliser le dossier personnel"
 
@@ -1980,8 +2049,8 @@ msgstr "Temps détaillé avant la fin du chapitre"
 msgid "View"
 msgstr "Vue"
 
-msgid "Visibility"
-msgstr "Visibilité"
+msgid "Virtual folder"
+msgstr "Dossier virtuel"
 
 msgid "Warmth"
 msgstr "Chaleur"
@@ -2046,12 +2115,6 @@ msgstr "Zen"
 msgid "Zen highlight menu"
 msgstr "Menu de surlignage Zen"
 
-msgid "Zen icon - black background"
-msgstr "Icône Zen - fond noir"
-
-msgid "Zen icon - white background"
-msgstr "Icône Zen — fond blanc"
-
 msgid "Zen Mode"
 msgstr "Mode Zen"
 
@@ -2060,6 +2123,9 @@ msgstr "Mode Zen"
 
 msgid "Zen OPDS"
 msgstr "Zen OPDS"
+
+msgid "Zen Presets"
+msgstr "Zen Presets"
 
 msgid "Zen quick lookup"
 msgstr "Recherche rapide Zen"

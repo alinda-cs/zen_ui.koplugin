@@ -48,8 +48,17 @@ msgstr "12時間表示 (午後3:30)"
 msgid "12-hour time"
 msgstr "12時間表示"
 
+msgid "180°"
+msgstr "180°"
+
 msgid "24-hour  (15:30)"
 msgstr "24時間表示 (15:30)"
+
+msgid "270°"
+msgstr "270°"
+
+msgid "90°"
+msgstr "90°"
 
 msgid "< 1 min left in chapter"
 msgstr "この章の残り1分未満"
@@ -60,11 +69,11 @@ msgstr "電子書籍リーダーのための最小限でクリーン、シンプ
 msgid "A short summary of what went wrong"
 msgstr "何が問題だったかの簡単な要約"
 
-msgid "A simple tab-based bar at the bottom of your library.\nFully customizable to make it your own"
-msgstr "ライブラリ下部のシンプルなタブバー。\n完全にカスタマイズして自分好みに。"
-
 msgid "About"
 msgstr "Zen UIについて"
+
+msgid "Action"
+msgstr "アクション"
 
 msgid "Action: %1"
 msgstr "アクション: %1"
@@ -87,8 +96,17 @@ msgstr "アクティブタブのスタイル"
 msgid "Active tab underline"
 msgstr "アクティブタブの下線"
 
+msgid "Add"
+msgstr "追加"
+
+msgid "Add action"
+msgstr "アクションを追加"
+
 msgid "Add book"
 msgstr "本を追加"
+
+msgid "Add buttons"
+msgstr "ボタンを追加"
 
 msgid "Add catalog"
 msgstr "カタログを追加"
@@ -96,11 +114,20 @@ msgstr "カタログを追加"
 msgid "Add custom button"
 msgstr "カスタムボタンを追加"
 
+msgid "Add custom buttons for other plugins or actions."
+msgstr "他のプラグインやアクション用のカスタムボタンを追加します。"
+
 msgid "Add custom tab"
 msgstr "カスタムタブを追加"
 
+msgid "Add folder"
+msgstr "フォルダを追加"
+
 msgid "Add folder…"
 msgstr "フォルダを追加…"
+
+msgid "Add plugin"
+msgstr "プラグインを追加"
 
 msgid "Add to collection"
 msgstr "コレクションに追加"
@@ -120,8 +147,8 @@ msgstr "アレクサンドル・デュマ"
 msgid "All"
 msgstr "すべて"
 
-msgid "All settings in one unified tab.\nCheck for and install Zen UI updates directly from your e-reader."
-msgstr "すべての設定を1つのタブに統合。\n電子書籍リーダーから直接Zen UIのアップデートを確認・インストールできます。"
+msgid "All settings are in one unified tab. This icon with the dot indicates an update is available.\n\nInstall Zen UI updates directly from your device."
+msgstr "すべての設定は1つの統合タブにあります。ドット付きのこのアイコンは、更新が利用可能であることを示します。\n\nZen UIの更新をデバイスから直接インストールできます。"
 
 msgid "All Time"
 msgstr "全期間"
@@ -129,8 +156,8 @@ msgstr "全期間"
 msgid "Allow custom icons"
 msgstr "カスタムアイコンを許可"
 
-msgid "Allow delete in context menu"
-msgstr "コンテキストメニューで削除を許可"
+msgid "Allow delete"
+msgstr "削除を許可"
 
 msgid "Amber"
 msgstr "アンバー"
@@ -138,8 +165,8 @@ msgstr "アンバー"
 msgid "An item with that name already exists."
 msgstr "その名前のアイテムは既に存在します。"
 
-msgid "An unobtrusive reader view with customizable top clock and bottom progress bar."
-msgstr "上部の時計と下部の進行状況バーをカスタマイズできる控えめなリーダービュー。"
+msgid "App"
+msgstr "アプリ"
 
 msgid "Apply"
 msgstr "適用"
@@ -162,23 +189,14 @@ msgstr "中央アイテムの配置"
 msgid "Arrange left items"
 msgstr "左アイテムの配置"
 
-msgid "Arrange navbar tabs"
-msgstr "ナビゲーションバーのタブ配置"
-
-msgid "Arrange quick settings buttons"
-msgstr "クイック設定ボタンの配置"
-
 msgid "Arrange right items"
 msgstr "右アイテムの配置"
 
-msgid "Arrange tabs"
-msgstr "タブの配置"
-
-msgid "Arrange widgets"
-msgstr "ウィジェットの配置"
-
 msgid "Ascending"
 msgstr "昇順"
+
+msgid "At least one tab must be visible"
+msgstr "少なくとも1つのタブを表示する必要があります"
 
 msgid "Author"
 msgstr "著者"
@@ -188,9 +206,6 @@ msgstr "著者"
 
 msgid "authors"
 msgstr "著者"
-
-msgid "Authors & Series"
-msgstr "著者＆シリーズ"
 
 msgid "Automatic suspend"
 msgstr "自動サスペンド"
@@ -203,6 +218,9 @@ msgstr "平均読書時間/冊"
 
 msgid "avg time/day"
 msgstr "平均読書時間/日"
+
+msgid "Back"
+msgstr "戻る"
 
 msgid "Badge color RGB"
 msgstr "バッジ色 RGB"
@@ -249,6 +267,9 @@ msgstr "ブルー"
 msgid "Bold"
 msgstr "太字"
 
+msgid "bold"
+msgstr "太字"
+
 msgid "Bold active tab"
 msgstr "アクティブタブを太字"
 
@@ -263,9 +284,6 @@ msgstr "本"
 
 msgid "Book added to download list"
 msgstr "ダウンロードリストに本を追加しました"
-
-msgid "Book cover - black background"
-msgstr "本の表紙 - 黒背景"
 
 msgid "Book information"
 msgstr "本の情報"
@@ -320,9 +338,6 @@ msgstr "明るさ"
 
 msgid "Brightness schedule"
 msgstr "明るさスケジュール"
-
-msgid "Browse your entire library organized by author or series.\nAccess these views anytime from the navigation bar."
-msgstr "著者別またはシリーズ別に整理されたライブラリ全体を閲覧。\nナビゲーションバーからいつでもこれらのビューにアクセスできます。"
 
 msgid "Bug description (optional)"
 msgstr "バグの説明 (任意)"
@@ -399,14 +414,17 @@ msgstr "別のフォルダを選択"
 msgid "Choose a preset for your reading progress bar."
 msgstr "読書進行状況バーのプリセットを選択してください。"
 
+msgid "Choose item"
+msgstr "項目を選択"
+
+msgid "Choose plugin menu"
+msgstr "プラグインメニューを選択"
+
 msgid "Choose which tabs appear in your navigation bar.\nYou can rearrange or adjust these anytime in Settings."
 msgstr "ナビゲーションバーに表示するタブを選択します。\n設定からいつでも並べ替えや調整が可能です。"
 
 msgid "Classic (filename only)"
 msgstr "クラシック (ファイル名のみ)"
-
-msgid "Clean, minimal library with mosaic cover art and list views, reduced clutter, and a streamlined context menu."
-msgstr "モザイク表紙とリスト表示、不要な要素を減らし、合理化されたコンテキストメニューを備えたクリーンで最小限のライブラリ。"
 
 msgid "Clear"
 msgstr "クリア"
@@ -531,8 +549,14 @@ msgstr "カスタムテキスト: "
 msgid "Custom: "
 msgstr "カスタム: "
 
+msgid "Customizable top status bar and bottom progress bar."
+msgstr "カスタマイズ可能な上部ステータスバーと下部進行状況バー。"
+
 msgid "Cut"
 msgstr "切り取り"
+
+msgid "Cycle"
+msgstr "順送り"
 
 msgid "Daily pages goal"
 msgstr "1日のページ目標"
@@ -545,15 +569,6 @@ msgstr "1日の時間目標 (分)"
 
 msgid "Daily time goal (min): "
 msgstr "1日の時間目標 (分): "
-
-msgid "Home page"
-msgstr "ダッシュボード"
-
-msgid "Home page preset"
-msgstr "ダッシュボードプリセット"
-
-msgid "date modified"
-msgstr "更新日"
 
 msgid "Day brightness"
 msgstr "日中明るさ"
@@ -615,6 +630,12 @@ msgstr "OPDSカタログを削除しますか？"
 msgid "Delete preset?"
 msgstr "プリセットを削除しますか？"
 
+msgid "Delete this button?"
+msgstr "このボタンを削除しますか？"
+
+msgid "Delete this folder and its buttons?"
+msgstr "このフォルダとそのボタンを削除しますか？"
+
 msgid "Descending"
 msgstr "降順"
 
@@ -659,6 +680,9 @@ msgstr "設定パネルを無効化"
 
 msgid "Disable word search on hold"
 msgstr "長押しでの単語検索を無効化"
+
+msgid "Disable zen mode to access default KOReader menus."
+msgstr "デフォルトのKOReaderメニューにアクセスするにはZenモードを無効にしてください。"
 
 msgid "Disk space"
 msgstr "ディスク容量"
@@ -753,9 +777,6 @@ msgstr "お気に入り"
 msgid "Featured widgets"
 msgstr "注目ウィジェット"
 
-msgid "File Browser"
-msgstr "ファイルブラウザ"
-
 msgid "File search"
 msgstr "ファイル検索"
 
@@ -783,8 +804,14 @@ msgstr "ファームウェア: "
 msgid "First cover image"
 msgstr "最初の表紙画像"
 
+msgid "Flip LH/RH icon"
+msgstr "LH/RHアイコンを反転"
+
 msgid "Folder"
 msgstr "フォルダ"
+
+msgid "Folder buttons"
+msgstr "フォルダボタン"
 
 msgid "Folder name"
 msgstr "フォルダ名"
@@ -798,13 +825,16 @@ msgstr "フォルダプリセット"
 msgid "Folders"
 msgstr "フォルダ"
 
-msgid "Folders and files mixed"
-msgstr "フォルダとファイル混在"
-
 msgid "Font"
 msgstr "フォント"
 
+msgid "font"
+msgstr "フォント"
+
 msgid "Font size"
+msgstr "フォントサイズ"
+
+msgid "font size"
 msgstr "フォントサイズ"
 
 msgid "Font size:"
@@ -861,6 +891,9 @@ msgstr "グレー"
 msgid "Green"
 msgstr "グリーン"
 
+msgid "Group book series into folders"
+msgstr "本のシリーズをフォルダにまとめる"
+
 msgid "Hide in CBZ/PDF files"
 msgstr "CBZ/PDFファイルで非表示"
 
@@ -887,6 +920,9 @@ msgstr "ホームフォルダ"
 
 msgid "Home folder"
 msgstr "ホームフォルダ"
+
+msgid "Home page preset"
+msgstr "ダッシュボードプリセット"
 
 msgid "Home tab label"
 msgstr "ホームタブラベル"
@@ -924,9 +960,6 @@ msgstr "ページあたりのアイテム数"
 msgid "Keep existing settings"
 msgstr "既存の設定を保持"
 
-msgid "Keywords"
-msgstr "キーワード"
-
 msgid "KOReader: "
 msgstr "KOReader: "
 
@@ -942,14 +975,23 @@ msgstr "横長モザイク: "
 msgid "Large"
 msgstr "大"
 
-msgid "last read date"
-msgstr "最終読了日"
-
 msgid "Later"
 msgstr "後で"
 
 msgid "latest"
 msgstr "最新"
+
+msgid "Launcher"
+msgstr "ランチャー"
+
+msgid "Launcher entry is unavailable"
+msgstr "ランチャー項目は利用できません"
+
+msgid "Launcher label"
+msgstr "ランチャーラベル"
+
+msgid "Layout"
+msgstr "レイアウト"
 
 msgid "Leave empty to use action title"
 msgstr "アクションタイトルを使用する場合は空欄"
@@ -1017,11 +1059,17 @@ msgstr "マンガタブアクション: "
 msgid "Match whole words"
 msgstr "単語全体に一致"
 
+msgid "Maximum 5 widgets allowed"
+msgstr "ウィジェットは最大5個までです"
+
+msgid "Maximum 7 tabs allowed"
+msgstr "タブは最大7個までです"
+
+msgid "Maximum 9 buttons allowed"
+msgstr "ボタンは最大9個までです"
+
 msgid "Menu"
 msgstr "メニュー"
-
-msgid "Minimal status bar in the library view.\nCustomizable - show only what you need: time, battery, etc."
-msgstr "ライブラリビューの最小限のステータスバー。\nカスタマイズ可能 - 必要なものだけ表示: 時間、バッテリーなど。"
 
 msgid "Minute"
 msgstr "分"
@@ -1047,23 +1095,20 @@ msgstr "移動"
 msgid "Move failed."
 msgstr "移動に失敗しました。"
 
+msgid "Move out of folder"
+msgstr "フォルダから移動"
+
+msgid "Move to folder"
+msgstr "フォルダへ移動"
+
 msgid "Move to…"
 msgstr "移動先…"
-
-msgid "name"
-msgstr "名前"
-
-msgid "name (natural sorting)"
-msgstr "名前 (自然順ソート)"
 
 msgid "Navbar"
 msgstr "ナビゲーションバー"
 
 msgid "Navbar Tabs"
 msgstr "ナビゲーションバータブ"
-
-msgid "Navigation Bar"
-msgstr "ナビゲーションバー"
 
 msgid "New"
 msgstr "新規"
@@ -1137,6 +1182,9 @@ msgstr "夜間色温度: "
 msgid "No books found"
 msgstr "本が見つかりません"
 
+msgid "No buttons"
+msgstr "ボタンなし"
+
 msgid "No changelog entries found.\n\nNo releases are available for this channel."
 msgstr "変更履歴の項目が見つかりません。\n\nこのチャンネルで利用できるリリースはありません。"
 
@@ -1145,6 +1193,9 @@ msgstr "変更履歴は提供されていません。"
 
 msgid "No description."
 msgstr "説明なし。"
+
+msgid "No launchable plugin menus found"
+msgstr "起動可能なプラグインメニューが見つかりません"
 
 msgid "No network connection. Please connect to Wi-Fi and try again."
 msgstr "ネットワーク接続がありません。Wi-Fiに接続して再試行してください。"
@@ -1209,6 +1260,9 @@ msgstr "順序"
 msgid "Outlined boxes"
 msgstr "枠線付きボックス"
 
+msgid "Page %1 of %2"
+msgstr "ページ %1 / %2"
+
 msgid "Page Browser"
 msgstr "ページブラウザ"
 
@@ -1245,15 +1299,6 @@ msgstr "貼り付け"
 msgid "Percent"
 msgstr "パーセント"
 
-msgid "percent - unopened - finished last"
-msgstr "パーセント - 未開封 - 読了を最後"
-
-msgid "percent - unopened first"
-msgstr "パーセント - 未開封を先頭"
-
-msgid "percent - unopened last"
-msgstr "パーセント - 未開封を最後"
-
 msgid "Personal Records"
 msgstr "個人記録"
 
@@ -1277,9 +1322,6 @@ msgstr "プリセット名"
 
 msgid "Presets"
 msgstr "プリセット"
-
-msgid "Zen Presets"
-msgstr "Zen Presets"
 
 msgid "Prev"
 msgstr "前へ"
@@ -1377,6 +1419,9 @@ msgstr "更新"
 msgid "Refresh navbar"
 msgstr "ナビゲーションバーを更新"
 
+msgid "regular"
+msgstr "標準"
+
 msgid "Regular Oxford English"
 msgstr "標準オックスフォード英語"
 
@@ -1397,6 +1442,9 @@ msgstr "コレクションから削除"
 
 msgid "Remove from history"
 msgstr "履歴から削除"
+
+msgid "Remove this book from history?"
+msgstr "この本を履歴から削除しますか？"
 
 msgid "Remove this button"
 msgstr "このボタンを削除"
@@ -1428,16 +1476,13 @@ msgstr "本を再起動"
 msgid "Restart now"
 msgstr "今すぐ再起動"
 
-msgid "Restore library view on return"
-msgstr "戻ったときにライブラリビューを復元"
+msgid "Restore library location on exit"
+msgstr "終了時にライブラリの場所を復元"
 
 msgid "Resume from page"
 msgstr "ページから再開"
 
 msgid "Reverse"
-msgstr "逆順"
-
-msgid "Reverse sorting"
 msgstr "逆順"
 
 msgid "Review"
@@ -1451,6 +1496,9 @@ msgstr "右アイテム"
 
 msgid "Rotate"
 msgstr "回転"
+
+msgid "Rotate: %1"
+msgstr "回転: %1"
 
 msgid "Rounded cover corners"
 msgstr "表紙の角を丸く"
@@ -1479,8 +1527,8 @@ msgstr "スクリーンショット"
 msgid "Screenshot saved to:"
 msgstr "スクリーンショット保存先:"
 
-msgid "Scroll bar style"
-msgstr "スクロールバーのスタイル"
+msgid "Scroll bar"
+msgstr "スクロールバー"
 
 msgid "Search"
 msgstr "検索"
@@ -1563,6 +1611,15 @@ msgstr "著者を表示"
 msgid "Show author below cover (mosaic)"
 msgstr "表紙の下に著者を表示 (モザイク)"
 
+msgid "Show badges"
+msgstr "バッジを表示"
+
+msgid "Show Book cover"
+msgstr "本の表紙を表示"
+
+msgid "Show book titles"
+msgstr "本のタイトルを表示"
+
 msgid "Show bottom border"
 msgstr "下部の境界線を表示"
 
@@ -1580,6 +1637,9 @@ msgstr "フォルダ名を表示"
 
 msgid "Show hidden files"
 msgstr "隠しファイルを表示"
+
+msgid "Show icons"
+msgstr "アイコンを表示"
 
 msgid "Show in navbar"
 msgstr "ナビゲーションバーに表示"
@@ -1623,9 +1683,6 @@ msgstr "表紙にシリーズ番号を表示"
 msgid "Show spine lines"
 msgstr "背表紙の線を表示"
 
-msgid "Show strip item titles"
-msgstr "ストリップ項目のタイトルを表示"
-
 msgid "Show title below cover (mosaic)"
 msgstr "表紙の下にタイトルを表示 (モザイク)"
 
@@ -1644,8 +1701,11 @@ msgstr "ウィジェットタイトルを表示"
 msgid "Show Wikipedia"
 msgstr "Wikipediaを表示"
 
-msgid "size"
-msgstr "サイズ"
+msgid "Show Zen icon - black background"
+msgstr "Zenアイコンを表示 - 黒背景"
+
+msgid "Show Zen icon - white background"
+msgstr "Zenアイコンを表示 - 白背景"
 
 msgid "Skip"
 msgstr "スキップ"
@@ -1675,9 +1735,6 @@ msgid "Sort books by"
 msgstr "本の並べ替え: "
 
 msgid "Sort by"
-msgstr "並べ替え: "
-
-msgid "Sort by: "
 msgstr "並べ替え: "
 
 msgid "Sort folder"
@@ -1728,9 +1785,6 @@ msgstr "統計: 進行状況"
 msgid "Status bar"
 msgstr "ステータスバー"
 
-msgid "Status Bar"
-msgstr "ステータスバー"
-
 msgid "Status bar items"
 msgstr "ステータスバー項目"
 
@@ -1755,8 +1809,8 @@ msgstr "送信"
 msgid "Submitting report…"
 msgstr "レポートを送信中…"
 
-msgid "Swipe down to reach quick settings like brightness, Wi-Fi, night mode, zen mode and more."
-msgstr "下にスワイプすると、明るさ、Wi-Fi、夜間モード、Zenモードなどのクイック設定にアクセスできます。"
+msgid "Swipe down from the top to reach quick settings like brightness, Wi-Fi, night mode, zen mode and more."
+msgstr "上端から下にスワイプすると、明るさ、Wi-Fi、夜間モード、Zenモードなどのクイック設定にアクセスできます。"
 
 msgid "Swipe up from the bottom while reading to open the Page Browser.\n\nSkim through pages or skip chapters, browse the table of contents, manage bookmarks, adjust fonts and more."
 msgstr "読書中に下から上にスワイプしてページブラウザを開きます。\n\nページをざっと見たり章をスキップしたり、目次を閲覧したり、しおりを管理したり、フォントを調整したりできます。"
@@ -1766,6 +1820,9 @@ msgstr "同期"
 
 msgid "Sync all catalogs"
 msgstr "すべてのカタログを同期"
+
+msgid "Tab settings"
+msgstr "タブ設定"
 
 msgid "Tabs"
 msgstr "タブ"
@@ -1779,8 +1836,14 @@ msgstr "タグ"
 msgid "Tap and hold any book or folder in your library to reveal details."
 msgstr "ライブラリ内の本やフォルダを長押しすると詳細が表示されます。"
 
+msgid "Text styles"
+msgstr "テキストスタイル"
+
 msgid "The best interface is the one you forget is there.\nNow go get lost in a good book."
 msgstr "最高のインターフェースはそこにあることを忘れてしまうものです。\nさあ、良い本に没頭してください。"
+
+msgid "The default KOReader reader menu is inside the Aa icon."
+msgstr "デフォルトのKOReader読書メニューはAaアイコン内にあります。"
 
 msgid "The place for all your books %1"
 msgstr "あなたのすべての本の場所 %1"
@@ -1815,6 +1878,9 @@ msgstr "本の終了までの時間"
 msgid "Title"
 msgstr "タイトル"
 
+msgid "Title natural"
+msgstr "自然順タイトル"
+
 msgid "To Be Read"
 msgstr "未読"
 
@@ -1826,6 +1892,12 @@ msgstr "未読のストリップウィジェット"
 
 msgid "Today"
 msgstr "今日"
+
+msgid "Toggle Lockdown Mode"
+msgstr "ロックダウンモードを切り替え"
+
+msgid "Toggle Zen Mode"
+msgstr "Zenモードを切り替え"
 
 msgid "Too many requests. Please try again later."
 msgstr "リクエストが多すぎます。後でもう一度お試しください。"
@@ -1854,8 +1926,8 @@ msgstr "合計時間"
 msgid "Turn on Zen mode to strip KOReader down to its bare essentials.\n\nRemove visual clutter for a focused, distraction-free reading experience. Exit at anytime from Settings."
 msgstr "Zenモードをオンにすると、KOReaderを必要最小限にそぎ落とします。\n\n集中して邪魔のない読書体験のために視覚的なノイズを取り除きます。いつでも設定から終了できます。"
 
-msgid "type"
-msgstr "種類"
+msgid "Two rows"
+msgstr "2行"
 
 msgid "Underline above icon"
 msgstr "アイコンの上に下線"
@@ -1959,6 +2031,9 @@ msgstr "現在のフォルダを使用"
 msgid "Use default font"
 msgstr "デフォルトフォントを使用"
 
+msgid "Use default style"
+msgstr "デフォルトスタイルを使用"
+
 msgid "Use home folder"
 msgstr "ホームフォルダを使用"
 
@@ -1974,8 +2049,8 @@ msgstr "章の終わりまでの詳細時間"
 msgid "View"
 msgstr "表示"
 
-msgid "Visibility"
-msgstr "表示"
+msgid "Virtual folder"
+msgstr "仮想フォルダ"
 
 msgid "Warmth"
 msgstr "色温度"
@@ -2040,12 +2115,6 @@ msgstr "Zen"
 msgid "Zen highlight menu"
 msgstr "Zenハイライトメニュー"
 
-msgid "Zen icon - black background"
-msgstr "Zenアイコン - 黒背景"
-
-msgid "Zen icon - white background"
-msgstr "Zenアイコン - 白背景"
-
 msgid "Zen Mode"
 msgstr "Zenモード"
 
@@ -2054,6 +2123,9 @@ msgstr "Zenモード"
 
 msgid "Zen OPDS"
 msgstr "Zen OPDS"
+
+msgid "Zen Presets"
+msgstr "Zen Presets"
 
 msgid "Zen quick lookup"
 msgstr "Zenクイック検索"
@@ -2069,6 +2141,3 @@ msgstr "Zen UIは最新です。"
 
 msgid "Zen UI: "
 msgstr "Zen UI: "
-
-msgid "Title natural"
-msgstr "自然順タイトル"
