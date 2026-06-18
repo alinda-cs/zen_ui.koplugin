@@ -191,6 +191,32 @@ local function repopulate(sort_widget)
     UIManager:setDirty(sort_widget, "ui")
 end
 
+local function install_titlebar_focus(sort_widget)
+    if not (sort_widget and sort_widget.layout) then return end
+    local title_bar = sort_widget.title_bar
+    local left_button = title_bar and title_bar.left_button
+    if not left_button then return end
+    local first = sort_widget.layout[1]
+    if first and first[1] == left_button then return end
+    table.insert(sort_widget.layout, 1, { left_button })
+    if sort_widget.selected then
+        sort_widget.selected.y = (sort_widget.selected.y or 1) + 1
+    end
+end
+
+local function patch_move_item_kb(sort_widget)
+    if not sort_widget or sort_widget._zen_move_kb_patched then return end
+    sort_widget._zen_move_kb_patched = true
+    sort_widget.onMoveItemKB = function(self, diff)
+        local focused = self.getFocusItem and self:getFocusItem()
+        if focused and focused.index then
+            self.marked = focused.index
+            self:moveItem(diff)
+        end
+        return true
+    end
+end
+
 local function refresh_after_callbacks(items, refresh, menu_proxy)
     if type(items) ~= "table" or type(refresh) ~= "function" then return end
     for _i, item in ipairs(items) do
@@ -214,6 +240,16 @@ end
 local show_submenu
 local install_submenu_tap_handlers
 local install_root_tap_handlers
+
+local function open_submenu_for_item(sort_widget, item)
+    if not (sort_widget and item and item.hold_callback and has_submenu(item)) then
+        return false
+    end
+    item:hold_callback(function()
+        repopulate(sort_widget)
+    end)
+    return true
+end
 
 local function ensure_submenu_callbacks(items)
     if type(items) ~= "table" then return end
@@ -273,6 +309,18 @@ show_submenu = function(title, items, refresh)
     }
     sort_widget.sort_disabled = true
 
+    sort_widget.key_events = sort_widget.key_events or {}
+    sort_widget.key_events.FocusRight = nil
+    sort_widget.key_events.AlternativeFocusRight = nil
+    sort_widget.key_events.ZenArrangeOpenSubmenu = {
+        { "Right" },
+        event = "ZenArrangeOpenSubmenu",
+    }
+    sort_widget.onZenArrangeOpenSubmenu = function(self)
+        open_submenu_for_item(self, get_focused_item(self))
+        return true
+    end
+
     configure_title_bar(sort_widget)
     suppress_footer_cancel(sort_widget.footer_cancel)
     suppress_footer_jump_buttons(sort_widget)
@@ -285,8 +333,10 @@ show_submenu = function(title, items, refresh)
         suppress_footer_cancel(self.footer_cancel)
         suppress_footer_jump_buttons(self)
         install_submenu_tap_handlers(self)
+        install_titlebar_focus(self)
         return result
     end
+    install_titlebar_focus(sort_widget)
 
     UIManager:show(sort_widget)
 end
@@ -374,11 +424,22 @@ function M.show(opts)
         if toggle_sort_item(self, get_focused_item(self)) then return true end
         return self:onReturn()
     end
+    sort_widget.key_events.FocusRight = nil
+    sort_widget.key_events.AlternativeFocusRight = nil
+    sort_widget.key_events.ZenArrangeOpenSubmenu = {
+        { "Right" },
+        event = "ZenArrangeOpenSubmenu",
+    }
+    sort_widget.onZenArrangeOpenSubmenu = function(self)
+        if open_submenu_for_item(self, get_focused_item(self)) then return true end
+        return true
+    end
 
     configure_title_bar(sort_widget)
     sync_footer_cancel(sort_widget)
     suppress_footer_jump_buttons(sort_widget)
     install_root_tap_handlers(sort_widget)
+    patch_move_item_kb(sort_widget)
     local orig_populate = sort_widget._populateItems
     sort_widget._populateItems = function(self, ...)
         update_dynamic_text(self.item_table)
@@ -386,8 +447,10 @@ function M.show(opts)
         sync_footer_cancel(self)
         suppress_footer_jump_buttons(self)
         install_root_tap_handlers(self)
+        install_titlebar_focus(self)
         return result
     end
+    install_titlebar_focus(sort_widget)
 
     UIManager:show(sort_widget)
     return sort_widget

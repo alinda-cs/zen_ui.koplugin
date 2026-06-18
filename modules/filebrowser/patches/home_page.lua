@@ -1098,6 +1098,334 @@ local function grow_row_heights_by_priority(row_heights, extra_px)
     return grown
 end
 
+local function paint_focus_rect(bb, x, y, w, h)
+    if not (bb and x and y and w and h and w > 2 and h > 2) then return end
+    local t = 2
+    for i = 0, t - 1 do
+        bb:paintRect(x + i, y + i, w - i * 2, 1, Blitbuffer.COLOR_BLACK)
+        bb:paintRect(x + i, y + h - 1 - i, w - i * 2, 1, Blitbuffer.COLOR_BLACK)
+        bb:paintRect(x + i, y + i, 1, h - i * 2, Blitbuffer.COLOR_BLACK)
+        bb:paintRect(x + w - 1 - i, y + i, 1, h - i * 2, Blitbuffer.COLOR_BLACK)
+    end
+end
+
+local function sort_home_focus_targets(menu)
+    local targets = menu and menu._zen_home_focus_targets
+    if type(targets) ~= "table" then return end
+    table.sort(targets, function(a, b)
+        local ar = tonumber(a.row_order) or 0
+        local br = tonumber(b.row_order) or 0
+        if ar ~= br then return ar < br end
+        local ac = tonumber(a.col) or 0
+        local bc = tonumber(b.col) or 0
+        if ac ~= bc then return ac < bc end
+        return (tonumber(a.seq) or 0) < (tonumber(b.seq) or 0)
+    end)
+    for i, target in ipairs(targets) do
+        target.index = i
+    end
+end
+
+local function register_home_focus_target(menu, target)
+    if not (menu and type(target) == "table") then return target end
+    menu._zen_home_focus_targets = menu._zen_home_focus_targets or {}
+    menu._zen_home_focus_seq = (menu._zen_home_focus_seq or 0) + 1
+    target.seq = menu._zen_home_focus_seq
+    target.id = target.id or target.seq
+    target.key = target.key or ("target:" .. tostring(target.id))
+    table.insert(menu._zen_home_focus_targets, target)
+    return target
+end
+
+local function wrap_home_focus_target(menu, target, widget)
+    if not (menu and target and widget) then return widget end
+    local FrameContainer = require("ui/widget/container/framecontainer")
+    local size = widget.getSize and widget:getSize() or nil
+    local width = tonumber(target.width) or (size and size.w) or 1
+    local height = tonumber(target.height) or (size and size.h) or 1
+    target.width = width
+    target.height = height
+    register_home_focus_target(menu, target)
+
+    local frame = FrameContainer:new{
+        width = width,
+        height = height,
+        padding = 0,
+        bordersize = 0,
+        background = Blitbuffer.COLOR_WHITE,
+        widget,
+    }
+    local orig_paintTo = frame.paintTo
+    frame.paintTo = function(self, bb, x, y)
+        orig_paintTo(self, bb, x, y)
+        if menu._zen_home_focus_id == target.id then
+            paint_focus_rect(bb, x, y, self:getSize().w, self:getSize().h)
+        end
+    end
+    target.widget = frame
+    return frame
+end
+
+local function find_home_focus_index(menu, key)
+    if not (menu and key and type(menu._zen_home_focus_targets) == "table") then return nil end
+    for i, target in ipairs(menu._zen_home_focus_targets) do
+        if target.key == key then return i end
+    end
+end
+
+local function set_home_focus(menu, index)
+    local targets = menu and menu._zen_home_focus_targets
+    if type(targets) ~= "table" or #targets == 0 then return false end
+    if index < 1 then index = 1 end
+    if index > #targets then index = #targets end
+    local target = targets[index]
+    if not target then return false end
+    menu._zen_home_focus_suspended = false
+    menu._zen_home_focus_index = index
+    menu._zen_home_focus_id = target.id
+    menu._zen_home_focus_key = target.key
+    require("ui/uimanager"):setDirty(menu, "ui")
+    return true
+end
+
+local function clear_home_focus(menu, suspended)
+    if not menu then return end
+    menu._zen_home_focus_index = nil
+    menu._zen_home_focus_id = nil
+    menu._zen_home_focus_suspended = suspended == true
+    require("ui/uimanager"):setDirty(menu, "ui")
+end
+
+local function get_home_focus_target(menu)
+    local targets = menu and menu._zen_home_focus_targets
+    local index = menu and menu._zen_home_focus_index
+    if type(targets) ~= "table" or type(index) ~= "number" then return nil end
+    return targets[index]
+end
+
+local function move_home_focus(menu, dx, dy)
+    local targets = menu and menu._zen_home_focus_targets
+    if type(targets) ~= "table" or #targets == 0 then return false end
+    if menu._zen_home_focus_suspended then return false end
+    local current = get_home_focus_target(menu)
+    if not current then
+        return set_home_focus(menu, dy and dy < 0 and #targets or 1)
+    end
+
+    local best_i, best_score
+    local cur_row = tonumber(current.row_order) or 0
+    local cur_col = tonumber(current.col) or 0
+    if dy and dy ~= 0 then
+        for i, target in ipairs(targets) do
+            local row = tonumber(target.row_order) or 0
+            if (dy > 0 and row > cur_row) or (dy < 0 and row < cur_row) then
+                local col = tonumber(target.col) or 0
+                local score = math.abs(col - cur_col) + math.abs(row - cur_row) * 100
+                if not best_score or score < best_score then
+                    best_i, best_score = i, score
+                end
+            end
+        end
+    elseif dx and dx ~= 0 then
+        for i, target in ipairs(targets) do
+            local row = tonumber(target.row_order) or 0
+            local col = tonumber(target.col) or 0
+            if row == cur_row and ((dx > 0 and col > cur_col) or (dx < 0 and col < cur_col)) then
+                local score = math.abs(col - cur_col)
+                if not best_score or score < best_score then
+                    best_i, best_score = i, score
+                end
+            end
+        end
+        if not best_i then
+            best_i = current.index + dx
+            if best_i < 1 or best_i > #targets then best_i = nil end
+        end
+    end
+    if best_i then return set_home_focus(menu, best_i) end
+    return false
+end
+
+local function activate_home_focus(menu)
+    local target = get_home_focus_target(menu)
+    if not target then return false end
+    if type(target.activate) == "function" then
+        target.activate()
+    end
+    return true
+end
+
+local function context_home_focus(menu)
+    local target = get_home_focus_target(menu)
+    if not target then return false end
+    if type(target.context) == "function" then
+        target.context()
+    end
+    return true
+end
+
+local function install_home_key_handlers(menu)
+    if not menu or menu._zen_home_key_patched then return end
+    menu._zen_home_key_patched = true
+    local UIManager = require("ui/uimanager")
+    local HOLD_DELAY = 0.4
+    local hold_fn = nil
+    local hold_key = nil
+
+    local function cancel_hold()
+        if hold_fn then
+            UIManager:unschedule(hold_fn)
+            hold_fn = nil
+            local key = hold_key
+            hold_key = nil
+            return key
+        end
+        hold_key = nil
+    end
+
+    local function start_hold(m, key)
+        cancel_hold()
+        hold_key = key
+        hold_fn = function()
+            hold_fn = nil
+            hold_key = nil
+            context_home_focus(m)
+        end
+        UIManager:scheduleIn(HOLD_DELAY, hold_fn)
+    end
+
+    local function home_move_or_focus(m, dx, dy)
+        if move_home_focus(m, dx, dy) then return true end
+        return false
+    end
+
+    local function delegate_to_navbar(m, callback, ...)
+        local handled = callback and callback(m, ...)
+        if handled then
+            clear_home_focus(m, true)
+        end
+        return handled
+    end
+
+    menu.key_events = menu.key_events or {}
+    menu.key_events.LeftButtonTap = {
+        { "Menu" },
+        event = "ZenHomeContext",
+    }
+    menu.key_events.ZenHomeContext = {
+        { "Menu" },
+        event = "ZenHomeContext",
+    }
+
+    function menu:onZenHomeContext()
+        if not get_home_focus_target(self) then
+            return set_home_focus(self, 1)
+        end
+        return context_home_focus(self)
+    end
+
+    local orig_left = menu.onZenNavbarFocusLeft
+    function menu:onZenNavbarFocusLeft()
+        if self._zen_home_focus_suspended then
+            return orig_left and orig_left(self)
+        end
+        if home_move_or_focus(self, -1, 0) then return true end
+        return delegate_to_navbar(self, orig_left)
+    end
+
+    local orig_right = menu.onZenNavbarFocusRight
+    function menu:onZenNavbarFocusRight()
+        if self._zen_home_focus_suspended then
+            return orig_right and orig_right(self)
+        end
+        if home_move_or_focus(self, 1, 0) then return true end
+        return delegate_to_navbar(self, orig_right)
+    end
+
+    local orig_up = menu.onZenNavbarFocusUp
+    function menu:onZenNavbarFocusUp()
+        if self._zen_home_focus_suspended then
+            local handled = orig_up and orig_up(self)
+            if handled then
+                self._zen_home_focus_suspended = false
+                return set_home_focus(self, #(self._zen_home_focus_targets or {}))
+            end
+            return handled
+        end
+        if home_move_or_focus(self, 0, -1) then return true end
+        return delegate_to_navbar(self, orig_up)
+    end
+
+    local orig_down = menu.onZenNavbarFocusDown
+    function menu:onZenNavbarFocusDown()
+        if self._zen_home_focus_suspended then
+            return orig_down and orig_down(self)
+        end
+        if home_move_or_focus(self, 0, 1) then return true end
+        return delegate_to_navbar(self, orig_down)
+    end
+
+    local orig_confirm = menu.onZenNavbarConfirm
+    function menu:onZenNavbarConfirm()
+        if self._zen_home_focus_suspended then
+            return orig_confirm and orig_confirm(self)
+        end
+        if activate_home_focus(self) then return true end
+        return orig_confirm and orig_confirm(self)
+    end
+
+    local orig_focus_move = menu.onFocusMove
+    menu.onFocusMove = function(m, args)
+        local dx = args and args[1] or 0
+        local dy = args and args[2] or 0
+        if m._zen_home_focus_suspended and dy == -1 then
+            local handled = orig_focus_move and orig_focus_move(m, args)
+            if handled then
+                m._zen_home_focus_suspended = false
+                return set_home_focus(m, #(m._zen_home_focus_targets or {}))
+            end
+            return handled
+        end
+        if not m._zen_home_focus_suspended and home_move_or_focus(m, dx, dy) then return true end
+        local handled = orig_focus_move and orig_focus_move(m, args)
+        if handled and dy == 1 then clear_home_focus(m, true) end
+        return handled
+    end
+
+    local orig_key_press = menu.onKeyPress
+    menu.onKeyPress = function(m, key)
+        if m._zen_home_focus_suspended and key == "Up" then
+            local handled = orig_key_press and orig_key_press(m, key)
+            if handled then
+                m._zen_home_focus_suspended = false
+                return set_home_focus(m, #(m._zen_home_focus_targets or {}))
+            end
+            return handled
+        end
+        if key == "Left" and home_move_or_focus(m, -1, 0) then return true end
+        if key == "Right" and home_move_or_focus(m, 1, 0) then return true end
+        if key == "Up" and home_move_or_focus(m, 0, -1) then return true end
+        if key == "Down" and home_move_or_focus(m, 0, 1) then return true end
+        if (key == "Press" or key == "Return") and get_home_focus_target(m) then
+            start_hold(m, key)
+            return true
+        end
+        local handled = orig_key_press and orig_key_press(m, key)
+        if handled and key == "Down" then clear_home_focus(m, true) end
+        return handled
+    end
+
+    local orig_key_release = menu.onKeyRelease
+    menu.onKeyRelease = function(m, key)
+        if (key == "Press" or key == "Return") and hold_key == key then
+            cancel_hold()
+            activate_home_focus(m)
+            return true
+        end
+        return orig_key_release and orig_key_release(m, key)
+    end
+end
+
 local function build_home_content(menu, dcfg, rows, data_provider)
     local Device = require("device")
     local Screen = Device.screen
@@ -1110,6 +1438,12 @@ local function build_home_content(menu, dcfg, rows, data_provider)
     local LeftContainer = require("ui/widget/container/leftcontainer")
     local FrameContainer = require("ui/widget/container/framecontainer")
     local Font = require("ui/font")
+
+    local prev_focus_key = menu._zen_home_focus_key
+    menu._zen_home_focus_targets = {}
+    menu._zen_home_focus_seq = 0
+    menu._zen_home_focus_index = nil
+    menu._zen_home_focus_id = nil
 
     local show_status_bar = dcfg.show_status_bar ~= false
     local tb = menu.title_bar
@@ -1233,6 +1567,8 @@ local function build_home_content(menu, dcfg, rows, data_provider)
         local module_cfg = type(dcfg.modules) == "table" and dcfg.modules[comp.id] or nil
         local show_row_title = not (module_cfg and module_cfg.show_module_title == false)
         local row_title = title_for_component(comp.id) or comp.title or comp.label or ""
+        local row_focus_base = i * 10
+        local row_focus_actions = {}
         local title_h = 0
         local title_widget = nil
         if show_row_title and row_title ~= "" then
@@ -1269,6 +1605,16 @@ local function build_home_content(menu, dcfg, rows, data_provider)
                     table.insert(menu._zen_home_clock_refreshers, refresh)
                 end
             end,
+            setWidgetActions = function(actions)
+                row_focus_actions = type(actions) == "table" and actions or {}
+            end,
+            registerHomeFocusTarget = function(target, widget)
+                if not target then return widget end
+                target.row_order = tonumber(target.row_order) or row_focus_base + (tonumber(target.subrow) or 1)
+                target.col = tonumber(target.col) or 1
+                target.key = target.key or (comp.id .. ":" .. tostring(target.row_order) .. ":" .. tostring(target.col))
+                return wrap_home_focus_target(menu, target, widget)
+            end,
             face_title = face_title,
             face_value = face_value,
             face_label = face_label,
@@ -1290,6 +1636,15 @@ local function build_home_content(menu, dcfg, rows, data_provider)
                     widget,
                 }
             end
+            final_widget = wrap_home_focus_target(menu, {
+                key = "widget:" .. tostring(comp.id),
+                row_order = row_focus_base,
+                col = 0,
+                width = content_w,
+                height = h,
+                activate = row_focus_actions.activate,
+                context = row_focus_actions.context,
+            }, final_widget)
             table.insert(children, FrameContainer:new{
                 width = content_w,
                 height = h,
@@ -1310,6 +1665,12 @@ local function build_home_content(menu, dcfg, rows, data_provider)
 
     if used_h < body_h then
         table.insert(children, VerticalSpan:new{ width = body_h - used_h })
+    end
+
+    sort_home_focus_targets(menu)
+    local restore_i = find_home_focus_index(menu, prev_focus_key)
+    if restore_i then
+        set_home_focus(menu, restore_i)
     end
 
     return HorizontalGroup:new{
@@ -1473,6 +1834,7 @@ function M.showHomeView(injectNavbar)
     if injectNavbar then
         injectNavbar(menu, "home")
     end
+    install_home_key_handlers(menu)
 
     UIManager:show(menu)
     UIManager:nextTick(function()

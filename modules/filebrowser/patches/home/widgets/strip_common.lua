@@ -410,7 +410,7 @@ function M.build_strip(ctx, source_key)
     local max_cover_h_per_row = math.max(1, math.min(MIN_COVER_H, per_row_budget))
     if per_row_budget > MIN_COVER_H then max_cover_h_per_row = per_row_budget end
 
-    local function build_row_widget(row_list)
+    local function build_row_widget(row_list, row_num)
         local n = #row_list
         local min_gap = math.max(6, math.min(Screen:scaleBySize(14), math.floor(width * 0.018)))
         local max_cover_w = math.max(24, math.floor((width - min_gap * (n - 1)) / n))
@@ -518,6 +518,23 @@ function M.build_strip(ctx, source_key)
                 tap[1] = content
                 item_widget = tap
             end
+            if interactive and type(ctx.registerHomeFocusTarget) == "function" then
+                item_widget = ctx.registerHomeFocusTarget({
+                    key = "book:" .. tostring(path),
+                    subrow = row_num or 1,
+                    col = idx,
+                    width = item_w,
+                    height = item.h,
+                    activate = function()
+                        ctx.openBook(path)
+                        return true
+                    end,
+                    context = function()
+                        if ctx.showBookMenu then return ctx.showBookMenu(path, source) end
+                        return false
+                    end,
+                }, item_widget)
+            end
 
             table.insert(row, item_widget)
             if idx < #items then
@@ -538,7 +555,7 @@ function M.build_strip(ctx, source_key)
     local total_row_h = 0
     for r = 1, num_rows do
         if #row_books[r] > 0 then
-            local row_widget, row_h = build_row_widget(row_books[r])
+            local row_widget, row_h = build_row_widget(row_books[r], r)
             total_row_h = total_row_h + row_h
             table.insert(vgroup, CenterContainer:new{ dimen = Geom:new{ w = width, h = row_h }, row_widget })
             if row_inner_bottom_pad > 0 then

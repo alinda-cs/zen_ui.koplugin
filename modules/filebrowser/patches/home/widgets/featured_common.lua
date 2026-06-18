@@ -170,6 +170,19 @@ function M.build(ctx, source_key)
         }
     end
 
+    if type(ctx.setWidgetActions) == "function" then
+        ctx.setWidgetActions{
+            activate = function()
+                ctx.openBook(book.path)
+                return true
+            end,
+            context = function()
+                if ctx.showBookMenu then return ctx.showBookMenu(book.path, source) end
+                return false
+            end,
+        }
+    end
+
     -- Both columns share this height so tops and bottoms align
     local col_h = math.max(1, height - col_top_pad - col_bottom_pad)
 
