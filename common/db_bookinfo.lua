@@ -3,20 +3,11 @@
 -- Used by the Authors and Series navbar tabs.
 
 local logger = require("logger")
-local SQ3 = require("lua-ljsqlite3/init")
 local lfs = require("libs/libkoreader-lfs")
 local paths = require("common/paths")
+local bimOk, BookInfoManager = pcall(require, "bookinfomanager")
 
 local M = {}
-
--- Returns the path to bookinfo_cache.sqlite3, or nil if not found.
-local function getDbPath()
-    local ok, DataStorage = pcall(require, "datastorage")
-    if not ok then return nil end
-    local path = DataStorage:getSettingsDir() .. "/bookinfo_cache.sqlite3"
-    if lfs.attributes(path, "mode") == "file" then return path end
-    return nil
-end
 
 -- Returns the authors string as-is (no splitting) so multi-author books
 -- are grouped under their combined author string.
@@ -32,19 +23,14 @@ end
 -- Only includes books within home_dir that still exist on disk.
 -- Each book appears under every author it has (multi-author support).
 function M.getGroupedByAuthor()
-    local db_path = getDbPath()
-    if not db_path then
-        logger.warn("zen-ui db_bookinfo: bookinfo_cache.sqlite3 not found")
+    if not bimOk then
+        logger.warn("zen-ui automatic_series_grouping: BookInfoManager not available")
         return {}
     end
+    BookInfoManager:openDbConnection()
+    local conn = BookInfoManager.db_conn
 
     local home_dir = paths.getHomeDir()
-    local ok, conn = pcall(SQ3.open, db_path)
-    if not ok then
-        logger.warn("zen-ui db_bookinfo: failed to open DB:", conn)
-        return {}
-    end
-    conn:set_busy_timeout(3000)
 
     local author_map = {}  -- author -> { files }
 
@@ -98,8 +84,6 @@ function M.getGroupedByAuthor()
         end
     end)
 
-    conn:close()
-
     if not ok2 then
         logger.warn("zen-ui db_bookinfo: query error:", err)
         return {}
@@ -123,19 +107,13 @@ end
 -- Items within each series are sorted by series_index (then filename as tiebreak).
 -- Only includes books within home_dir that still exist on disk.
 function M.getGroupedBySeries()
-    local db_path = getDbPath()
-    if not db_path then
-        logger.warn("zen-ui db_bookinfo: bookinfo_cache.sqlite3 not found")
+    if not bimOk then
+        logger.warn("zen-ui automatic_series_grouping: BookInfoManager not available")
         return {}
     end
-
+    BookInfoManager:openDbConnection()
+    local conn = BookInfoManager.db_conn
     local home_dir = paths.getHomeDir()
-    local ok, conn = pcall(SQ3.open, db_path)
-    if not ok then
-        logger.warn("zen-ui db_bookinfo: failed to open DB:", conn)
-        return {}
-    end
-    conn:set_busy_timeout(3000)
 
     local series_map = {}  -- series_name -> { {file, series_index, filename} }
 
@@ -190,8 +168,6 @@ function M.getGroupedBySeries()
         end
     end)
 
-    conn:close()
-
     if not ok2 then
         logger.warn("zen-ui db_bookinfo: query error:", err)
         return {}
@@ -219,19 +195,13 @@ end
 -- Returns a flat list of file paths whose sidecar summary.status == "abandoned"
 -- (displayed in the UI as "To Be Read").
 function M.getTBRBooks()
-    local db_path = getDbPath()
-    if not db_path then
-        logger.warn("zen-ui db_bookinfo: getTBRBooks: bookinfo_cache.sqlite3 not found")
+    if not bimOk then
+        logger.warn("zen-ui automatic_series_grouping: BookInfoManager not available")
         return {}
     end
-
+    BookInfoManager:openDbConnection()
+    local conn = BookInfoManager.db_conn
     local home_dir = paths.getHomeDir()
-    local ok, conn = pcall(SQ3.open, db_path)
-    if not ok then
-        logger.warn("zen-ui db_bookinfo: getTBRBooks: failed to open DB:", conn)
-        return {}
-    end
-    conn:set_busy_timeout(3000)
 
     local candidates = {}
 
@@ -270,7 +240,6 @@ function M.getTBRBooks()
         end
     end)
 
-    conn:close()
 
     if not ok2 then
         logger.warn("zen-ui db_bookinfo: getTBRBooks query error:", err)
@@ -302,19 +271,13 @@ end
 -- Books may appear under multiple tags. Tags are split by comma and trimmed.
 -- Only includes books within home_dir that still exist on disk.
 function M.getGroupedByTags()
-    local db_path = getDbPath()
-    if not db_path then
-        logger.warn("zen-ui db_bookinfo: getGroupedByTags: bookinfo_cache.sqlite3 not found")
+    if not bimOk then
+        logger.warn("zen-ui automatic_series_grouping: BookInfoManager not available")
         return {}
     end
-
+    BookInfoManager:openDbConnection()
+    local conn = BookInfoManager.db_conn
     local home_dir = paths.getHomeDir()
-    local ok, conn = pcall(SQ3.open, db_path)
-    if not ok then
-        logger.warn("zen-ui db_bookinfo: getGroupedByTags: failed to open DB:", conn)
-        return {}
-    end
-    conn:set_busy_timeout(3000)
 
     local tag_map = {}  -- tag_name -> { file_paths }
 
@@ -366,7 +329,6 @@ function M.getGroupedByTags()
         end
     end)
 
-    conn:close()
 
     if not ok2 then
         logger.warn("zen-ui db_bookinfo: getGroupedByTags query error:", err)
@@ -388,13 +350,14 @@ end
 -- Returns the total number of fully-indexed books in the bookinfo cache
 -- that live under home_dir. Uses a SQL COUNT so no lfs calls are made.
 function M.getTotalBookCount()
-    local db_path = getDbPath()
-    if not db_path then return 0 end
+    if not bimOk then
+        logger.warn("zen-ui automatic_series_grouping: BookInfoManager not available")
+        return {}
+    end
+    BookInfoManager:openDbConnection()
+    local conn = BookInfoManager.db_conn
 
     local home_dir = paths.getHomeDir()
-    local ok, conn = pcall(SQ3.open, db_path)
-    if not ok then return 0 end
-    conn:set_busy_timeout(3000)
 
     local count = 0
     local ok2, err = pcall(function()
@@ -427,7 +390,6 @@ function M.getTotalBookCount()
         row = conn:rowexec(sql)
         count = tonumber(row) or 0
     end)
-    conn:close()
     if not ok2 then
         logger.warn("zen-ui db_bookinfo: getTotalBookCount error:", err)
     end
