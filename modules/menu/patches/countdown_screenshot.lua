@@ -11,13 +11,15 @@ local Blitbuffer       = require("ffi/blitbuffer")
 local ButtonDialog     = require("ui/widget/buttondialog")
 local CenterContainer  = require("ui/widget/container/centercontainer")
 local DataStorage      = require("datastorage")
+local Device           = require("device")
 local Font             = require("ui/font")
 local FrameContainer   = require("ui/widget/container/framecontainer")
 local Geom             = require("ui/geometry")
+local logger           = require("logger")
 local TextWidget       = require("ui/widget/textwidget")
 local UIManager        = require("ui/uimanager")
 local WidgetContainer  = require("ui/widget/container/widgetcontainer")
-local Screen           = require("device").screen
+local Screen           = Device.screen
 local util             = require("util")
 local _                = require("gettext")
 local icons            = require("common/inline_icon_map")
@@ -78,6 +80,26 @@ local function get_screenshot_context_name()
     local title = props and props.title
     if title and title ~= "" then return title end
     return rawget(_G, "__ZEN_UI_ACTIVE_TAB_LABEL")
+end
+
+local function get_top_widget_name()
+    local stack = UIManager._window_stack
+    local top = stack and stack[#stack]
+    local widget = top and top.widget
+    return tostring(widget and (widget.name or widget.id or widget.class or widget) or "nil")
+end
+
+local function get_device_name()
+    return tostring(Device.model or Device.model_name or Device.device_model
+        or Device.product or Device.name or "unknown")
+end
+
+local function repaint_before_screenshot()
+    UIManager:setDirty(nil, "full")
+    local ok, err = pcall(function() UIManager:forceRePaint() end)
+    if not ok then
+        logger.warn("zen-ui screenshot: forceRePaint before shot failed:", err)
+    end
 end
 
 local function show_save_dialog(screenshot_name)
@@ -167,13 +189,23 @@ function M.run()
     local function do_shot()
         close_bar()
         UIManager:scheduleIn(0.05, function()
+            repaint_before_screenshot()
             local screenshot_dir = DataStorage:getFullDataDir() .. "/screenshots"
             util.makePath(screenshot_dir)
-            local prefix = safe_filename_part(get_screenshot_context_name())
+            local context_name = get_screenshot_context_name()
+            local prefix = safe_filename_part(context_name)
             local pattern = prefix and (screenshot_dir .. "/" .. prefix .. "_Screenshot_%Y-%m-%d_%H%M%S.png")
                 or (screenshot_dir .. "/Screenshot_%Y-%m-%d_%H%M%S.png")
             local name = os.date(pattern)
+            logger.dbg("zen-ui screenshot: taking shot",
+                "file=", name,
+                "context=", tostring(context_name),
+                "active_tab_label=", tostring(rawget(_G, "__ZEN_UI_ACTIVE_TAB_LABEL")),
+                "top_widget=", get_top_widget_name(),
+                "device=", get_device_name(),
+                "screen=", tostring(Screen:getWidth()) .. "x" .. tostring(Screen:getHeight()))
             Screen:shot(name)
+            logger.dbg("zen-ui screenshot: saved", name)
             show_save_dialog(name)
         end)
     end
