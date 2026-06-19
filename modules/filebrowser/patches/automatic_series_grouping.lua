@@ -5,6 +5,7 @@ local function apply_automatic_series_grouping()
     local FileChooser = require("ui/widget/filechooser")
     local TitleBar = require("ui/widget/titlebar")
     local logger = require("logger")
+    local util = require("util")
 
     local ok_bim, BookInfoManager = pcall(require, "bookinfomanager")
     if not ok_bim or not BookInfoManager then
@@ -44,23 +45,64 @@ local function apply_automatic_series_grouping()
             or item.mode == "directory"
     end
 
-    local function get_doc_props(item, file_chooser)
+    local function prefetch_directory_metadata(dir_path)
+        BookInfoManager:openDbConnection()
+
+        if not BookInfoManager._zen_dir_stmt then
+            -- Shin chilling BOOKINFO_DB_VERSION >= 20201210
+            local cols = {
+                "directory", "filename", "filesize", "filemtime", "in_progress",
+                "unsupported", "cover_fetched", "has_meta", "has_cover",
+                "cover_sizetag", "ignore_meta", "ignore_cover", "pages",
+                "title", "authors", "series", "series_index", "language",
+                "keywords", "description"
+            }
+            local sql = "SELECT " .. table.concat(cols, ",") .. " FROM bookinfo WHERE directory=? AND in_progress=0;"
+            BookInfoManager._zen_dir_stmt = BookInfoManager.db_conn:prepare(sql)
+        end
+
+        local stmt = BookInfoManager._zen_dir_stmt
+        stmt:bind(dir_path)
+
+        local metadata_map = {}
+        while true do
+            local row = stmt:step()
+            if not row then break end
+
+            local filename = row[2]
+            if filename then
+                -- 13 -> 20
+                metadata_map[filename] = {
+                    pages = tonumber(row[13]),
+                    title = row[14],
+                    authors = row[15],
+                    series = row[16],
+                    series_index = row[17],
+                    language = row[18],
+                    keywords = row[19],
+                    description = row[20],
+                }
+            end
+        end
+        stmt:clearbind():reset()
+        return metadata_map
+    end
+
+    local function get_doc_props(item, cache)
         if type(item.doc_props) == "table" then
             return item.doc_props
         end
         local path = item.path or item.file
         if not path then return nil end
 
-        local ui_bookinfo = file_chooser and file_chooser.ui and file_chooser.ui.bookinfo
-        if ui_bookinfo and type(ui_bookinfo.getDocProps) == "function" then
-            local ok_props, props = pcall(ui_bookinfo.getDocProps, ui_bookinfo, path)
-            if ok_props and type(props) == "table" then
-                item.doc_props = props
-                return props
-            end
+        local _, filename = util.splitFilePathName(path)
+
+        if cache and cache[filename] then
+            item.doc_props = cache[filename]
+            return cache[filename]
         end
 
-        local bookinfo = BookInfoManager:getBookInfo(path, false)
+        local bookinfo = BookInfoManager:getDocProps(path)
         if type(bookinfo) == "table" then
             item.doc_props = bookinfo
             return bookinfo
@@ -155,6 +197,23 @@ local function apply_automatic_series_grouping()
         if not file_chooser or not item_table then return end
         if file_chooser.show_current_dir_for_hold then return end
 
+        local current_dir_cache = {}
+        local first_file_path
+        for _, item in ipairs(item_table) do
+            if item.is_file and item.path then
+                first_file_path = item.path
+                break
+            end
+        end
+
+        if first_file_path then
+            local directory, _ = util.splitFilePathName(first_file_path)
+            local ok, cached_map = pcall(prefetch_directory_metadata, directory)
+            if ok and cached_map then
+                current_dir_cache = cached_map
+            end
+        end
+
         local collate, collate_id = file_chooser:getCollate()
         local reverse = G_reader_settings:isTrue("reverse_collate")
         local sort_func = file_chooser:getSortingFunction(collate, reverse)
@@ -180,9 +239,10 @@ local function apply_automatic_series_grouping()
                 local series_handled = false
                 if item.is_file and item.path then
                     book_count = book_count + 1
-                    local doc_props = get_doc_props(item, file_chooser)
+                    local doc_props = get_doc_props(item, current_dir_cache)
                     local series_name = doc_props and doc_props.series
                     if type(series_name) == "string" and series_name ~= "" and series_name ~= NO_SERIES then
+                        ---@diagnostic disable-next-line: need-check-nil
                         item._series_index = tonumber(doc_props.series_index) or 0
 
                         if not series_map[series_name] then

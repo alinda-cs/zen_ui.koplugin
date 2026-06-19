@@ -1070,9 +1070,10 @@ local function showGroupSortDialog(tab_id, menu)
         local cur_reverse = is_tags_global_reverse()
 
         local SORT_OPTIONS = {
-            { key = "series_index", text = "\u{F0CB}  " .. _("Series number") },
-            { key = "title",        text = "\u{F031}  " .. _("Title") },
-            { key = "access",       text = "\u{F073}  " .. _("Recently read") },
+            { key = "series_index",  text = "\u{F0CB}  " .. _("Series number") },
+            { key = "title",         text = "\u{F031}  " .. _("Title") },
+            { key = "title_natural", text = "\u{F04BB}  " .. _("Title natural") },
+            { key = "access",        text = "\u{F073}  " .. _("Recently read") },
         }
 
         local sort_dialog
@@ -1177,7 +1178,7 @@ local function sortDetailFiles(files, collate, reverse)
         local bookinfo = BookInfoManager:getBookInfo(fpath, true)
         local sort_key
 
-        if collate == "title" then
+        if collate == "title" or collate == "title_natural" then
             sort_key = (bookinfo and bookinfo.title) or fpath:match("([^/]+)$") or fpath
         elseif collate == "series_index" then
             -- Numeric; books without an index sort last.
@@ -1196,23 +1197,32 @@ local function sortDetailFiles(files, collate, reverse)
     end
 
     -- Sort by key
-    table.sort(items, function(a, b)
-        if collate == "series_index" or collate == "access" then
-            -- Numeric comparison; for access higher = more recent so invert.
-            local a_n = type(a.key) == "number" and a.key or 0
-            local b_n = type(b.key) == "number" and b.key or 0
-            if collate == "access" then
-                if reverse then return a_n < b_n else return a_n > b_n end
+    if collate ~= "title_natural" then
+        table.sort(items, function(a, b)
+            if collate == "series_index" or collate == "access" then
+                -- Numeric comparison; for access higher = more recent so invert.
+                local a_n = type(a.key) == "number" and a.key or 0
+                local b_n = type(b.key) == "number" and b.key or 0
+                if collate == "access" then
+                    if reverse then return a_n < b_n else return a_n > b_n end
+                else
+                    if reverse then return a_n > b_n else return a_n < b_n end
+                end
             else
-                if reverse then return a_n > b_n else return a_n < b_n end
+                -- Alphabetical for title/series
+                local a_lower = type(a.key) == "string" and a.key:lower() or tostring(a.key)
+                local b_lower = type(b.key) == "string" and b.key:lower() or tostring(b.key)
+                if reverse then return a_lower > b_lower else return a_lower < b_lower end
             end
-        else
-            -- Alphabetical for title/series
-            local a_lower = type(a.key) == "string" and a.key:lower() or tostring(a.key)
-            local b_lower = type(b.key) == "string" and b.key:lower() or tostring(b.key)
-            if reverse then return a_lower > b_lower else return a_lower < b_lower end
-        end
-    end)
+        end)
+    else
+        local BookList = require("ui/widget/booklist")
+        local sort_func = BookList.collates.title_natural.init_sort_func()
+
+        table.sort(items, function(a, b)
+            return sort_func({ doc_props = { display_title = a.key } }, { doc_props = { display_title = b.key } })
+        end)
+    end
 
     -- Extract sorted paths
     local sorted = {}
@@ -1265,9 +1275,10 @@ local function showDetailSortDialog(group_name, tab_id, menu, files)
     local cur_reverse = get_detail_reverse(tab_id, group_name, reverse_fallback)
 
     local SORT_OPTIONS = {
-        { key = "series_index", text = "\u{F0CB}  " .. _("Series number") },
-        { key = "title",        text = "\u{F031}  " .. _("Title") },
-        { key = "access",       text = "\u{F073}  " .. _("Recently read") },
+        { key = "series_index",  text = "\u{F0CB}  " .. _("Series number") },
+        { key = "title",         text = "\u{F031}  " .. _("Title") },
+        { key = "title_natural", text = "\u{F04BB}  " .. _("Title natural") },
+        { key = "access",        text = "\u{F073}  " .. _("Recently read") },
     }
 
     local function rebuildMenu(collate, reverse)
