@@ -107,9 +107,10 @@ return {
         "Improved 'Restore library location on exit' (Settings > Reader)",
         "Updated how settings are stored",
         "Reorganized/restructured",
+        "Major performance improvements across the entire app",
         "Optimizations reducing app size by 57%",
         "Add option to flip Quick Settings and Home/Library icon in menu (Settings > Quick Settings)",
         "Added German translations",
-        "Bug fixes and performance improvements",
+        "Bug fixes",
     },
 }
