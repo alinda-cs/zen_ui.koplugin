@@ -23,6 +23,7 @@ local registry = require("modules/registry")
 local zen_settings = require("modules/settings/zen_settings")
 local zen_updater   = require("modules/settings/zen_updater")
 local paths         = require("common/paths")
+local library_navigation = require("common/library_navigation")
 
 -- Absolute path to this plugin's root directory (shared module resolves relative paths).
 local _plugin_root = require("common/plugin_root")
@@ -493,20 +494,6 @@ function ZenUI:init()
         return (type(icon) == "string" and icon ~= "") and icon or "library"
     end
 
-    local function return_to_rakuyomi_reader(restore)
-        if not restore and not G_reader_settings:isTrue("allow_commaneer_filemanager") then
-            return false
-        end
-        local ok, MangaReader = pcall(require, "MangaReader")
-        if not ok or type(MangaReader) ~= "table"
-                or MangaReader.is_showing ~= true
-                or type(MangaReader.onReturn) ~= "function" then
-            return false
-        end
-        MangaReader:onReturn()
-        return true
-    end
-
     local function app_launcher_enabled()
         local _cfg = _zen_plugin_ref and _zen_plugin_ref.config
         local _ft = _cfg and _cfg.features
@@ -607,25 +594,8 @@ function ZenUI:init()
                     end
                     local ui = m_self.ui
                     if not ui then return end
-                    local _feat = _zen_plugin_ref and _zen_plugin_ref.config and _zen_plugin_ref.config.features
-                    local restore = type(_feat) == "table" and _feat.restore_library_view == true
                     if ui.document then
-                        local file = ui.document.file
-                        local outside_home = file and not paths.isInHomeDir(file)
-                        ui:handleEvent(require("ui/event"):new("CloseConfigMenu"))
-                        if return_to_rakuyomi_reader(restore) then
-                            return
-                        end
-                        ui:onClose()
-                        if type(ui.showFileManager) == "function" then
-                            if not restore and not outside_home then
-                                _G.__ZEN_UI_FORCE_DEFAULT_LIBRARY_TAB = true
-                            end
-                            if outside_home then
-                                _G.__ZEN_UI_KEEP_BOOK_LOCATION = true
-                            end
-                            ui:showFileManager(file)
-                        end
+                        library_navigation.showFromReader(ui, _zen_plugin_ref)
                     else
                         local fm = require("apps/filemanager/filemanager").instance
                         if fm then require("common/utils").closeWidgetsAbove(fm) end

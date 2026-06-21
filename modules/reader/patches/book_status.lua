@@ -1,10 +1,13 @@
 local function apply_book_status()
+    local zen_plugin = rawget(_G, "__ZEN_UI_PLUGIN")
+
     -- Use KOReader's native "show Book Status at end of book" setting rather
     -- than hooking onEndOfBook ourselves.
     G_reader_settings:saveSetting("end_document_action", "book_status")
 
     -- Always use the Zen UI custom Book Status layout (home + close buttons, cleaner stats)
     local BookStatusWidget = require("ui/widget/bookstatuswidget")
+    local library_navigation = require("common/library_navigation")
 
     BookStatusWidget.getStatusContent = function(self, width)
         local _ = require("gettext")
@@ -32,16 +35,12 @@ local function apply_book_status()
 
         local home_callback = function()
             local ui = self.ui
-            local file = ui and ui.document and ui.document.file
             if self.updated then
                 ui.doc_settings:flush()
             end
             UIManager:close(self)
             if ui and ui.document then
-                ui:onClose()
-                if type(ui.showFileManager) == "function" then
-                    ui:showFileManager(file)
-                end
+                library_navigation.showFromReader(ui, zen_plugin or rawget(_G, "__ZEN_UI_PLUGIN"))
             end
         end
 
