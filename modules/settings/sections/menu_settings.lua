@@ -383,9 +383,18 @@ function M.build(ctx)
     -- Custom buttons and their enabled states are preserved.
     local function resetQuickSettings()
         local def = defaults.quick_settings
+        -- Rebuild show_buttons from defaults so only default buttons remain enabled.
+        local new_show = {}
         for key, val in pairs(def.show_buttons) do
-            config.quick_settings.show_buttons[key] = val
+            new_show[key] = val
         end
+        -- Keep custom buttons saved but disabled (not part of defaults).
+        if type(config.quick_settings.custom_buttons) == "table" then
+            for _i, cb in ipairs(config.quick_settings.custom_buttons) do
+                new_show[cb.id] = false
+            end
+        end
+        config.quick_settings.show_buttons = new_show
         config.quick_settings.show_frontlight = def.show_frontlight
         config.quick_settings.show_warmth = def.show_warmth
         config.quick_settings.flip_lh_rh_icon = def.flip_lh_rh_icon
@@ -505,7 +514,7 @@ function M.build(ctx)
                 callback = function(touch_menu)
                     local ConfirmBox = require("ui/widget/confirmbox")
                     UIManager:show(ConfirmBox:new{
-                        text = _("Reset quick settings to defaults?\n\nThis restores the default enabled options. Custom buttons are kept."),
+                        text = _("Reset quick settings to defaults?"),
                         ok_text = _("Reset"),
                         ok_callback = function()
                             resetQuickSettings()

@@ -56,17 +56,6 @@ local function sanitize_list(entries, allow_folder)
     return out, changed
 end
 
-local function max_id(entries, current)
-    for _i, entry in ipairs(entries or {}) do
-        local n = type(entry.id) == "string" and tonumber(entry.id:match("^al_(%d+)$"))
-        if n and n > current then current = n end
-        if entry.type == "folder" then
-            current = max_id(entry.children, current)
-        end
-    end
-    return current
-end
-
 function M.ensure()
     local cfg = Store.load()
     local entries, changed = sanitize_list(cfg.entries, true)
@@ -74,11 +63,6 @@ function M.ensure()
         cfg.entries = entries
     elseif type(cfg.entries) ~= "table" then
         cfg.entries = {}
-    end
-    local max_seen = max_id(cfg.entries, 0)
-    if type(cfg.next_id) ~= "number" or cfg.next_id < max_seen then
-        cfg.next_id = max_seen
-        changed = true
     end
     if changed then
         Store.save(cfg)
@@ -90,6 +74,8 @@ function M.save(cfg)
     return Store.save(cfg)
 end
 
+-- Monotonic counter that only ever increments, so removing entries can never
+-- cause a future id to collide with an existing one.
 function M.next_id(cfg)
     cfg.next_id = (tonumber(cfg.next_id) or 0) + 1
     return "al_" .. cfg.next_id
