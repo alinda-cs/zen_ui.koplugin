@@ -6,6 +6,9 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 local UIManager = require("ui/uimanager")
 local defaults = require("config/defaults")
+local icons = require("common/inline_icon_map")
+local IconItem = require("common/ui/icon_menu_item")
+local PluginScan = require("modules/menu/app_launcher/plugin_scan")
 
 local M = {}
 
@@ -79,6 +82,7 @@ function M.build(ctx)
     for _i, quick_item in ipairs(quick_button_items) do
         quick_button_label_by_id[quick_item.key] = quick_item.text
     end
+    local quick_button_custom_by_id = {}
 
     local quick_buttons_max = 9
 
@@ -114,9 +118,12 @@ function M.build(ctx)
     if type(config.quick_settings.custom_buttons) == "table" then
         for _i, cb in ipairs(config.quick_settings.custom_buttons) do
             if type(cb.id) == "string" then
+                quick_button_custom_by_id[cb.id] = cb
                 local lbl
                 if cb.label and cb.label ~= "" then
                     lbl = cb.label
+                elseif cb.type == "plugin" then
+                    lbl = cb.plugin_title
                 elseif ok_disp and cb.action and next(cb.action) then
                     lbl = Dispatcher:menuTextFunc(cb.action)
                 end
@@ -170,9 +177,149 @@ function M.build(ctx)
         return true
     end
 
+    local build_cb_sub_items
+    local get_cb_label
+
+    local function ensureButtonOrder(id)
+        for _i, ordered_id in ipairs(config.quick_settings.button_order) do
+            if ordered_id == id then return end
+        end
+        table.insert(config.quick_settings.button_order, id)
+    end
+
+    local function addActionButton(touch_menu)
+        local cbs = config.quick_settings.custom_buttons
+        if type(cbs) ~= "table" then
+            config.quick_settings.custom_buttons = {}
+            cbs = config.quick_settings.custom_buttons
+        end
+        local taken = {}
+        for _i, b in ipairs(cbs) do
+            local lbl = (b.label and b.label ~= "") and b.label or _("Custom")
+            taken[lbl] = true
+        end
+        local default_label
+        if taken[_("Custom")] then
+            local n = 2
+            while taken[_("Custom") .. " " .. n] do n = n + 1 end
+            default_label = _("Custom") .. " " .. n
+        end
+        config.quick_settings.next_custom_id =
+            (config.quick_settings.next_custom_id or 0) + 1
+        local new_cb = {
+            id     = "cb_" .. config.quick_settings.next_custom_id,
+            type   = "action",
+            label  = default_label,
+            icon   = "zen_ui",
+            action = {},
+        }
+        table.insert(cbs, new_cb)
+        quick_button_custom_by_id[new_cb.id] = new_cb
+        quick_button_label_by_id[new_cb.id] = new_cb.label or _("Custom")
+        quick_button_key_set[new_cb.id] = true
+        config.quick_settings.show_buttons[new_cb.id] = countEnabledButtons() < quick_buttons_max
+        ensureButtonOrder(new_cb.id)
+        save_and_apply_quick_settings()
+        if touch_menu and build_cb_sub_items then
+            local sub_items = build_cb_sub_items(new_cb)
+            if #sub_items > 0 then
+                table.insert(touch_menu.item_table_stack, touch_menu.item_table)
+                touch_menu.parent_id = nil
+                touch_menu.item_table = sub_items
+                touch_menu:updateItems(1)
+            end
+        end
+    end
+
+    local function showPluginPicker(on_select)
+        local found = PluginScan.scan()
+        if #found == 0 then
+            local InfoMessage = require("ui/widget/infomessage")
+            UIManager:show(InfoMessage:new{ text = _("No launchable plugin menus found") })
+            return
+        end
+        local picker_items = {}
+        for _i, plugin in ipairs(found) do
+            picker_items[#picker_items + 1] = {
+                text = plugin.title,
+                plugin = plugin,
+            }
+        end
+        local show_menu_picker = require("common/ui/zen_menu_picker")
+        show_menu_picker{
+            title = _("Choose plugin menu"),
+            items = picker_items,
+            on_select = on_select,
+        }
+    end
+
+    local function choosePluginButton(cb, touch_menu, open_settings)
+        showPluginPicker(function(item)
+            local plugin = item.plugin
+            if not plugin then return end
+            cb.type = "plugin"
+            cb.plugin_title = plugin.title
+            cb.plugin = { key = plugin.key, method = plugin.method }
+            if not cb.label or cb.label == "" or cb.label == _("Plugin") then
+                cb.label = plugin.title
+            end
+            quick_button_label_by_id[cb.id] = get_cb_label(cb)
+            save_and_apply_quick_settings()
+            if touch_menu and build_cb_sub_items and open_settings then
+                local sub_items = build_cb_sub_items(cb)
+                if #sub_items > 0 then
+                    table.insert(touch_menu.item_table_stack, touch_menu.item_table)
+                    touch_menu.parent_id = nil
+                    touch_menu.item_table = sub_items
+                    touch_menu:updateItems(1)
+                end
+            elseif touch_menu and touch_menu.updateItems then
+                touch_menu:updateItems(1)
+            end
+        end)
+    end
+
+    local function addPluginButton(touch_menu)
+        showPluginPicker(function(item)
+            local plugin = item.plugin
+            if not plugin then return end
+            local cbs = config.quick_settings.custom_buttons
+            if type(cbs) ~= "table" then
+                config.quick_settings.custom_buttons = {}
+                cbs = config.quick_settings.custom_buttons
+            end
+            config.quick_settings.next_custom_id =
+                (config.quick_settings.next_custom_id or 0) + 1
+            local new_cb = {
+                id           = "cb_" .. config.quick_settings.next_custom_id,
+                type         = "plugin",
+                label        = plugin.title,
+                plugin_title = plugin.title,
+                icon         = "lightning",
+                plugin       = { key = plugin.key, method = plugin.method },
+            }
+            table.insert(cbs, new_cb)
+            quick_button_custom_by_id[new_cb.id] = new_cb
+            quick_button_label_by_id[new_cb.id] = get_cb_label(new_cb)
+            quick_button_key_set[new_cb.id] = true
+            config.quick_settings.show_buttons[new_cb.id] = countEnabledButtons() < quick_buttons_max
+            ensureButtonOrder(new_cb.id)
+            save_and_apply_quick_settings()
+            if touch_menu and build_cb_sub_items then
+                local sub_items = build_cb_sub_items(new_cb)
+                if #sub_items > 0 then
+                    table.insert(touch_menu.item_table_stack, touch_menu.item_table)
+                    touch_menu.parent_id = nil
+                    touch_menu.item_table = sub_items
+                    touch_menu:updateItems(1)
+                end
+            end
+        end)
+    end
+
     local function showButtonsArrange()
         local ZenArrangeList = require("common/ui/zen_arrange_list")
-        local sort_items = {}
+        local sort_items
         local function shouldDimButton(id)
             return config.quick_settings.show_buttons[id] ~= true
                 and countEnabledButtons() >= quick_buttons_max
@@ -182,35 +329,64 @@ function M.build(ctx)
                 sort_item.dim = shouldDimButton(sort_item.orig_item)
             end
         end
-        for _i, id in ipairs(config.quick_settings.button_order) do
-            local label = quick_button_label_by_id[id]
-            if label then
-                local item = {
-                    text = label,
-                    orig_item = id,
-                    dim = shouldDimButton(id),
-                    checked_func = function()
-                        return config.quick_settings.show_buttons[id] == true
-                    end,
-                    callback = function()
-                        if toggleQuickButton(id) then
-                            updateDimStates()
+        local function build_sort_items()
+            local items = {}
+            for _i, id in ipairs(config.quick_settings.button_order) do
+                local label = quick_button_label_by_id[id]
+                if label then
+                    local item = {
+                        text = label,
+                        orig_item = id,
+                        dim = shouldDimButton(id),
+                        checked_func = function()
+                            return config.quick_settings.show_buttons[id] == true
+                        end,
+                        callback = function()
+                            if toggleQuickButton(id) then
+                                updateDimStates()
+                            end
+                        end,
+                    }
+                    if id == "rotate" then
+                        item.text_func = function()
+                            return T(_("Rotate: %1"), getRotateActionLabel()) .. " \u{25B8}"
                         end
-                    end,
-                }
-                if id == "rotate" then
-                    item.text_func = function()
-                        return T(_("Rotate: %1"), getRotateActionLabel()) .. " \u{25B8}"
+                        item.sub_title = _("Rotate")
+                        item.sub_item_table_func = buildRotateButtonSubItems
+                    elseif quick_button_custom_by_id[id] then
+                        local cb = quick_button_custom_by_id[id]
+                        item.text_func = function()
+                            return get_cb_label(cb)
+                        end
+                        item.sub_title = get_cb_label(cb)
+                        item.sub_item_table_func = function()
+                            return build_cb_sub_items(cb)
+                        end
                     end
-                    item.sub_title = _("Rotate")
-                    item.sub_item_table_func = buildRotateButtonSubItems
+                    table.insert(items, item)
                 end
-                table.insert(sort_items, item)
             end
+            sort_items = items
+            return items
         end
+        sort_items = build_sort_items()
         ZenArrangeList.show{
             title = _("Buttons"),
             item_table = sort_items,
+            add_title = _("Add"),
+            hide_footer_cancel = true,
+            add_item_table = {
+                IconItem.decorate({
+                    text = _("Action"),
+                    keep_menu_open = true,
+                    callback = addActionButton,
+                }, icons.action),
+                IconItem.decorate({
+                    text = _("Plugin"),
+                    keep_menu_open = true,
+                    callback = addPluginButton,
+                }, icons.plugin),
+            },
             callback = function()
                 -- Replace the table to avoid leaving stale trailing entries
                 local new_order = {}
@@ -228,6 +404,7 @@ function M.build(ctx)
                 config.quick_settings.button_order = new_order
                 save_and_apply_quick_settings()
             end,
+            refresh_func = build_sort_items,
         }
     end
 
@@ -247,8 +424,11 @@ function M.build(ctx)
         _icon_picker(getCustomButtonIcons(), cb.icon, on_select)
     end
 
-    local function get_cb_label(cb)
+    get_cb_label = function(cb)
         if cb.label and cb.label ~= "" then return cb.label end
+        if cb.type == "plugin" then
+            return cb.plugin_title or _("Plugin")
+        end
         if ok_disp and cb.action and next(cb.action) then
             local t = Dispatcher:menuTextFunc(cb.action)
             if t ~= _("Nothing") then return t end
@@ -256,34 +436,27 @@ function M.build(ctx)
         return _("Custom")
     end
 
-    local function build_cb_sub_items(cb)
+    build_cb_sub_items = function(cb)
         local items = {}
 
-        -- Enable/disable toggle
-        table.insert(items, {
-            text = _("Show in quick settings"),
-            separator = true,
-            checked_func = function()
-                return config.quick_settings.show_buttons[cb.id] ~= false
-            end,
-            enabled_func = function()
-                return config.quick_settings.show_buttons[cb.id] ~= false
-                    or countEnabledButtons() < quick_buttons_max
-            end,
-            callback = function()
-                local cur = config.quick_settings.show_buttons[cb.id]
-                config.quick_settings.show_buttons[cb.id] = (cur == false)
-                save_and_apply_quick_settings()
-            end,
-        })
-
-        -- Action picker via Dispatcher submenu
-        if ok_disp then
+        if cb.type == "plugin" then
+            table.insert(items, IconItem.decorate({
+                text_func = function()
+                    return T(_("Plugin: %1"), cb.plugin_title or cb.label or _("(none)"))
+                end,
+                keep_menu_open = true,
+                callback = function(touch_menu)
+                    choosePluginButton(cb, touch_menu, false)
+                end,
+            }, icons.plugin))
+        elseif ok_disp then
+            -- Action picker via Dispatcher submenu
             local dispatch_items = {}
             -- Proxy caller: triggers save whenever Dispatcher writes caller.updated = true
             local caller = setmetatable({}, {
                 __newindex = function(t, k, v)
                     if k == "updated" and v then
+                        quick_button_label_by_id[cb.id] = get_cb_label(cb)
                         save_and_apply_quick_settings()
                     else
                         rawset(t, k, v)
@@ -292,7 +465,7 @@ function M.build(ctx)
                 __index = function() return nil end,
             })
             Dispatcher:addSubMenu(caller, dispatch_items, cb, "action")
-            table.insert(items, {
+            table.insert(items, IconItem.decorate({
                 text_func = function()
                     if cb.action and next(cb.action) then
                         return T(_("Action: %1"), Dispatcher:menuTextFunc(cb.action))
@@ -301,11 +474,11 @@ function M.build(ctx)
                 end,
                 keep_menu_open = true,
                 sub_item_table = dispatch_items,
-            })
+            }, icons.action))
         end
 
         -- Icon picker
-        table.insert(items, {
+        table.insert(items, IconItem.decorate({
             text_func = function()
                 return T(_("Icon: %1"), cb.icon or "zen_ui")
             end,
@@ -318,16 +491,16 @@ function M.build(ctx)
                     if tm and tm.updateItems then tm:updateItems(1) end
                 end)
             end,
-        })
+        }, icons.icon))
 
         -- Optional label override
-        table.insert(items, {
+        table.insert(items, IconItem.decorate({
             text_func = function()
                 local lbl = (cb.label and cb.label ~= "") and cb.label or _("(auto)")
                 return T(_("Label: %1"), lbl)
             end,
             keep_menu_open = true,
-            callback = function()
+            callback = function(touch_menu)
                 local InputDialog = require("ui/widget/inputdialog")
                 local dialog
                 dialog = InputDialog:new{
@@ -343,17 +516,21 @@ function M.build(ctx)
                                 local txt = dialog:getInputText()
                                 cb.label = (txt and txt ~= "") and txt or nil
                                 UIManager:close(dialog)
+                                quick_button_label_by_id[cb.id] = get_cb_label(cb)
                                 save_and_apply_quick_settings()
+                                if touch_menu and touch_menu.updateItems then
+                                    touch_menu:updateItems(1)
+                                end
                             end,
                         },
                     }},
                 }
                 UIManager:show(dialog)
             end,
-        })
+        }, icons.label))
 
         -- Delete button
-        table.insert(items, {
+        table.insert(items, IconItem.decorate({
             text = _("Remove this button"),
             separator = true,
             keep_menu_open = true,
@@ -365,6 +542,9 @@ function M.build(ctx)
                         break
                     end
                 end
+                quick_button_custom_by_id[cb.id] = nil
+                quick_button_label_by_id[cb.id] = nil
+                quick_button_key_set[cb.id] = nil
                 config.quick_settings.show_buttons[cb.id] = nil
                 local new_order = {}
                 for _i, id in ipairs(config.quick_settings.button_order) do
@@ -374,7 +554,7 @@ function M.build(ctx)
                 save_and_apply_quick_settings()
                 if touch_menu then touch_menu:backToUpperMenu() end
             end,
-        })
+        }, icons.delete))
 
         return items
     end
@@ -401,79 +581,6 @@ function M.build(ctx)
         save_and_apply_quick_settings()
     end
 
-    local custom_buttons_item = {
-        text = _("Custom buttons"),
-        separator = true,
-        keep_menu_open = true,
-        sub_item_table_func = function()
-            local function build()
-                local items = {}
-                -- Add new custom button
-                table.insert(items, {
-                    text = _("Add custom button"),
-                    keep_menu_open = true,
-                    callback = function(touch_menu)
-                        local cbs = config.quick_settings.custom_buttons
-                        if type(cbs) ~= "table" then
-                            config.quick_settings.custom_buttons = {}
-                            cbs = config.quick_settings.custom_buttons
-                        end
-                        -- Pick a unique default label: "Custom", "Custom 2", "Custom 3", ...
-                        local taken = {}
-                        for _i, b in ipairs(cbs) do
-                            local lbl = (b.label and b.label ~= "") and b.label or _("Custom")
-                            taken[lbl] = true
-                        end
-                        local default_label
-                        if taken[_("Custom")] then
-                            local n = 2
-                            while taken[_("Custom") .. " " .. n] do n = n + 1 end
-                            default_label = _("Custom") .. " " .. n
-                        end
-                        config.quick_settings.next_custom_id =
-                            (config.quick_settings.next_custom_id or 0) + 1
-                        local new_cb = {
-                            id     = "cb_" .. config.quick_settings.next_custom_id,
-                            label  = default_label,
-                            icon   = "zen_ui",
-                            action = {},
-                        }
-                        table.insert(cbs, new_cb)
-                        config.quick_settings.show_buttons[new_cb.id] = countEnabledButtons() < quick_buttons_max
-                        table.insert(config.quick_settings.button_order, new_cb.id)
-                        save_and_apply_quick_settings()
-                        -- Navigate into new button's config; list refreshes on back
-                        local sub_items = build_cb_sub_items(new_cb)
-                        if touch_menu and #sub_items > 0 then
-                            table.insert(touch_menu.item_table_stack, touch_menu.item_table)
-                            touch_menu.parent_id = nil
-                            touch_menu.item_table = sub_items
-                            touch_menu:updateItems(1)
-                        end
-                    end,
-                })
-                -- Existing custom buttons
-                if type(config.quick_settings.custom_buttons) == "table" then
-                    for _i, cb in ipairs(config.quick_settings.custom_buttons) do
-                        local cb_ref = cb
-                        table.insert(items, {
-                            text_func = function() return get_cb_label(cb_ref) end,
-                            keep_menu_open = true,
-                            sub_item_table_func = function()
-                                return build_cb_sub_items(cb_ref)
-                            end,
-                        })
-                    end
-                end
-                -- Refresh this list when backToUpperMenu() is called (after add or remove)
-                items.needs_refresh = true
-                items.refresh_func = build
-                return items
-            end
-            return build()
-        end,
-    }
-
     return {
         text = _("Quick Settings"),
         sub_item_table = {
@@ -482,7 +589,6 @@ function M.build(ctx)
                 keep_menu_open = true,
                 callback = showButtonsArrange,
             },
-            custom_buttons_item,
             {
                 text = _("Show brightness slider"),
                 checked_func = function() return config.quick_settings.show_frontlight == true end,

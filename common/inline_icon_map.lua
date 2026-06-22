@@ -53,6 +53,10 @@ return {
     -- details / info (context_menu.lua / opds.lua)
     details      = "\u{F02FD}",  -- mdi-information
     edit         = "\u{F090C}",  -- mdi-pencil
+    label        = "\u{F04F9}",
+    icon         = "\u{F02F5}",
+    plugin       = "\u{F06A5}",
+    action       = "\u{F140B}",
 
     -- network / sync (opds.lua)
     search       = "\u{F0349}",  -- mdi-magnify

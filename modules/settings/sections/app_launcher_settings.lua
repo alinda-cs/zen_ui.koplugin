@@ -1,6 +1,8 @@
 local _ = require("gettext")
 local T = require("ffi/util").template
 local UIManager = require("ui/uimanager")
+local icons = require("common/inline_icon_map")
+local IconItem = require("common/ui/icon_menu_item")
 
 local Model = require("modules/menu/app_launcher/model")
 local PluginScan = require("modules/menu/app_launcher/plugin_scan")
@@ -243,24 +245,83 @@ function M.build(ctx)
         }
     end
 
+    local function choose_plugin_entry(entry, touch_menu)
+        local found = PluginScan.scan()
+        if #found == 0 then
+            local InfoMessage = require("ui/widget/infomessage")
+            UIManager:show(InfoMessage:new{ text = _("No launchable plugin menus found") })
+            return
+        end
+        local picker_items = {}
+        for _i, plugin in ipairs(found) do
+            picker_items[#picker_items + 1] = {
+                text = plugin.title,
+                plugin = plugin,
+            }
+        end
+        local show_menu_picker = require("common/ui/zen_menu_picker")
+        show_menu_picker{
+            title = _("Choose plugin menu"),
+            items = picker_items,
+            on_select = function(item)
+                local plugin = item.plugin
+                entry.type = "plugin"
+                entry.plugin = { key = plugin.key, method = plugin.method }
+                entry.label = plugin.title
+                save_app_launcher()
+                if touch_menu and touch_menu.updateItems then
+                    touch_menu:updateItems(1)
+                end
+            end,
+        }
+    end
+
     local function add_items(folder)
         return {
-            {
+            IconItem.decorate({
                 text = _("Add action"),
                 keep_menu_open = true,
                 callback = function(touch_menu)
                     local entry = add_action(folder)
                     open_entry_settings(touch_menu, entry, folder)
                 end,
-            },
-            {
+            }, icons.action),
+            IconItem.decorate({
                 text = _("Add plugin"),
                 keep_menu_open = true,
                 callback = function(touch_menu)
                     add_plugin(folder, touch_menu)
                 end,
-            },
+            }, icons.plugin),
         }
+    end
+
+    local function arrange_add_items(folder)
+        local items = {
+            IconItem.decorate({
+                text = _("Action"),
+                keep_menu_open = true,
+                callback = function(touch_menu)
+                    local entry = add_action(folder)
+                    open_entry_settings(touch_menu, entry, folder)
+                end,
+            }, icons.action),
+            IconItem.decorate({
+                text = _("Plugin"),
+                keep_menu_open = true,
+                callback = function(touch_menu)
+                    add_plugin(folder, touch_menu)
+                end,
+            }, icons.plugin),
+        }
+        if not folder then
+            items[#items + 1] = IconItem.decorate({
+                text = _("Folder"),
+                keep_menu_open = true,
+                callback = add_folder,
+            }, icons.new_folder)
+        end
+        return items
     end
 
     local function build_action_picker(entry)
@@ -280,7 +341,7 @@ function M.build(ctx)
             end,
         })
         Dispatcher:addSubMenu(caller, dispatch_items, entry, "action")
-        return {
+        return IconItem.decorate({
             text_func = function()
                 if entry.action and next(entry.action) then
                     return T(_("Action: %1"), Dispatcher:menuTextFunc(entry.action))
@@ -289,7 +350,7 @@ function M.build(ctx)
             end,
             keep_menu_open = true,
             sub_item_table = dispatch_items,
-        }
+        }, icons.action)
     end
 
     local function build_move_items(entry, parent)
@@ -302,7 +363,7 @@ function M.build(ctx)
                 end
             end
             if parent then
-                items[#items + 1] = {
+                items[#items + 1] = IconItem.decorate({
                     text = _("Move out of folder"),
                     callback = function(touch_menu)
                         if Model.move_to_root(cfg.entries, entry.id) then
@@ -310,10 +371,10 @@ function M.build(ctx)
                             if touch_menu then touch_menu:backToUpperMenu() end
                         end
                     end,
-                }
+                }, icons.move)
             end
             if #folder_choices > 0 then
-                items[#items + 1] = {
+                items[#items + 1] = IconItem.decorate({
                     text = _("Move to folder"),
                     keep_menu_open = true,
                     callback = function(touch_menu)
@@ -341,7 +402,7 @@ function M.build(ctx)
                         }
                         UIManager:show(dialog)
                     end,
-                }
+                }, icons.move)
             end
         end
         return items
@@ -350,7 +411,7 @@ function M.build(ctx)
     build_entry_items = function(entry, parent)
         local items = {}
         local function add_icon_item()
-            items[#items + 1] = {
+            items[#items + 1] = IconItem.decorate({
                 text_func = function()
                     return T(_("Icon: %1"), entry.icon or DEFAULT_ENTRY_ICON)
                 end,
@@ -358,10 +419,10 @@ function M.build(ctx)
                 callback = function(touch_menu)
                     show_icon_picker(entry, touch_menu)
                 end,
-            }
+            }, icons.icon)
         end
         local function add_label_item()
-            items[#items + 1] = {
+            items[#items + 1] = IconItem.decorate({
                 text_func = function()
                     return T(_("Label: %1"), entry.label)
                 end,
@@ -369,7 +430,7 @@ function M.build(ctx)
                 callback = function()
                     prompt_label(entry, _("Launcher label"))
                 end,
-            }
+            }, icons.label)
         end
         if entry.type == "action" then
             local picker = build_action_picker(entry)
@@ -379,18 +440,27 @@ function M.build(ctx)
         elseif entry.type == "folder" then
             add_label_item()
             add_icon_item()
-            items[#items + 1] = {
+            items[#items + 1] = IconItem.decorate({
                 text = _("Folder buttons"),
                 keep_menu_open = true,
                 callback = function()
                     show_entries_arrange(entry)
                 end,
-            }
+            }, icons.folder_open)
             local add_sub = add_items(entry)
             for _i, item in ipairs(add_sub) do
                 items[#items + 1] = item
             end
         else
+            items[#items + 1] = IconItem.decorate({
+                text_func = function()
+                    return T(_("Plugin: %1"), entry.label or _("(none)"))
+                end,
+                keep_menu_open = true,
+                callback = function(touch_menu)
+                    choose_plugin_entry(entry, touch_menu)
+                end,
+            }, icons.plugin)
             add_label_item()
             add_icon_item()
         end
@@ -398,7 +468,7 @@ function M.build(ctx)
         for _i, item in ipairs(move_items) do
             items[#items + 1] = item
         end
-        items[#items + 1] = {
+        items[#items + 1] = IconItem.decorate({
             text = _("Delete"),
             separator = true,
             callback = function(touch_menu)
@@ -415,7 +485,7 @@ function M.build(ctx)
                     ok_callback = remove,
                 })
             end,
-        }
+        }, icons.delete)
         return items
     end
 
@@ -442,14 +512,11 @@ function M.build(ctx)
             return items
         end
         sort_items = build_sort_items()
-        if #sort_items == 0 then
-            local InfoMessage = require("ui/widget/infomessage")
-            UIManager:show(InfoMessage:new{ text = _("No buttons") })
-            return
-        end
         ZenArrangeList.show{
             title = parent and parent.label or _("Buttons"),
             item_table = sort_items,
+            add_title = _("Add"),
+            add_item_table = arrange_add_items(parent),
             callback = function()
                 list = current_list(parent)
                 local reordered = {}
@@ -491,6 +558,14 @@ function M.build(ctx)
             end,
         },
         {
+            text = _("Buttons") .. " \u{25B8}",
+            separator = true,
+            keep_menu_open = true,
+            callback = function()
+                show_entries_arrange(nil)
+            end,
+        },
+        {
             text = _("Show labels"),
             checked_func = function()
                 return cfg.show_labels ~= false
@@ -516,23 +591,6 @@ function M.build(ctx)
                 end
             end,
         },
-        {
-            text = _("Buttons") .. " \u{25B8}",
-            separator = true,
-            keep_menu_open = true,
-            callback = function()
-                show_entries_arrange(nil)
-            end,
-        },
-    }
-    local add_root_items = add_items(nil)
-    for _i, item in ipairs(add_root_items) do
-        root_items[#root_items + 1] = item
-    end
-    root_items[#root_items + 1] = {
-        text = _("Add folder"),
-        keep_menu_open = true,
-        callback = add_folder,
     }
 
     return {

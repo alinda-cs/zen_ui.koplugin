@@ -27,6 +27,7 @@ local function apply_quick_settings()
     local _ = require("gettext")
     local Screen = Device.screen
     local Dispatcher = require("dispatcher")
+    local PluginScan = require("modules/menu/app_launcher/plugin_scan")
 
     local zen_plugin = rawget(_G, "__ZEN_UI_PLUGIN")
     if not zen_plugin or type(zen_plugin.config) ~= "table" then
@@ -238,6 +239,11 @@ local function apply_quick_settings()
         local ok_r, RU = pcall(require, "apps/reader/readerui")
         local ui = (ok_f and FM.instance) or (ok_r and RU.instance)
         return ui == nil or ui[slot] ~= nil
+    end
+
+    local function showUnavailable()
+        local InfoMessage = require("ui/widget/infomessage")
+        UIManager:show(InfoMessage:new{ text = _("Quick settings button is unavailable") })
     end
 
     -- ============================================================
@@ -694,19 +700,43 @@ local function apply_quick_settings()
         -- without a restart (config is always current at this point).
         if type(config.custom_buttons) == "table" then
             for _i, cb in ipairs(config.custom_buttons) do
-                local cb_action = cb.action
-                button_defs[cb.id] = {
-                    icon = cb.icon or "zen_ui",
-                    label = (cb.label and cb.label ~= "") and cb.label
-                        or (cb_action and next(cb_action) and Dispatcher:menuTextFunc(cb_action))
-                        or _("Custom"),
-                    callback = function(tm)
-                        tm:closeMenu()
-                        if type(cb_action) == "table" and next(cb_action) then
-                            Dispatcher:execute(cb_action)
-                        end
-                    end,
-                }
+                if cb.type == "plugin" and type(cb.plugin) == "table" then
+                    local plugin = cb.plugin
+                    button_defs[cb.id] = {
+                        icon = cb.icon or "lightning",
+                        label = (cb.label and cb.label ~= "") and cb.label
+                            or cb.plugin_title
+                            or _("Plugin"),
+                        visible_func = function()
+                            return PluginScan.exists(plugin.key, plugin.method)
+                        end,
+                        callback = function(tm)
+                            local launch = PluginScan.resolve(plugin.key, plugin.method)
+                            if not launch then
+                                showUnavailable()
+                                return
+                            end
+                            tm:closeMenu()
+                            UIManager:nextTick(function()
+                                pcall(launch)
+                            end)
+                        end,
+                    }
+                else
+                    local cb_action = cb.action
+                    button_defs[cb.id] = {
+                        icon = cb.icon or "zen_ui",
+                        label = (cb.label and cb.label ~= "") and cb.label
+                            or (cb_action and next(cb_action) and Dispatcher:menuTextFunc(cb_action))
+                            or _("Custom"),
+                        callback = function(tm)
+                            tm:closeMenu()
+                            if type(cb_action) == "table" and next(cb_action) then
+                                Dispatcher:execute(cb_action)
+                            end
+                        end,
+                    }
+                end
             end
         end
 

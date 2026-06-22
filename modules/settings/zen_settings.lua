@@ -4,6 +4,7 @@ local UIManager = require("ui/uimanager")
 local settings_apply = require("modules/settings/zen_settings_apply")
 local updater        = require("modules/settings/zen_updater")
 local icons          = require("common/inline_icon_map")
+local IconItem       = require("common/ui/icon_menu_item")
 local utils          = require("modules/settings/zen_settings_utils")
 
 local lib_section      = require("modules/settings/sections/library_settings")
@@ -18,9 +19,7 @@ local about_section    = require("modules/settings/sections/about_settings")
 
 local M = {}
 
-local function icon_label(icon, label)
-    return icon .. "  " .. label
-end
+IconItem.installMenuPatch()
 
 function M.build(plugin)
     -- Initialize updater banner state; release metadata stays live-only.
@@ -121,25 +120,29 @@ function M.build(plugin)
     -- Root menu assembly
     -- -------------------------------------------------------------------------
 
-    quick_settings_item.text = icons.settings_quick .. "\u{2009}\u{2009}" .. _("Quick Settings")
-    app_launcher_item.text = icon_label(icons.settings_launcher, _("Launcher"))
+    quick_settings_item.text = _("Quick Settings")
+    IconItem.decorate(quick_settings_item, icons.settings_quick)
+    app_launcher_item.text = _("Launcher")
+    IconItem.decorate(app_launcher_item, icons.settings_launcher)
     app_launcher_item._zen_settings_root = "launcher"
-    home_item.text = icon_label(icons.settings_home, _("Home"))
-    navbar_item.text = icon_label(icons.settings_navbar, _("Navbar"))
+    home_item.text = _("Home")
+    IconItem.decorate(home_item, icons.settings_home)
+    navbar_item.text = _("Navbar")
+    IconItem.decorate(navbar_item, icons.settings_navbar)
 
     local root_items = {
         quick_settings_item,
         app_launcher_item,
         home_item,
-        { text = icon_label(icons.settings_library, _("Library")), sub_item_table = filebrowser_items },
+        IconItem.decorate({ text = _("Library"), sub_item_table = filebrowser_items }, icons.settings_library),
         navbar_item,
-        { text = icon_label(icons.settings_reader, _("Reader")), sub_item_table = reader_items },
-        { text = icon_label(icons.settings_global, _("Global")), sub_item_table = global_items },
-        { text = icon_label(icons.settings_advanced, _("Advanced")), sub_item_table = advanced_items },
-        {
-            text = icon_label(icons.settings_about, _("About")),
+        IconItem.decorate({ text = _("Reader"), sub_item_table = reader_items }, icons.settings_reader),
+        IconItem.decorate({ text = _("Global"), sub_item_table = global_items }, icons.settings_global),
+        IconItem.decorate({ text = _("Advanced"), sub_item_table = advanced_items }, icons.settings_advanced),
+        IconItem.decorate({
+            text = _("About"),
             sub_item_table = general_items,
-        },
+        }, icons.settings_about),
     }
 
     -- Insert banner if an update is already known.

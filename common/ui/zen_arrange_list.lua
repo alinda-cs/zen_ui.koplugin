@@ -1,7 +1,35 @@
+local Blitbuffer = require("ffi/blitbuffer")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local CheckMark = require("ui/widget/checkmark")
+local Font = require("ui/font")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local IconWidget = require("ui/widget/iconwidget")
+local LeftContainer = require("ui/widget/container/leftcontainer")
+local LineWidget = require("ui/widget/linewidget")
+local Size = require("ui/size")
 local SortWidget = require("ui/widget/sortwidget")
+local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local IconItem = require("common/ui/icon_menu_item")
+local utils = require("common/utils")
 
 local M = {}
+local show_submenu
+local repopulate
+local plus_icon_path
+
+local function get_plus_icon_path()
+    if plus_icon_path ~= nil then return plus_icon_path end
+    plus_icon_path = false
+    local ok_root, root = pcall(require, "common/plugin_root")
+    if ok_root and root then
+        plus_icon_path = utils.resolveLocalIcon(root .. "/icons/", "plus") or false
+    end
+    return plus_icon_path or nil
+end
 
 local function suppress_footer_cancel(button)
     if not button then return end
@@ -132,7 +160,72 @@ local function sync_footer_ok(sort_widget)
     end
 end
 
-local function configure_title_bar(sort_widget)
+local function rebuild_icon_row(row)
+    local item = row and row.item
+    if not (item and item.icon_glyph and row.width and row.height) then return end
+
+    local item_checkable = false
+    local item_checked = item.checked
+    if item.checked_func then
+        item_checkable = true
+        item_checked = item.checked_func()
+    end
+    row.checkmark_widget = CheckMark:new{
+        checkable = item_checkable,
+        checked = item_checked,
+    }
+
+    local checked_widget = CheckMark:new{ checked = true }
+    local check_w = checked_widget:getSize().w
+    local icon_w = IconItem.getWidth(item)
+    local text_max_width = row.width - 2 * Size.padding.default - check_w - icon_w
+    local face = item.face or row.face or Font:getFace("smallinfofont")
+
+    row[1] = FrameContainer:new{
+        padding = 0,
+        bordersize = 0,
+        focusable = true,
+        focus_border_size = Size.border.thin,
+        LeftContainer:new{
+            dimen = Geom:new{
+                w = row.width,
+                h = row.height,
+            },
+            HorizontalGroup:new{
+                align = "center",
+                CenterContainer:new{
+                    dimen = Geom:new{ w = check_w },
+                    row.checkmark_widget,
+                },
+                IconItem.makeState(item.icon_glyph, icon_w, row.height, face),
+                VerticalGroup:new{
+                    align = "left",
+                    TextWidget:new{
+                        text = item.text,
+                        max_width = text_max_width,
+                        face = face,
+                        fgcolor = item.dim and Blitbuffer.COLOR_DARK_GRAY or nil,
+                    },
+                    row.show_parent.underscore_checked_item and item_checked and LineWidget:new{
+                        dimen = Geom:new{ w = text_max_width, h = Size.line.thick },
+                        background = Blitbuffer.COLOR_DARK_GRAY,
+                    },
+                },
+            },
+        },
+    }
+    row[1].invert = row.invert
+end
+
+local function apply_icon_rows(sort_widget)
+    if not sort_widget or not sort_widget.main_content then return end
+    for _i, child in ipairs(sort_widget.main_content) do
+        rebuild_icon_row(child)
+    end
+end
+
+local function configure_title_bar(sort_widget, opts)
+    opts = opts or {}
     local title_bar = sort_widget and sort_widget.title_bar
     if not title_bar then return end
 
@@ -150,16 +243,53 @@ local function configure_title_bar(sort_widget)
 
     local right_button = title_bar.right_button
     if right_button then
-        right_button.enabled = false
-        right_button.callback = nil
+        if type(opts.add_item_table) == "table" and #opts.add_item_table > 0 then
+            local icon_path = get_plus_icon_path()
+            if icon_path and right_button.image and right_button.horizontal_group then
+                right_button.image:free()
+                right_button.image = IconWidget:new{
+                    file = icon_path,
+                    width = right_button.width,
+                    height = right_button.height,
+                }
+                right_button.horizontal_group[2] = right_button.image
+                right_button:update()
+            elseif title_bar.setRightIcon then
+                title_bar:setRightIcon("plus")
+            elseif right_button.setIcon then
+                right_button:setIcon("plus")
+            end
+            right_button.enabled = true
+            right_button.callback = function()
+                if show_submenu then
+                    show_submenu(opts.add_title or "", opts.add_item_table, function()
+                        if sort_widget._zen_arrange_refresh then
+                            sort_widget:_zen_arrange_refresh()
+                        else
+                            repopulate(sort_widget)
+                        end
+                    end)
+                end
+                return true
+            end
+            right_button.onTapIconButton = nil
+            if right_button.image then
+                right_button.image.hide = false
+            end
+            if right_button.show then right_button:show() end
+            if right_button.enable then right_button:enable() end
+        else
+            right_button.enabled = false
+            right_button.callback = nil
+            right_button.onTapIconButton = function() return true end
+            if right_button.image then
+                right_button.image.hide = true
+            end
+        end
         right_button.hold_callback = false
         right_button.allow_flash = false
-        right_button.onTapIconButton = function() return true end
         right_button.onHoldIconButton = function() return true end
         right_button.onHoldReleaseIconButton = function() return true end
-        if right_button.image then
-            right_button.image.hide = true
-        end
     end
 end
 
@@ -223,7 +353,7 @@ local function update_dynamic_text(items)
     end
 end
 
-local function repopulate(sort_widget)
+repopulate = function(sort_widget)
     if not sort_widget then return end
     sort_widget:_populateItems()
     UIManager:setDirty(sort_widget, "ui")
@@ -275,7 +405,6 @@ local function refresh_after_callbacks(items, refresh, menu_proxy)
     end
 end
 
-local show_submenu
 local install_submenu_tap_handlers
 local install_root_tap_handlers
 
@@ -375,6 +504,7 @@ show_submenu = function(title, items, refresh)
     suppress_footer_cancel(sort_widget.footer_cancel)
     suppress_footer_jump_buttons(sort_widget)
     sync_footer_ok(sort_widget)
+    apply_icon_rows(sort_widget)
     install_submenu_tap_handlers(sort_widget)
 
     local orig_populate = sort_widget._populateItems
@@ -384,6 +514,7 @@ show_submenu = function(title, items, refresh)
         suppress_footer_cancel(self.footer_cancel)
         suppress_footer_jump_buttons(self)
         sync_footer_ok(self)
+        apply_icon_rows(self)
         install_submenu_tap_handlers(self)
         install_titlebar_focus(self)
         return result
@@ -506,19 +637,32 @@ function M.show(opts)
         return true
     end
 
-    configure_title_bar(sort_widget)
-    sync_footer_cancel(sort_widget)
+    configure_title_bar(sort_widget, {
+        add_title = opts.add_title,
+        add_item_table = opts.add_item_table,
+    })
+    if opts.hide_footer_cancel then
+        suppress_footer_cancel(sort_widget.footer_cancel)
+    else
+        sync_footer_cancel(sort_widget)
+    end
     suppress_footer_jump_buttons(sort_widget)
     sync_footer_ok(sort_widget)
+    apply_icon_rows(sort_widget)
     install_root_tap_handlers(sort_widget)
     patch_move_item_kb(sort_widget)
     local orig_populate = sort_widget._populateItems
     sort_widget._populateItems = function(self, ...)
         update_dynamic_text(self.item_table)
         local result = orig_populate(self, ...)
-        sync_footer_cancel(self)
+        if opts.hide_footer_cancel then
+            suppress_footer_cancel(self.footer_cancel)
+        else
+            sync_footer_cancel(self)
+        end
         suppress_footer_jump_buttons(self)
         sync_footer_ok(self)
+        apply_icon_rows(self)
         install_root_tap_handlers(self)
         install_titlebar_focus(self)
         return result
