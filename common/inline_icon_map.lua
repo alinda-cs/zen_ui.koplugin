@@ -83,6 +83,10 @@ return {
     settings_advanced = "\u{F1323}",
     settings_about    = "\u{F02FD}",  -- mdi-information
 
+    -- book status actions (book_status.lua)
+    restart      = "\u{F0709}",  -- mdi-restart
+    next_book    = "\u{f0054}",   -- nf-md-arrow-right
+
     -- misc
     update       = "\u{F01B}",   -- nf-fa-cloud-download
     check        = "\u{2713}",   -- plain checkmark

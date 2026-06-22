@@ -45,6 +45,19 @@ local function apply_automatic_series_grouping()
             or item.mode == "directory"
     end
 
+    local function ensure_sort_doc_props(item)
+        if type(item) ~= "table" then return end
+        local props = type(item.doc_props) == "table" and item.doc_props or {}
+        local title = props.display_title or props.title or item.text or item.path or item.file or ""
+        props.display_title = tostring(title)
+        props.title = props.title or props.display_title
+        props.authors = props.authors or NO_SERIES
+        props.series = props.series or NO_SERIES
+        props.series_index = props.series_index or 0
+        props.keywords = props.keywords or NO_SERIES
+        item.doc_props = props
+    end
+
     local function prefetch_directory_metadata(dir_path)
         BookInfoManager:openDbConnection()
 
@@ -199,7 +212,7 @@ local function apply_automatic_series_grouping()
 
         local current_dir_cache = {}
         local first_file_path
-        for _, item in ipairs(item_table) do
+        for _i, item in ipairs(item_table) do
             if item.is_file and item.path then
                 first_file_path = item.path
                 break
@@ -222,6 +235,12 @@ local function apply_automatic_series_grouping()
         local is_name_sort = collate_id == "strcoll"
             or collate_id == "natural"
             or collate_id == "title"
+            or collate_id == "title_natural"
+        local needs_doc_props_sort = collate_id == "title"
+            or collate_id == "title_natural"
+            or collate_id == "authors"
+            or collate_id == "series"
+            or collate_id == "keywords"
 
         local series_map = {}
         local processed_list = {}
@@ -322,6 +341,7 @@ local function apply_automatic_series_grouping()
                     if item.is_go_up then
                         up_item = item
                     else
+                        if needs_doc_props_sort then ensure_sort_doc_props(item) end
                         table.insert(to_sort, item)
                     end
                 end
@@ -345,8 +365,10 @@ local function apply_automatic_series_grouping()
                 if item.is_go_up then
                     up_item = item
                 elseif is_directory(item) then
+                    if needs_doc_props_sort then ensure_sort_doc_props(item) end
                     table.insert(dirs, item)
                 else
+                    if needs_doc_props_sort then ensure_sort_doc_props(item) end
                     table.insert(files, item)
                 end
             end

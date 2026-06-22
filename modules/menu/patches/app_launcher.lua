@@ -127,6 +127,8 @@ local function apply_app_launcher()
     local function make_cell(opts)
         local icon_path, icon_name = icon_spec(opts.icon)
         local icon_size = opts.icon_size
+        local circle_size = opts.circle_size
+        local circle_border = opts.circle_border
         local label_face = opts.label_face
         local fg = opts.dim and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_BLACK
         local show_label = opts.show_label ~= false
@@ -137,9 +139,24 @@ local function apply_app_launcher()
             height = icon_size,
             alpha = true,
         }
+        local icon_circle = FrameContainer:new{
+            width = circle_size,
+            height = circle_size,
+            padding = 0,
+            bordersize = circle_border,
+            radius = math.floor(circle_size / 2),
+            background = Blitbuffer.COLOR_WHITE,
+            CenterContainer:new{
+                dimen = Geom:new{
+                    w = circle_size - circle_border * 2,
+                    h = circle_size - circle_border * 2,
+                },
+                icon,
+            },
+        }
         local content_items = {
             align = "center",
-            icon,
+            icon_circle,
         }
         if show_label then
             local label = TextWidget:new{
@@ -286,6 +303,7 @@ local function apply_app_launcher()
         local entries, folder = current_entries(touch_menu)
         local cfg = Model.ensure(zen_plugin.config)
         local show_labels = cfg.show_labels ~= false
+        local center_icons = cfg.center_icons == true
         local panel_width = touch_menu.item_width
         local pad = Screen:scaleBySize(8)
         local inner_w = panel_width - pad * 2
@@ -293,7 +311,10 @@ local function apply_app_launcher()
         local cols = math.max(2, math.floor(inner_w / min_cell_w))
         local cell_w = math.floor(inner_w / cols)
         local cell_h = Screen:scaleBySize(92)
-        local icon_size = Screen:scaleBySize(38)
+        local row_gap = Screen:scaleBySize(8)
+        local circle_size = Screen:scaleBySize(64)
+        local icon_size = math.floor(circle_size * 0.5)
+        local circle_border = Screen:scaleBySize(2)
         local label_size = Font.sizemap and Font.sizemap["xx_smallinfofont"] or 18
         local label_face = library_font.getFace(label_size)
         local rows = {}
@@ -317,7 +338,7 @@ local function apply_app_launcher()
         -- Pagination: slice the grid so it never overflows the space a normal
         -- menu would use (bar + items area + footer). The footer up arrow then
         -- always stays on screen, matching KOReader's stock menu height.
-        local cell_total_h = cell_h + Screen:scaleBySize(4)
+        local cell_total_h = cell_h + row_gap
         local screen_h = (touch_menu.screen_size and touch_menu.screen_size.h) or Screen:getHeight()
         local menu_height = touch_menu.height
             and math.min(touch_menu.height, screen_h)
@@ -393,7 +414,6 @@ local function apply_app_launcher()
             if col == 1 then
                 rows[#rows + 1] = HorizontalGroup:new{ align = "top" }
                 row_counts[#rows] = 0
-                rows[#rows][#rows[#rows] + 1] = HorizontalSpan:new{ width = pad }
                 layout_rows[#layout_rows + 1] = {}
             end
             row_counts[#rows] = row_counts[#rows] + 1
@@ -403,6 +423,8 @@ local function apply_app_launcher()
                 cell_h = cell_h,
                 pad = pad,
                 icon_size = icon_size,
+                circle_size = circle_size,
+                circle_border = circle_border,
                 label_face = label_face,
                 label = Model.display_label(entry),
                 show_label = show_labels,
@@ -424,8 +446,21 @@ local function apply_app_launcher()
 
         for _i, row in ipairs(rows) do
             local used = (row_counts[_i] or 0) * cell_w
-            row[#row + 1] = HorizontalSpan:new{ width = math.max(0, panel_width - pad - used) }
+            local slack = math.max(0, panel_width - pad * 2 - used)
+            local lead, trail
+            if center_icons then
+                lead = pad + math.floor(slack / 2)
+                trail = panel_width - lead - used
+            else
+                lead = pad
+                trail = panel_width - pad - used
+            end
+            table.insert(row, 1, HorizontalSpan:new{ width = lead })
+            row[#row + 1] = HorizontalSpan:new{ width = math.max(0, trail) }
             panel[#panel + 1] = row
+            if _i < #rows then
+                panel[#panel + 1] = VerticalSpan:new{ width = row_gap }
+            end
         end
         panel[#panel + 1] = VerticalSpan:new{ width = pad }
         refs.goto_page = function(nb)

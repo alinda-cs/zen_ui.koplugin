@@ -696,6 +696,16 @@ local function apply_context_menu()
                 end)
             end
 
+            local function refresh_after_folder_sort()
+                if self_fc._zen_clear_item_table_cache then
+                    self_fc:_zen_clear_item_table_cache()
+                end
+                if self_fc.clearSortingCache then
+                    self_fc:clearSortingCache()
+                end
+                self_fc:refreshPath()
+            end
+
             local dialog_title, dialog_cover_widget, book_description
 
             local function showCoverFullscreen(cover_path)
@@ -1812,7 +1822,7 @@ local function apply_context_menu()
                                             callback = function()
                                                 fsd_api.set(real_folder, opt.key, cur_reverse)
                                                 UIManager:close(sort_dialog)
-                                                self_fc:refreshPath()
+                                                refresh_after_folder_sort()
                                             end,
                                         }})
                                     end
@@ -1826,7 +1836,7 @@ local function apply_context_menu()
                                                 on_select = function(reverse)
                                                     if cur_collate then
                                                         fsd_api.set(real_folder, cur_collate, reverse)
-                                                        self_fc:refreshPath()
+                                                        refresh_after_folder_sort()
                                                     end
                                                 end,
                                             })
@@ -1840,7 +1850,7 @@ local function apply_context_menu()
                                             callback = function()
                                                 fsd_api.clear(real_folder)
                                                 UIManager:close(sort_dialog)
-                                                self_fc:refreshPath()
+                                                refresh_after_folder_sort()
                                             end,
                                         }})
                                     end

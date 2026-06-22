@@ -129,6 +129,29 @@ function M.build(ctx)
         save_app_launcher()
     end
 
+    local function current_list(parent)
+        if parent then
+            if type(parent.children) ~= "table" then
+                parent.children = {}
+            end
+            return parent.children
+        end
+        if type(cfg.entries) ~= "table" then
+            cfg.entries = {}
+        end
+        return cfg.entries
+    end
+
+    local function entry_exists_in_list(list, entry)
+        if not (list and entry and entry.id) then return false end
+        for _i, candidate in ipairs(list) do
+            if candidate.id == entry.id then
+                return true
+            end
+        end
+        return false
+    end
+
     local function new_action_entry(label)
         return {
             id = Model.next_id(cfg),
@@ -397,20 +420,12 @@ function M.build(ctx)
     end
 
     show_entries_arrange = function(parent)
-        local list = parent and parent.children or cfg.entries
-        if type(list) ~= "table" then
-            if parent then
-                parent.children = {}
-                list = parent.children
-            else
-                cfg.entries = {}
-                list = cfg.entries
-            end
-        end
+        local list = current_list(parent)
         local ZenArrangeList = require("common/ui/zen_arrange_list")
         local sort_items
         local function build_sort_items()
             local items = {}
+            list = current_list(parent)
             for _i, entry in ipairs(list) do
                 items[#items + 1] = {
                     text_func = function()
@@ -436,10 +451,18 @@ function M.build(ctx)
             title = parent and parent.label or _("Buttons"),
             item_table = sort_items,
             callback = function()
+                list = current_list(parent)
                 local reordered = {}
+                local reordered_ids = {}
                 for _i, item in ipairs(sort_items) do
-                    if item.orig_entry then
+                    if entry_exists_in_list(list, item.orig_entry) then
                         reordered[#reordered + 1] = item.orig_entry
+                        reordered_ids[item.orig_entry.id] = true
+                    end
+                end
+                for _i, entry in ipairs(list) do
+                    if entry.id and not reordered_ids[entry.id] then
+                        reordered[#reordered + 1] = entry
                     end
                 end
                 if parent then
@@ -474,6 +497,19 @@ function M.build(ctx)
             end,
             callback = function(touch_menu)
                 cfg.show_labels = cfg.show_labels == false
+                save_app_launcher()
+                if touch_menu and touch_menu.updateItems then
+                    touch_menu:updateItems(1)
+                end
+            end,
+        },
+        {
+            text = _("Center align buttons"),
+            checked_func = function()
+                return cfg.center_icons == true
+            end,
+            callback = function(touch_menu)
+                cfg.center_icons = cfg.center_icons ~= true
                 save_app_launcher()
                 if touch_menu and touch_menu.updateItems then
                     touch_menu:updateItems(1)

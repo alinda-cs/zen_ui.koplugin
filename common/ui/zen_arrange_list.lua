@@ -10,6 +10,7 @@ local function suppress_footer_cancel(button)
     button.onTapSelectButton = function() return true end
     button.onHoldSelectButton = function() return true end
     button.hidden = false
+    button.skip_paint = true
     button:hide()
 end
 
@@ -43,6 +44,7 @@ local function sync_footer_cancel(sort_widget)
         suppress_footer_cancel(button)
         return
     end
+    button.skip_paint = false
     button:show()
     button:enable()
     button.onTapSelectButton = nil
@@ -67,11 +69,13 @@ local function hide_button_icon(button)
     button.onHoldSelectButton = function() return true end
     button.onHoldReleaseSelectButton = function() return true end
     button.hidden = false
+    button.skip_paint = true
     button:hide()
 end
 
 local function restore_button_icon(button)
     if not button then return end
+    button.skip_paint = false
     if button._zen_arrange_callback ~= nil then
         button.callback = button._zen_arrange_callback
         button.onTapSelectButton = button._zen_arrange_on_tap
@@ -92,6 +96,40 @@ local function suppress_footer_jump_buttons(sort_widget)
 
     hide_button_icon(sort_widget.footer_first_up)
     hide_button_icon(sort_widget.footer_last_down)
+end
+
+local function item_order_key(item)
+    if type(item) ~= "table" then return item end
+    local key = item.orig_item
+    if key == nil then key = item.orig_entry end
+    if type(key) == "table" then
+        return key.id or key.key or key.name or key.text or key.label
+    end
+    return key or item.text
+end
+
+local function has_rearranged_items(sort_widget)
+    local orig_items = sort_widget and sort_widget.orig_item_table
+    local items = sort_widget and sort_widget.item_table
+    if type(orig_items) ~= "table" or type(items) ~= "table" then return false end
+    if #orig_items ~= #items then return true end
+    for i, item in ipairs(items) do
+        if item_order_key(item) ~= item_order_key(orig_items[i]) then
+            return true
+        end
+    end
+    return false
+end
+
+local function sync_footer_ok(sort_widget)
+    local button = sort_widget and sort_widget.footer_ok
+    if not button then return end
+    if has_rearranged_items(sort_widget) then
+        restore_button_icon(button)
+        button:enable()
+    else
+        hide_button_icon(button)
+    end
 end
 
 local function configure_title_bar(sort_widget)
@@ -246,7 +284,11 @@ local function open_submenu_for_item(sort_widget, item)
         return false
     end
     item:hold_callback(function()
-        repopulate(sort_widget)
+        if sort_widget._zen_arrange_refresh then
+            sort_widget:_zen_arrange_refresh()
+        else
+            repopulate(sort_widget)
+        end
     end)
     return true
 end
@@ -332,6 +374,7 @@ show_submenu = function(title, items, refresh)
     configure_title_bar(sort_widget)
     suppress_footer_cancel(sort_widget.footer_cancel)
     suppress_footer_jump_buttons(sort_widget)
+    sync_footer_ok(sort_widget)
     install_submenu_tap_handlers(sort_widget)
 
     local orig_populate = sort_widget._populateItems
@@ -340,6 +383,7 @@ show_submenu = function(title, items, refresh)
         local result = orig_populate(self, ...)
         suppress_footer_cancel(self.footer_cancel)
         suppress_footer_jump_buttons(self)
+        sync_footer_ok(self)
         install_submenu_tap_handlers(self)
         install_titlebar_focus(self)
         return result
@@ -446,7 +490,10 @@ function M.show(opts)
     }
     sort_widget.onZenArrangeToggle = function(self)
         if toggle_sort_item(self, get_focused_item(self)) then return true end
-        return self:onReturn()
+        if has_rearranged_items(self) then
+            return self:onReturn()
+        end
+        return true
     end
     sort_widget.key_events.FocusRight = nil
     sort_widget.key_events.AlternativeFocusRight = nil
@@ -462,6 +509,7 @@ function M.show(opts)
     configure_title_bar(sort_widget)
     sync_footer_cancel(sort_widget)
     suppress_footer_jump_buttons(sort_widget)
+    sync_footer_ok(sort_widget)
     install_root_tap_handlers(sort_widget)
     patch_move_item_kb(sort_widget)
     local orig_populate = sort_widget._populateItems
@@ -470,6 +518,7 @@ function M.show(opts)
         local result = orig_populate(self, ...)
         sync_footer_cancel(self)
         suppress_footer_jump_buttons(self)
+        sync_footer_ok(self)
         install_root_tap_handlers(self)
         install_titlebar_focus(self)
         return result

@@ -89,6 +89,24 @@ local function apply_browser_folder_cover()
         return features.automatic_series_grouping ~= false
     end
 
+    local function _folder_sort_override(path)
+        local fsd_api = rawget(_G, "__ZEN_FOLDER_SORT")
+        if not (fsd_api and type(fsd_api.get) == "function") then
+            return nil
+        end
+        local real_path = ffiUtil.realpath(path) or path
+        return (real_path and fsd_api.get(real_path))
+            or (path ~= real_path and fsd_api.get(path))
+    end
+
+    local function _folder_sort_key(path)
+        local override = _folder_sort_override(path)
+        if type(override) ~= "table" then
+            return ""
+        end
+        return tostring(override.collate or "") .. ":" .. tostring(override.reverse == true)
+    end
+
     local function _is_special_item(item)
         return item.is_go_up or (item.path and item.path:sub(-2) == "/.")
     end
@@ -139,10 +157,11 @@ local function apply_browser_folder_cover()
         return item and item.attr and item.attr.modification or 0
     end
 
-    local function _apply_history_order(fc, item_table, collate)
+    local function _apply_history_order(fc, item_table, collate, reverse_collate)
         if type(item_table) ~= "table" then return item_table end
         local map = _history_time_map()
-        local reverse = G_reader_settings:isTrue("reverse_collate")
+        local reverse = type(reverse_collate) == "boolean"
+            and reverse_collate or G_reader_settings:isTrue("reverse_collate")
         local mixed = collate.can_collate_mixed and G_reader_settings:isTrue("collate_mixed")
 
         for _i, item in ipairs(item_table) do
@@ -240,13 +259,14 @@ local function apply_browser_folder_cover()
 
     local function _item_table_stable_key(path)
         local filter = FileChooser.show_filter and FileChooser.show_filter.status
-        return string.format("%s|%s|%s|%s|%s|%s|%s",
+        return string.format("%s|%s|%s|%s|%s|%s|%s|%s",
             path,
             G_reader_settings:readSetting("collate", "strcoll"),
             tostring(G_reader_settings:isTrue("collate_mixed")),
             tostring(G_reader_settings:isTrue("reverse_collate")),
             tostring(FileChooser.show_hidden),
             tostring(filter),
+            _folder_sort_key(path),
             tostring(_automatic_series_grouping_enabled()))
     end
 
@@ -264,8 +284,12 @@ local function apply_browser_folder_cover()
 
     function FileChooser:genItemTableFromPath(path)
         if not self._dummy and self.name == "filemanager" then
-            local collate_mode = G_reader_settings:readSetting("collate", "strcoll")
-            local collate = self:getCollate()
+            local override = _folder_sort_override(path)
+            local collate_mode = type(override) == "table" and override.collate
+                or G_reader_settings:readSetting("collate", "strcoll")
+            local collate = (self.collates and self.collates[collate_mode]) or self:getCollate()
+            local reverse_collate = type(override) == "table"
+                and override.reverse or G_reader_settings:isTrue("reverse_collate")
 
             -- key embeds the directory mtime, so any on-disk change (book added,
             -- removed, sidecar written) advances the key and invalidates the cache.
@@ -274,7 +298,7 @@ local function apply_browser_folder_cover()
             if _item_table_cache and _item_table_cache.key == key then
                 local cached_table = _item_table_cache.table
                 if collate_mode == "access" then
-                    cached_table = _apply_history_order(self, cached_table, collate)
+                    cached_table = _apply_history_order(self, cached_table, collate, reverse_collate)
                     _item_table_cache.table = cached_table
                 end
                 return cached_table
@@ -292,7 +316,7 @@ local function apply_browser_folder_cover()
                     and _item_table_cache
                     and _item_table_cache.stable_key == stable_key then
                 _G.__ZEN_UI_LAST_READ_FILE = nil
-                local cached_table = _apply_history_order(self, _item_table_cache.table, collate)
+                local cached_table = _apply_history_order(self, _item_table_cache.table, collate, reverse_collate)
                 _item_table_cache = {
                     key = key,
                     stable_key = stable_key,
@@ -304,7 +328,7 @@ local function apply_browser_folder_cover()
             cached_list = {}
             local result = orig_FileChooser_genItemTableFromPath(self, path)
             if collate_mode == "access" then
-                result = _apply_history_order(self, result, collate)
+                result = _apply_history_order(self, result, collate, reverse_collate)
             end
             _item_table_cache = {
                 key = key,
