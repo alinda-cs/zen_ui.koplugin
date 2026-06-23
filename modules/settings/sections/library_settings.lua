@@ -14,6 +14,8 @@ local zen_settings_utils  = require("modules/settings/zen_settings_utils")
 local M = {}
 local home_rebuild_pending = false
 local home_rebuild_poll_active = false
+local bg_surface_refresh_pending = false
+local bg_surface_refresh_poll_active = false
 
 local function is_filemanager_menu_open()
     local ok_fm, FileManager = pcall(require, "apps/filemanager/filemanager")
@@ -40,6 +42,52 @@ local function schedule_home_rebuild_on_menu_close(plugin)
         if home and home.rebuildActive then
             home.rebuildActive()
         end
+    end
+
+    UIManager:scheduleIn(0.25, tick)
+end
+
+local function refresh_background_surfaces(plugin)
+    local home = SharedState.get(plugin, "home")
+    if home and home.rebuildActive then
+        home.rebuildActive()
+    end
+
+    local stack = UIManager._window_stack
+    if type(stack) == "table" then
+        for _i, entry in ipairs(stack) do
+            local widget = entry and entry.widget
+            if widget and widget._zen_bg_applied and type(widget.updateItems) == "function" then
+                pcall(widget.updateItems, widget)
+                UIManager:setDirty(widget, "full")
+            end
+        end
+    end
+
+    local reinject_navbars = rawget(_G, "__ZEN_UI_REINJECT_NAVBARS")
+    if type(reinject_navbars) == "function" then
+        reinject_navbars()
+    else
+        UIManager:setDirty(nil, "full")
+        UIManager:forceRePaint()
+    end
+end
+
+local function schedule_background_surface_refresh(plugin)
+    if not plugin then return end
+    bg_surface_refresh_pending = true
+    if bg_surface_refresh_poll_active then return end
+    bg_surface_refresh_poll_active = true
+
+    local function tick()
+        if is_filemanager_menu_open() then
+            UIManager:scheduleIn(0.25, tick)
+            return
+        end
+        bg_surface_refresh_poll_active = false
+        if not bg_surface_refresh_pending then return end
+        bg_surface_refresh_pending = false
+        refresh_background_surfaces(plugin)
     end
 
     UIManager:scheduleIn(0.25, tick)
@@ -988,6 +1036,102 @@ function M.build(ctx)
                         UIManager:setDirty(fm, "ui")
                     else
                         UIManager:setDirty(nil, "full")
+                    end
+                end,
+            },
+        },
+    })
+
+    -- -------------------------------------------------------------------------
+    -- Background image
+    -- -------------------------------------------------------------------------
+
+    local function ensure_lib_bg()
+        if type(config.library_background) ~= "table" then config.library_background = {} end
+        if config.library_background.enabled == nil then
+            config.library_background.enabled = false
+        end
+        if type(config.library_background.path) ~= "string" then
+            config.library_background.path = ""
+        end
+        return config.library_background
+    end
+    local function lib_bg_path()
+        return ensure_lib_bg().path
+    end
+    local function save_lib_bg()
+        plugin:saveConfig()
+        require("common/ui/background").clearCache()
+        settings_apply.reinit_filemanager_on_menu_close()
+        schedule_background_surface_refresh(plugin)
+    end
+    local function set_lib_bg(path)
+        ensure_lib_bg().path = path or ""
+        save_lib_bg()
+    end
+    local function is_lib_bg_file(path)
+        return require("common/ui/background").isJpegPath(path)
+    end
+    local function lib_bg_start_path()
+        local path = lib_bg_path()
+        if path ~= "" then
+            local util = require("util")
+            local dir = select(1, util.splitFilePathName(path))
+            if type(dir) == "string" and dir ~= "" then
+                return dir
+            end
+        end
+        return paths.getHomeDir() or G_reader_settings:readSetting("lastdir") or "/"
+    end
+
+    table.insert(items, {
+        text = _("Background"),
+        sub_item_table = {
+            {
+                text = _("Enable"),
+                checked_func = function()
+                    return ensure_lib_bg().enabled == true
+                end,
+                callback = function(touchmenu_instance)
+                    local bg = ensure_lib_bg()
+                    bg.enabled = bg.enabled ~= true
+                    save_lib_bg()
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+            },
+            {
+                text_func = function()
+                    local path = lib_bg_path()
+                    if path == "" then return _("Image: none") end
+                    local util = require("util")
+                    local name = select(2, util.splitFilePathName(path))
+                    return _("Image: ") .. (name ~= "" and name or path)
+                end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local PathChooser = require("ui/widget/pathchooser")
+                    UIManager:show(PathChooser:new{
+                        select_file = true,
+                        select_directory = false,
+                        show_files = true,
+                        path = lib_bg_start_path(),
+                        onConfirm = function(file_path)
+                            if not is_lib_bg_file(file_path) then
+                                local InfoMessage = require("ui/widget/infomessage")
+                                UIManager:show(InfoMessage:new{
+                                    text = _("Background image must be a JPG or JPEG file."),
+                                })
+                                return
+                            end
+                            set_lib_bg(file_path)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end,
+                    })
+                end,
+                hold_callback = function(touchmenu_instance)
+                    if lib_bg_path() ~= "" then
+                        set_lib_bg("")
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
                     end
                 end,
             },

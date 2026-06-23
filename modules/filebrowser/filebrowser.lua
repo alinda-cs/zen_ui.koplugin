@@ -46,6 +46,7 @@ local PATCH_MODULES = {
     group_view = "modules/filebrowser/patches/group_view",
     home_page = "modules/filebrowser/patches/home_page",
     status_on_open = "modules/filebrowser/patches/status_on_open",
+    library_background = "modules/filebrowser/patches/library_background",
 }
 
 local function is_feature_enabled(plugin, key)
@@ -205,6 +206,12 @@ function M.init(logger, plugin)
     local status_on_open_fn = load_patch("status_on_open")
     if status_on_open_fn then
         run_feature(logger, plugin, "status_on_open", status_on_open_fn)
+    end
+
+    -- Always apply: paints library background image (self-disables when path empty).
+    local library_background_fn = load_patch("library_background")
+    if library_background_fn then
+        run_feature(logger, plugin, "library_background", library_background_fn)
     end
 
     local zen_scroll_bar_fn = load_patch("zen_scroll_bar")

@@ -1,3 +1,4 @@
+local Background = require("common/ui/background")
 local Blitbuffer = require("ffi/blitbuffer")
 local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
@@ -168,7 +169,7 @@ function M.build(ctx, source_key)
             height = height,
             padding = 0,
             bordersize = 0,
-            background = Blitbuffer.COLOR_WHITE,
+            background = Background.tile_bg(Blitbuffer.COLOR_WHITE),
             CenterContainer:new{
                 dimen = Geom:new{ w = width, h = height },
                 TextWidget:new{ text = "No books found", face = ctx.face_label },
@@ -298,7 +299,7 @@ function M.build(ctx, source_key)
                 height = status_h,
                 padding = 0,
                 bordersize = 0,
-                background = Blitbuffer.COLOR_WHITE,
+                background = Background.tile_bg(Blitbuffer.COLOR_WHITE),
                 status_widget,
             }
             if type(ctx.registerClockRefresh) == "function" then
@@ -423,7 +424,7 @@ function M.build(ctx, source_key)
         height = col_h,
         padding = 0,
         bordersize = 0,
-        background = Blitbuffer.COLOR_WHITE,
+        background = Background.tile_bg(Blitbuffer.COLOR_WHITE),
         VerticalGroup:new(detail_children),
     }
 
@@ -439,7 +440,7 @@ function M.build(ctx, source_key)
         height = height,
         padding = 0,
         bordersize = 0,
-        background = Blitbuffer.COLOR_WHITE,
+        background = Background.tile_bg(Blitbuffer.COLOR_WHITE),
         TopContainer:new{
             dimen = Geom:new{ w = width, h = height },
             VerticalGroup:new{

@@ -1,3 +1,4 @@
+local Background = require("common/ui/background")
 local Blitbuffer = require("ffi/blitbuffer")
 local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
@@ -185,7 +186,7 @@ return {
             height = height,
             padding = 0,
             bordersize = 0,
-            background = Blitbuffer.COLOR_WHITE,
+            background = Background.tile_bg(Blitbuffer.COLOR_WHITE),
             CenterContainer:new{
                 dimen = Geom:new{ w = width, h = height },
                 body,

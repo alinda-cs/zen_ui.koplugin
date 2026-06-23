@@ -12,6 +12,14 @@ local WidgetResources = require("common/widget_resources")
 
 local M = {}
 
+-- When a library background image is configured, home module frames must be
+-- transparent (nil fill) instead of opaque COLOR_WHITE, or they paint over the
+-- background painted behind the page. Returns the fill color to use.
+local Background = require("common/ui/background")
+local function home_frame_bg()
+    return Background.tile_bg(Blitbuffer.COLOR_WHITE)
+end
+
 local _home_menu = nil
 local _home_inject_navbar = nil
 local _zen_shared = nil
@@ -1229,7 +1237,7 @@ local function wrap_home_focus_target(menu, target, widget)
         height = height,
         padding = 0,
         bordersize = 0,
-        background = Blitbuffer.COLOR_WHITE,
+        background = home_frame_bg(),
         widget,
     }
     local orig_paintTo = frame.paintTo
@@ -1727,7 +1735,7 @@ local function build_home_content(menu, dcfg, rows, data_provider)
                 height = h,
                 padding = 0,
                 bordersize = 0,
-                background = Blitbuffer.COLOR_WHITE,
+                background = home_frame_bg(),
                 final_widget,
             })
             used_h = used_h + h
@@ -1757,7 +1765,7 @@ local function build_home_content(menu, dcfg, rows, data_provider)
             height = body_h,
             padding = 0,
             bordersize = 0,
-            background = Blitbuffer.COLOR_WHITE,
+            background = home_frame_bg(),
             VerticalGroup:new(children),
         },
         HorizontalSpan:new{ width = right_pad },

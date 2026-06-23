@@ -1,6 +1,7 @@
 local function apply_history()
     local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
     local Menu = require("ui/widget/menu")
+    local Background = require("common/ui/background")
     local SharedState = require("common/shared_state")
     local _ = require("gettext")
 
@@ -133,6 +134,7 @@ local function apply_history()
 
     local function clean_nav(menu, hist_mgr)
         if not menu then return end
+        Background.applyToMenu(menu)
 
         -- === Fix partial-row left-alignment ===
         menu._do_center_partial_rows = false

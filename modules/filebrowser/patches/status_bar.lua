@@ -24,6 +24,7 @@ local function apply_status_bar()
     local utils = require("common/utils")
     local paths = require("common/paths")
     local SharedState = require("common/shared_state")
+    local Background = require("common/ui/background")
     local _ = require("gettext")
 
     local zen_plugin = rawget(_G, "__ZEN_UI_PLUGIN")
@@ -858,7 +859,12 @@ local function apply_status_bar()
         if not tb or not tb.dimen then return end
         local bb = Screen.bb
         if bb then
-            bb:paintRect(tb.dimen.x, tb.dimen.y, tb.dimen.w, tb.dimen.h, Blitbuffer.COLOR_WHITE)
+            local bg_path = Background.library_path()
+            if bg_path == "" or not Background.paintScreenRegion(bb,
+                    tb.dimen.x, tb.dimen.y, tb.dimen.x, tb.dimen.y,
+                    tb.dimen.w, tb.dimen.h, bg_path) then
+                bb:paintRect(tb.dimen.x, tb.dimen.y, tb.dimen.w, tb.dimen.h, Blitbuffer.COLOR_WHITE)
+            end
         end
         UIManager:widgetRepaint(tb, tb.dimen.x, tb.dimen.y)
         UIManager:setDirty(nil, "ui", tb.dimen)

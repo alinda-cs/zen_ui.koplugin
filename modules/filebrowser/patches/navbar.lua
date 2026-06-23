@@ -20,6 +20,7 @@ local function apply_navbar()
     local utils = require("common/utils")
     local paths = require("common/paths")
     local SharedState = require("common/shared_state")
+    local Background = require("common/ui/background")
     local PluginScan = require("modules/menu/app_launcher/plugin_scan")
     local Screen = Device.screen
     local _ = require("gettext")
@@ -43,6 +44,11 @@ local function apply_navbar()
     local function is_navbar_enabled()
         local features = zen_plugin.config and zen_plugin.config.features
         return type(features) == "table" and features.navbar == true
+    end
+
+    local function is_restore_enabled()
+        local features = zen_plugin.config and zen_plugin.config.features
+        return type(features) == "table" and features.restore_library_view == true
     end
 
     -- === Layout constants ===
@@ -279,6 +285,11 @@ local function apply_navbar()
     local active_tab
     local _navbar_focused_idx = nil  -- keyboard-focused tab index (nil = file list has focus)
     local _last_menu_item = nil  -- tracks last long-held item for the menu tab
+    local _suppress_bg_tab_refresh = false
+    local skip_tabs_for_state = {
+        books = true, manga = true, news = true,
+        continue = true, search = true, stats = true, exit = true,
+    }
 
     -- Forward declarations; defined later
     local injectNavbar
@@ -290,7 +301,19 @@ local function apply_navbar()
         _G.__ZEN_UI_ACTIVE_TAB_LABEL = tabs_by_id[active_tab] and tabs_by_id[active_tab].label or active_tab
     end
 
+    local _navbar_bg_refresh_pending = false
+    local function refreshBackgroundTabChange()
+        if _suppress_bg_tab_refresh or _navbar_bg_refresh_pending or not Background.library_active() then return end
+        _navbar_bg_refresh_pending = true
+        UIManager:nextTick(function()
+            _navbar_bg_refresh_pending = false
+            UIManager:setDirty(nil, "full")
+            UIManager:forceRePaint()
+        end)
+    end
+
     local function setActiveTab(id)
+        local changed = active_tab ~= id
         active_tab = id
         syncActiveTabLabel()
         _navbar_focused_idx = nil
@@ -298,6 +321,9 @@ local function apply_navbar()
         if fm then
             injectNavbar(fm)
             UIManager:setDirty(fm, "full")
+        end
+        if changed then
+            refreshBackgroundTabChange()
         end
     end
 
@@ -310,6 +336,15 @@ local function apply_navbar()
         else
             _G.__ZEN_UI_SUPPRESS_FILEMANAGER_COVERS = old
         end
+        if not ok then error(result) end
+        return result
+    end
+
+    local function withBgTabRefreshSuppressed(fn)
+        local old = _suppress_bg_tab_refresh
+        _suppress_bg_tab_refresh = true
+        local ok, result = pcall(fn)
+        _suppress_bg_tab_refresh = old
         if not ok then error(result) end
         return result
     end
@@ -482,6 +517,11 @@ local function apply_navbar()
                 text = _("Cannot open last document"),
             })
             return
+        end
+        if is_restore_enabled() and not skip_tabs_for_state[active_tab] then
+            _G.__ZEN_UI_LIBRARY_SOURCE_TAB = active_tab
+        else
+            _G.__ZEN_UI_LIBRARY_SOURCE_TAB = nil
         end
         local ReaderUI = require("apps/reader/readerui")
         ReaderUI:showReader(last_file)
@@ -865,6 +905,7 @@ local function apply_navbar()
                     file   = icon_path or nil,
                     width  = navbar_icon_size,
                     height = navbar_icon_size,
+                    alpha  = true,
                     _tint_color = active_color,
                 }
             else
@@ -873,6 +914,7 @@ local function apply_navbar()
                     file   = icon_path or nil,
                     width  = navbar_icon_size,
                     height = navbar_icon_size,
+                    alpha  = true,
                 }
             end
         end
@@ -1161,6 +1203,7 @@ local function apply_navbar()
             if track_tab and tapped_id ~= active_tab then
                 active_tab = tapped_id
                 syncActiveTabLabel()
+                refreshBackgroundTabChange()
                 -- Only repaint the FM navbar for tabs that render inside it (not overlay views)
                 local stays_in_browser = tapped_id == "books"
                     or (tapped_id == "manga" and config.manga_action == "folder" and config.manga_folder ~= "")
@@ -1437,6 +1480,7 @@ local function apply_navbar()
             if track and tid ~= active_tab then
                 active_tab = tid
                 syncActiveTabLabel()
+                refreshBackgroundTabChange()
                 local stays = tid == "books"
                     or (tid == "manga" and config.manga_action == "folder" and config.manga_folder ~= "")
                     or (tid == "news"  and config.news_action  == "folder" and config.news_folder  ~= "")
@@ -2070,37 +2114,30 @@ local function apply_navbar()
         -- menu_top_swipe (class-level patch on Menu.onSwipe).
     end
 
-    local function is_restore_enabled()
-        local features = zen_plugin.config and zen_plugin.config.features
-        return type(features) == "table" and features.restore_library_view == true
-    end
-
     -- Save current library view state just before the reader takes over.
     -- The FM is about to be destroyed; we persist {tab, page} so that when
     -- showFileManager() recreates it we can scroll back to the right place.
-    local skip_tabs_for_state = {
-        books = true, manga = true, news = true,
-        continue = true, search = true, stats = true, exit = true,
-    }
     local orig_fm_onShowingReader = FileManager.onShowingReader
     function FileManager:onShowingReader()
         local gv = get_shared("group_view")
-        if is_restore_enabled() and not skip_tabs_for_state[active_tab] then
+        local source_tab = rawget(_G, "__ZEN_UI_LIBRARY_SOURCE_TAB") or active_tab
+        _G.__ZEN_UI_LIBRARY_SOURCE_TAB = nil
+        if is_restore_enabled() and not skip_tabs_for_state[source_tab] then
             local page = 1
             -- Group views expose page via M.getActivePage
             if gv and gv.getActivePage then
-                page = gv.getActivePage(active_tab) or 1
+                page = gv.getActivePage(source_tab) or 1
             end
             local home = get_shared("home")
-            if home and active_tab == "home" and home.getActivePage then
+            if home and source_tab == "home" and home.getActivePage then
                 page = home.getActivePage() or 1
             end
             -- Standalone views: history / favorites / collections
             local fm = FileManager.instance
-            if fm and active_tab == "history"
+            if fm and source_tab == "history"
                     and fm.history and fm.history.booklist_menu then
                 page = fm.history.booklist_menu.page or 1
-            elseif fm and (active_tab == "favorites" or active_tab == "collections")
+            elseif fm and (source_tab == "favorites" or source_tab == "collections")
                     and fm.collections and fm.collections.booklist_menu then
                 page = fm.collections.booklist_menu.page or 1
             end
@@ -2114,7 +2151,7 @@ local function apply_navbar()
                 end
             end
             _G.__ZEN_UI_LIBRARY_STATE = {
-                tab          = active_tab,
+                tab          = source_tab,
                 page         = page,
                 detail_group = detail_group,
                 detail_page  = detail_page,
@@ -2224,10 +2261,12 @@ local function apply_navbar()
             _G.__ZEN_UI_FORCE_DEFAULT_LIBRARY_TAB = nil
             _G.__ZEN_UI_LIBRARY_STATE = nil
             if forced_default_tab == "books" then
-                setActiveTab("books")
+                withBgTabRefreshSuppressed(function()
+                    setActiveTab("books")
+                end)
                 return
             end
-            open_default_tab()
+            withBgTabRefreshSuppressed(open_default_tab)
             return
         end
         if keep_book_location then
@@ -2254,7 +2293,9 @@ local function apply_navbar()
         active_tab = state.tab
         syncActiveTabLabel()
         -- Open group/standalone view synchronously (stack: [fm, group_menu])
-        tab_callbacks[state.tab]()
+        withBgTabRefreshSuppressed(function()
+            tab_callbacks[state.tab]()
+        end)
         -- If a detail view was open, open it synchronously too (stack: [fm, group_menu, detail_menu]).
         -- _repaint will then start from detail_menu and never show the intermediate views.
         if state.detail_group and gv and gv.restoreDetail then

@@ -14,6 +14,7 @@ local function apply_browser_cover_badges()
     local ReadCollection = require("readcollection")
     local Screen         = require("device").screen
     local TextWidget     = require("ui/widget/textwidget")
+    local Background     = require("common/ui/background")
     local book_status    = require("common/book_status")
     local utils          = require("common/utils")
     local _              = require("gettext")
@@ -282,7 +283,7 @@ local function apply_browser_cover_badges()
                 pre_target.dim = is_selected and true or nil
                 pre_target.color = is_selected and Blitbuffer.COLOR_DARK_GRAY or nil
             end
-            -- Clear the full cell to white before painting so that portrait
+            -- Clear the full cell before painting so that portrait
             -- covers (which are narrower than the cell) don't leave ghost pixels
             -- from a previously painted full-width placeholder in the margins.
             -- Only needed in the file manager; PathChooser uses default KOReader rendering.
@@ -295,7 +296,11 @@ local function apply_browser_cover_badges()
                         "strip_patched=", tostring(MosaicMenuItem._zen_title_strip_patched),
                         "is_directory=", tostring(self.is_directory))
                 end
-                bb:paintRect(x, y, self.width, self.height, Blitbuffer.COLOR_WHITE)
+                local bg_path = Background.library_path()
+                if bg_path == "" or not Background.paintScreenRegion(bb, x, y,
+                        x, y, self.width, self.height, bg_path) then
+                    bb:paintRect(x, y, self.width, self.height, Blitbuffer.COLOR_WHITE)
+                end
             end
 
             -- 1. Base widget painting (cover image / FakeCover / folder tree)

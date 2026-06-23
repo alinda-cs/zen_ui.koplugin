@@ -3,8 +3,24 @@ local TitleBar = require("ui/widget/titlebar")
 local Geom = require("ui/geometry")
 local ClockTimer = require("common/clock_timer")
 local WidgetResources = require("common/widget_resources")
+local Background = require("common/ui/background")
 
 local M = {}
+local _zen_plugin = rawget(_G, "__ZEN_UI_PLUGIN")
+
+local function library_background_path()
+    local cfg = _zen_plugin and _zen_plugin.config
+    if type(cfg) ~= "table" then
+        local ok, loaded = pcall(function()
+            return require("config/manager").load()
+        end)
+        cfg = ok and loaded or nil
+    end
+    local bg = type(cfg) == "table" and cfg.library_background
+    if not (type(bg) == "table" and bg.enabled == true) then return "" end
+    local path = type(bg.path) == "string" and bg.path or ""
+    return Background.isJpegPath(path) and path or ""
+end
 
 local SKIP_FM_DISPATCH = {
     onBatchedUpdate = true,
@@ -163,8 +179,34 @@ function M.create_menu(opts)
         M.enable_filemanager_dispatch(menu_or_err)
     end
     M.prevent_swipe_close(menu_or_err)
+    M.apply_background(menu_or_err)
 
     return menu_or_err
+end
+
+-- Paint the configured library background image behind the page. The root
+-- FrameContainer's opaque white fill is dropped so the image shows through the
+-- gaps around the page content.
+function M.apply_background(menu)
+    if not menu or menu._zen_bg_applied then return end
+    menu._zen_bg_applied = true
+
+    local orig_paintTo = menu.paintTo
+    function menu:paintTo(bb, x, y)
+        local path = library_background_path()
+        if path ~= "" then
+            -- Menu:updateItems rebuilds self[1] with an opaque COLOR_WHITE fill,
+            -- so drop it on every paint (not just once at creation) or the white
+            -- returns after any refresh and hides the background.
+            Background.clearWhiteBackgrounds(self[1], 14)
+            if self.dimen then
+                Background.paint(bb, 0, 0, self.dimen.w, self.dimen.h, path)
+            end
+        end
+        if orig_paintTo then
+            return orig_paintTo(self, bb, x, y)
+        end
+    end
 end
 
 function M.hide_page_arrow(menu)

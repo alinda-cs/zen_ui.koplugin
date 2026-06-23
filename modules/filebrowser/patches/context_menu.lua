@@ -696,7 +696,7 @@ local function apply_context_menu()
                 end)
             end
 
-            local function refresh_after_folder_sort()
+            local function refresh_after_sort_change()
                 if self_fc._zen_clear_item_table_cache then
                     self_fc:_zen_clear_item_table_cache()
                 end
@@ -1762,7 +1762,7 @@ local function apply_context_menu()
                                             callback = function()
                                                 g_sort:saveSetting("collate", opt.key)
                                                 UIManager:close(sort_dialog)
-                                                self_fc:refreshPath()
+                                                refresh_after_sort_change()
                                             end,
                                         }})
                                     end
@@ -1779,7 +1779,7 @@ local function apply_context_menu()
                                                     else
                                                         g_sort:delSetting("reverse_collate")
                                                     end
-                                                    self_fc:refreshPath()
+                                                    refresh_after_sort_change()
                                                 end,
                                             })
                                         end,
@@ -1822,7 +1822,7 @@ local function apply_context_menu()
                                             callback = function()
                                                 fsd_api.set(real_folder, opt.key, cur_reverse)
                                                 UIManager:close(sort_dialog)
-                                                refresh_after_folder_sort()
+                                                refresh_after_sort_change()
                                             end,
                                         }})
                                     end
@@ -1836,7 +1836,7 @@ local function apply_context_menu()
                                                 on_select = function(reverse)
                                                     if cur_collate then
                                                         fsd_api.set(real_folder, cur_collate, reverse)
-                                                        refresh_after_folder_sort()
+                                                        refresh_after_sort_change()
                                                     end
                                                 end,
                                             })
@@ -1850,7 +1850,7 @@ local function apply_context_menu()
                                             callback = function()
                                                 fsd_api.clear(real_folder)
                                                 UIManager:close(sort_dialog)
-                                                refresh_after_folder_sort()
+                                                refresh_after_sort_change()
                                             end,
                                         }})
                                     end

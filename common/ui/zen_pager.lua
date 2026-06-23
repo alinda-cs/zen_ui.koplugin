@@ -48,8 +48,8 @@ end
 
 local function get_pn_icons()
     if not _icon_l then
-        _icon_l = IconWidget:new{ icon = "chevron.left",  width = M.PN_ICON_SZ, height = M.PN_ICON_SZ }
-        _icon_r = IconWidget:new{ icon = "chevron.right", width = M.PN_ICON_SZ, height = M.PN_ICON_SZ }
+        _icon_l = IconWidget:new{ icon = "chevron.left",  width = M.PN_ICON_SZ, height = M.PN_ICON_SZ, alpha = true }
+        _icon_r = IconWidget:new{ icon = "chevron.right", width = M.PN_ICON_SZ, height = M.PN_ICON_SZ, alpha = true }
     end
     return _icon_l, _icon_r
 end

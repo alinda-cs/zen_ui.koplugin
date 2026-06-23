@@ -14,6 +14,7 @@ local function apply_partial_page_repaint()
 
     local FileChooser = require("ui/widget/filechooser")
     local UIManager   = require("ui/uimanager")
+    local Background  = require("common/ui/background")
 
     local pending = false
 
@@ -28,7 +29,15 @@ local function apply_partial_page_repaint()
         if not perpage or perpage <= 0 then return end
         local page          = self.page or 1
         local items_on_page = math.max(0, math.min(perpage, total - (page - 1) * perpage))
-        if items_on_page > 0 and items_on_page < perpage and not pending then
+        local short_page = items_on_page > 0 and items_on_page < perpage
+        local bg_page_changed = false
+        if Background.library_active() then
+            local last_page = self._zen_bg_repaint_page
+            self._zen_bg_repaint_page = page
+            bg_page_changed = (last_page ~= nil and last_page ~= page)
+                or (last_page == nil and page > 1)
+        end
+        if (short_page or bg_page_changed) and not pending then
             pending = true
             local widget = self
             UIManager:nextTick(function()

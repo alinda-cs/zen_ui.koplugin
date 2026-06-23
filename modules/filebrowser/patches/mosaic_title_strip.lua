@@ -61,6 +61,7 @@ local function apply_mosaic_title_strip()
     local Blitbuffer = require("ffi/blitbuffer")
     local TextWidget = require("ui/widget/textwidget")
     local BD         = require("ui/bidi")
+    local Background = require("common/ui/background")
     local library_font = require("modules/filebrowser/patches/library_font")
 
     local TITLE_FONT  = library_font.scaleValue(16)
@@ -218,8 +219,13 @@ local function apply_mosaic_title_strip()
             if not self._zen_strip_bb then
                 local strip_w  = self.width
                 local text_w   = strip_w - 2 * PAD_H
+                local strip_y  = y + self.height - STRIP_H
                 local strip_bb = Blitbuffer.new(strip_w, STRIP_H, bb:getType())
-                strip_bb:fill(Blitbuffer.COLOR_WHITE)
+                local bg_path = Background.library_path()
+                if bg_path == "" or not Background.paintScreenRegion(strip_bb, 0, 0,
+                        x, strip_y, strip_w, STRIP_H, bg_path) then
+                    strip_bb:fill(Blitbuffer.COLOR_WHITE)
+                end
                 local cur_y = PAD
 
                 if _show_title then

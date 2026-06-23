@@ -6,6 +6,7 @@ local OverlapGroup = require("ui/widget/overlapgroup")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local Background = require("common/ui/background")
 local SharedState = require("common/shared_state")
 
 logger.dbg("zen-coll: module loaded")
@@ -851,6 +852,7 @@ local function apply_collections()
     ---------------------------------------------------------------------------
     local function clean_nav(menu, collection_name, raw_coll_name, fm_coll)
         if not menu then return end
+        Background.applyToMenu(menu)
 
         local UIManager_mod = require("ui/uimanager")
 
@@ -966,6 +968,7 @@ local function apply_collections()
     ---------------------------------------------------------------------------
     local function clean_nav_list(menu, fm_coll)
         if not menu then return end
+        Background.applyToMenu(menu)
 
         local UIManager_mod = require("ui/uimanager")
         local Device        = require("device")
@@ -1066,6 +1069,7 @@ local function apply_collections()
         if is_favorites and collection_name == nil then
             local menu = self.booklist_menu
             if menu and is_enabled() then
+                Background.applyToMenu(menu)
                 local _ = require("gettext")
                 local fav_display = _("Favorites")
                 local raw_fav = resolved_name
