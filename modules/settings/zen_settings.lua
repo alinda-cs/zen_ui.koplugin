@@ -129,7 +129,7 @@ function M.build(plugin)
     -- Root menu assembly
     -- -------------------------------------------------------------------------
 
-    quick_settings_item.text = _("Quick Settings")
+    quick_settings_item.text = _("Controls")
     IconItem.decorate(quick_settings_item, icons.settings_quick)
     app_launcher_item.text = _("Launcher")
     IconItem.decorate(app_launcher_item, icons.settings_launcher)

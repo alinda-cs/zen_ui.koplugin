@@ -680,7 +680,7 @@ function M.build(ctx)
     end
 
     return {
-        text = _("Quick Settings"),
+        text = _("Controls"),
         sub_item_table = {
             {
                 text = _("Buttons") .. " \u{25B8}",
@@ -718,7 +718,7 @@ function M.build(ctx)
                 callback = function(touch_menu)
                     local ConfirmBox = require("ui/widget/confirmbox")
                     UIManager:show(ConfirmBox:new{
-                        text = _("Reset quick settings to defaults?"),
+                        text = _("Reset Controls to defaults?"),
                         ok_text = _("Reset"),
                         ok_callback = function()
                             resetQuickSettings()

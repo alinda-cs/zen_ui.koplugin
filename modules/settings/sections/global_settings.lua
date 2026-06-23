@@ -698,7 +698,7 @@ function M.build(ctx)
                 },
             },
             {
-                text = _("Quick Settings"),
+                text = _("Controls"),
                 sub_item_table = {
                     {
                         text = _("Require hold to toggle buttons"),
