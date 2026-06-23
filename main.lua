@@ -428,6 +428,7 @@ function ZenUI:init()
                 local T = require("ffi/util").template
                 require("ui/uimanager"):show(ZenScreen:new{
                     title       = _("Zen UI"),
+                    title_icon  = true,
                     subtitle    = T(_("Updated to %1"), "v" .. current_ver),
                     scroll_text = build_update_changelog_scroll_text(changelog_to_show),
                     on_close    = function()
