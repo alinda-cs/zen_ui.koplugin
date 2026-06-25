@@ -32,8 +32,11 @@ end
 function M.showFromReader(ui, plugin, opts)
     if not ui or not ui.document then return false end
 
+    opts = type(opts) == "table" and opts or {}
     local file = ui.document.file
-    local open_home = type(opts) == "table" and opts.open_home == true
+    local open_home = opts.open_home == true
+    local target_tab = opts.target_tab
+    local target_folder = opts.target_folder
     local restore = M.restoreEnabled(plugin)
     local outside_home = file and not paths.isInHomeDir(file)
     _G.__ZEN_UI_LAST_READ_FILE = file
@@ -48,6 +51,10 @@ function M.showFromReader(ui, plugin, opts)
     if type(ui.showFileManager) == "function" then
         if open_home then
             _G.__ZEN_UI_OPEN_HOME_AFTER_FILEMANAGER = true
+        elseif target_tab then
+            _G.__ZEN_UI_OPEN_TARGET_TAB = target_tab
+        elseif target_folder then
+            _G.__ZEN_UI_OPEN_TARGET_FOLDER = target_folder
         elseif not restore and not outside_home then
             _G.__ZEN_UI_FORCE_DEFAULT_LIBRARY_TAB = true
         elseif outside_home then

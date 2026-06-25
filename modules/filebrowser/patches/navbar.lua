@@ -774,11 +774,12 @@ local function apply_navbar()
         return tab_id
     end
 
-    local function open_home_tab()
-        if shouldTrackActiveTab("home") then
-            setActiveTab("home")
+    local function open_tab(tab_id)
+        if not tab_callbacks[tab_id] then return false end
+        if shouldTrackActiveTab(tab_id) then
+            setActiveTab(tab_id)
         end
-        runTabCallback("home")
+        runTabCallback(tab_id)
         return true
     end
 
@@ -2266,6 +2267,10 @@ local function apply_navbar()
     function FileManager:showFiles(path, focused_file, selected_files)
         local open_home_after_filemanager = rawget(_G, "__ZEN_UI_OPEN_HOME_AFTER_FILEMANAGER") == true
         _G.__ZEN_UI_OPEN_HOME_AFTER_FILEMANAGER = nil
+        local open_target_tab = rawget(_G, "__ZEN_UI_OPEN_TARGET_TAB")
+        _G.__ZEN_UI_OPEN_TARGET_TAB = nil
+        local open_target_folder = rawget(_G, "__ZEN_UI_OPEN_TARGET_FOLDER")
+        _G.__ZEN_UI_OPEN_TARGET_FOLDER = nil
         local keep_book_location = rawget(_G, "__ZEN_UI_KEEP_BOOK_LOCATION") == true
         _G.__ZEN_UI_KEEP_BOOK_LOCATION = nil
         local restore_enabled = is_restore_enabled()
@@ -2287,6 +2292,8 @@ local function apply_navbar()
         end
         local hidden_bootstrap = (forced_default_tab and forced_default_tab ~= "books")
             or open_home_after_filemanager
+            or open_target_tab
+            or open_target_folder
             or (not restore_enabled
                 and not keep_book_location
                 and default_tab ~= "books")
@@ -2308,7 +2315,25 @@ local function apply_navbar()
         if open_home_after_filemanager then
             _G.__ZEN_UI_FORCE_DEFAULT_LIBRARY_TAB = nil
             _G.__ZEN_UI_LIBRARY_STATE = nil
-            withBgTabRefreshSuppressed(open_home_tab)
+            withBgTabRefreshSuppressed(function() open_tab("home") end)
+            return
+        end
+        if open_target_tab then
+            _G.__ZEN_UI_FORCE_DEFAULT_LIBRARY_TAB = nil
+            _G.__ZEN_UI_LIBRARY_STATE = nil
+            withBgTabRefreshSuppressed(function() open_tab(open_target_tab) end)
+            return
+        end
+        if open_target_folder then
+            _G.__ZEN_UI_FORCE_DEFAULT_LIBRARY_TAB = nil
+            _G.__ZEN_UI_LIBRARY_STATE = nil
+            local fm = FileManager.instance
+            local fc = fm and fm.file_chooser
+            if fc and lfs.attributes(open_target_folder, "mode") == "directory" then
+                setActiveTab("books")
+                fc:changeToPath(open_target_folder)
+                refreshSuppressedCoversNow(fm)
+            end
             return
         end
         if rawget(_G, "__ZEN_UI_FORCE_DEFAULT_LIBRARY_TAB") then
@@ -2555,7 +2580,7 @@ local function apply_navbar()
     -- Expose a reinject function for external callers (e.g. quickstart on_close).
     -- Allows main.lua to rebuild the navbar after quickstart changes tab config.
     _G.__ZEN_UI_NAVBAR_OPEN_DEFAULT_TAB = open_default_tab
-    _G.__ZEN_UI_NAVBAR_OPEN_HOME = open_home_tab
+    _G.__ZEN_UI_NAVBAR_OPEN_TAB = open_tab
     _G.__ZEN_UI_NAVBAR_RESOLVE_DEFAULT_TAB = resolve_default_tab
 
     _G.__ZEN_UI_REINJECT_FM_NAVBAR = function()

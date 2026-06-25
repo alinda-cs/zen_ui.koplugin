@@ -20,30 +20,93 @@ local function refresh_reader()
     end
 end
 
-local function show_home_from_filemanager(plugin)
-    local ok_shared, SharedState = pcall(require, "common/shared_state")
-    local home = ok_shared and SharedState.get(plugin, "home") or nil
-    if home and type(home.isActiveOnTop) == "function" and home.isActiveOnTop() then
-        return true
-    end
+local function open_navbar_tab(tab_id)
+    local open = rawget(_G, "__ZEN_UI_NAVBAR_OPEN_TAB")
+    if type(open) ~= "function" then return false end
+    return open(tab_id) ~= false
+end
 
+local group_view_show = {
+    authors = "showAuthorsView",
+    series = "showSeriesView",
+    tags = "showTagsView",
+}
+
+local function tab_fallback(plugin, tab_id)
+    local ok_shared, SharedState = pcall(require, "common/shared_state")
+    if not ok_shared then return false end
+    if tab_id == "home" then
+        local home = SharedState.get(plugin, "home")
+        if home and type(home.showHomeView) == "function" then
+            home.showHomeView()
+            return true
+        end
+        return false
+    end
+    local fn_name = group_view_show[tab_id]
+    if not fn_name then return false end
+    local gv = SharedState.get(plugin, "group_view")
+    if not (gv and type(gv[fn_name]) == "function") then return false end
+    gv[fn_name](nil)
+    return true
+end
+
+local function show_tab_from_filemanager(plugin, tab_id)
+    if tab_id == "home" then
+        local ok_shared, SharedState = pcall(require, "common/shared_state")
+        local home = ok_shared and SharedState.get(plugin, "home") or nil
+        if home and type(home.isActiveOnTop) == "function" and home.isActiveOnTop() then
+            return true
+        end
+    end
     local ok_fm, FileManager = pcall(require, "apps/filemanager/filemanager")
     local fm = ok_fm and FileManager and FileManager.instance
     if fm then
         require("common/utils").closeWidgetsAbove(fm)
     end
+    if open_navbar_tab(tab_id) then return true end
+    return tab_fallback(plugin, tab_id)
+end
 
-    local open_home = rawget(_G, "__ZEN_UI_NAVBAR_OPEN_HOME")
-    if type(open_home) == "function" then
-        return open_home() ~= false
+local function show_zen_tab(plugin, tab_id, opts)
+    opts = opts or {}
+    if not opts.open_home then opts.target_tab = tab_id end
+    local reader = get_reader()
+    if reader and reader.document then
+        return require("common/library_navigation").showFromReader(reader, plugin, opts)
     end
+    return show_tab_from_filemanager(plugin, tab_id)
+end
 
-    if not (home and type(home.showHomeView) == "function") then
+local function show_folder_from_filemanager(folder)
+    if type(folder) ~= "string" or folder == "" then return false end
+    local lfs = require("libs/libkoreader-lfs")
+    if lfs.attributes(folder, "mode") ~= "directory" then
+        require("ui/uimanager"):show(require("ui/widget/infomessage"):new{
+            text = _("Zen UI: folder not found: ") .. folder,
+        })
         return false
     end
-
-    home.showHomeView()
+    local ok_fm, FileManager = pcall(require, "apps/filemanager/filemanager")
+    local fm = ok_fm and FileManager and FileManager.instance
+    if not fm or not fm.file_chooser then return false end
+    require("common/utils").closeWidgetsAbove(fm)
+    fm.file_chooser:changeToPath(folder)
     return true
+end
+
+local function show_zen_folder(plugin, folder)
+    if type(folder) ~= "string" or folder == "" then
+        require("ui/uimanager"):show(require("ui/widget/infomessage"):new{
+            text = _("Zen UI: no folder set for this action."),
+        })
+        return false
+    end
+    local reader = get_reader()
+    if reader and reader.document then
+        return require("common/library_navigation").showFromReader(reader, plugin, { target_folder = folder })
+    end
+    return show_folder_from_filemanager(folder)
 end
 
 local function apply_top_status_bar(plugin, enabled)
@@ -121,6 +184,71 @@ local function set_bottom_status_bar(plugin, enabled)
     return true
 end
 
+local _folder_picker_patched = false
+
+-- Render a per-action folder picker for zen_ui_show_folder. The default Dispatcher
+-- menu only builds fixed radio lists for category="string", so we wrap _addItem to
+-- append a PathChooser-backed entry to the General section. The chosen path is stored
+-- in location[settings].zen_ui_show_folder, i.e. per gesture/profile instance.
+local function patch_folder_picker_menu(Dispatcher)
+    if _folder_picker_patched then return end
+    _folder_picker_patched = true
+    local util = require("util")
+    local UIManager = require("ui/uimanager")
+    local ACTION = "zen_ui_show_folder"
+
+    local orig_addItem = Dispatcher._addItem
+    Dispatcher._addItem = function(self, caller, menu, location, settings, section)
+        orig_addItem(self, caller, menu, location, settings, section)
+        if section ~= "general" then return end
+
+        local function stored_folder()
+            return location[settings] ~= nil and location[settings][ACTION] or nil
+        end
+
+        table.insert(menu, {
+            text_func = function()
+                local folder = stored_folder()
+                if type(folder) == "string" and folder ~= "" then
+                    local name = select(2, util.splitFilePathName(folder))
+                    return _("Zen UI - Open folder") .. ": " .. name
+                end
+                return _("Zen UI - Open folder")
+            end,
+            checked_func = function()
+                return stored_folder() ~= nil
+            end,
+            keep_menu_open = true,
+            callback = function(touchmenu_instance)
+                local PathChooser = require("ui/widget/pathchooser")
+                local folder = stored_folder()
+                local start_path = (type(folder) == "string" and folder ~= "") and folder
+                    or G_reader_settings:readSetting("lastdir") or "/"
+                UIManager:show(PathChooser:new{
+                    select_file = false,
+                    show_files = false,
+                    path = start_path,
+                    onConfirm = function(dir_path)
+                        if location[settings] == nil then location[settings] = {} end
+                        location[settings][ACTION] = dir_path
+                        Dispatcher._addToOrder(location, settings, ACTION)
+                        caller.updated = true
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end,
+                })
+            end,
+            hold_callback = function(touchmenu_instance)
+                if location[settings] ~= nil and location[settings][ACTION] ~= nil then
+                    location[settings][ACTION] = nil
+                    Dispatcher._removeFromOrder(location, settings, ACTION)
+                    caller.updated = true
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end
+            end,
+        })
+    end
+end
+
 function M.onDispatcherRegisterActions()
     local Dispatcher = require("dispatcher")
     Dispatcher:registerAction("zen_ui_toggle_zen_mode", {
@@ -159,6 +287,39 @@ function M.onDispatcherRegisterActions()
         title = _("Zen UI - Home"),
         general = true,
     })
+    Dispatcher:registerAction("zen_ui_show_authors", {
+        category = "none",
+        event = "ShowZenUIAuthors",
+        title = _("Zen UI - Authors"),
+        general = true,
+    })
+    Dispatcher:registerAction("zen_ui_show_series", {
+        category = "none",
+        event = "ShowZenUISeries",
+        title = _("Zen UI - Series"),
+        general = true,
+    })
+    Dispatcher:registerAction("zen_ui_show_tags", {
+        category = "none",
+        event = "ShowZenUITags",
+        title = _("Zen UI - Tags"),
+        general = true,
+    })
+    -- Folder action stores its target path per-gesture (category="string" passes the
+    -- stored value to the event). No section flag: the default menu loop skips it, so
+    -- our _addItem patch renders a PathChooser in the General section instead of a fixed
+    -- radio list. Per-gesture storage means each new action starts with no folder and
+    -- users can bind several actions to different folders. Execution isn't gated on the
+    -- section flag, so the action still fires in reader and file-browser contexts.
+    Dispatcher:registerAction("zen_ui_show_folder", {
+        category = "string",
+        event = "ShowZenUIFolder",
+        title = _("Zen UI - Open folder"),
+        args = {},
+        toggle = {},
+        zen_folder_picker = true,
+    })
+    patch_folder_picker_menu(Dispatcher)
 end
 
 function M.onToggleZenMode(plugin)
@@ -204,17 +365,24 @@ function M.onToggleReaderStatusBars(plugin)
 end
 
 function M.onShowZenUIHome(plugin)
-    local reader = get_reader()
-    if reader and reader.document then
-        local shown = require("common/library_navigation").showFromReader(reader, plugin, { open_home = true })
-        if shown then
-            require("ui/uimanager"):scheduleIn(0, function()
-                show_home_from_filemanager(plugin)
-            end)
-        end
-        return shown
-    end
-    return show_home_from_filemanager(plugin)
+    return show_zen_tab(plugin, "home", { open_home = true })
+end
+
+function M.onShowZenUIAuthors(plugin)
+    return show_zen_tab(plugin, "authors")
+end
+
+function M.onShowZenUISeries(plugin)
+    return show_zen_tab(plugin, "series")
+end
+
+function M.onShowZenUITags(plugin)
+    return show_zen_tab(plugin, "tags")
+end
+
+function M.onShowZenUIFolder(plugin, folder)
+    -- category="string": Dispatcher passes the per-action stored folder path as arg.
+    return show_zen_folder(plugin, folder)
 end
 
 function M.install(target)
@@ -225,6 +393,10 @@ function M.install(target)
     target.onToggleReaderBottomStatusBar = M.onToggleReaderBottomStatusBar
     target.onToggleReaderStatusBars = M.onToggleReaderStatusBars
     target.onShowZenUIHome = M.onShowZenUIHome
+    target.onShowZenUIAuthors = M.onShowZenUIAuthors
+    target.onShowZenUISeries = M.onShowZenUISeries
+    target.onShowZenUITags = M.onShowZenUITags
+    target.onShowZenUIFolder = M.onShowZenUIFolder
 end
 
 return M
