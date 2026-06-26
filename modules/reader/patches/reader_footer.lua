@@ -8,6 +8,7 @@ local function apply_reader_footer()
 
     local ReaderFooter = require("apps/reader/modules/readerfooter")
     local BD = require("ui/bidi")
+    local Blitbuffer = require("ffi/blitbuffer")
     local Geom = require("ui/geometry")
     local LeftContainer = require("ui/widget/container/leftcontainer")
     local TextWidget = require("ui/widget/textwidget")
@@ -278,6 +279,9 @@ local function apply_reader_footer()
     local orig_updateFooterContainer = ReaderFooter.updateFooterContainer
     ReaderFooter.updateFooterContainer = function(self)
         orig_updateFooterContainer(self)
+        if self.progress_bar then
+            self.progress_bar.fillcolor = Blitbuffer.COLOR_BLACK
+        end
         if not is_lcr_alongside(self) then
             -- Remove any stale left container from a previous mode.
             self._zen_left_text = nil
