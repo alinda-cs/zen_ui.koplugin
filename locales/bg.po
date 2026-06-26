@@ -33,6 +33,9 @@ msgstr "(авто)"
 msgid "(Kindle)"
 msgstr "(Kindle)"
 
+msgid "(none)"
+msgstr "(няма)"
+
 msgid "(standard)"
 msgstr "(стандартно)"
 
@@ -90,6 +93,9 @@ msgstr "Действие: %1"
 msgid "Action: (none)"
 msgstr "Действие: (няма)"
 
+msgid "Active tab"
+msgstr "Активен раздел"
+
 msgid "Active tab color"
 msgstr "Цвят на активния раздел"
 
@@ -98,12 +104,6 @@ msgstr "Цвят на активния раздел: "
 
 msgid "Active tab RGB"
 msgstr "RGB на активния раздел"
-
-msgid "Active tab styling"
-msgstr "Стилизиране на активния раздел"
-
-msgid "Active tab underline"
-msgstr "Подчертаване на активния раздел"
 
 msgid "Add"
 msgstr "Добавяне"
@@ -120,17 +120,8 @@ msgstr "Добавяне на бутони"
 msgid "Add catalog"
 msgstr "Добавяне на каталог"
 
-msgid "Add custom button"
-msgstr "Добавяне на персонализиран бутон"
-
 msgid "Add custom buttons for other plugins or actions."
 msgstr "Добавете персонализирани бутони за други плъгини или действия."
-
-msgid "Add custom tab"
-msgstr "Добавяне на персонализиран раздел"
-
-msgid "Add folder"
-msgstr "Добавяне на папка"
 
 msgid "Add folder…"
 msgstr "Добавяне на папка…"
@@ -231,6 +222,12 @@ msgstr "ср. време/ден"
 msgid "Back"
 msgstr "Назад"
 
+msgid "Background"
+msgstr "Фон"
+
+msgid "Background image must be a JPG or JPEG file."
+msgstr "Фоновото изображение трябва да е JPG или JPEG файл."
+
 msgid "Badge color RGB"
 msgstr "RGB цвят на значката"
 
@@ -279,9 +276,6 @@ msgstr "Удебелен"
 msgid "bold"
 msgstr "получер"
 
-msgid "Bold active tab"
-msgstr "Удебелен активен раздел"
-
 msgid "Bold text"
 msgstr "Удебелен текст"
 
@@ -329,9 +323,6 @@ msgstr "Показани книги: "
 
 msgid "Books tab label"
 msgstr "Етикет на раздела Книги"
-
-msgid "Books tab label: "
-msgstr "Етикет на раздела Книги: "
 
 msgid "Bottom"
 msgstr "Долу"
@@ -383,6 +374,9 @@ msgstr "Случаен шах"
 
 msgid "Center"
 msgstr "Центрирано"
+
+msgid "Center align buttons"
+msgstr "Центриране на бутоните"
 
 msgid "Center items"
 msgstr "Централни елементи"
@@ -459,8 +453,8 @@ msgstr "Облачно хранилище"
 msgid "Collections"
 msgstr "Колекции"
 
-msgid "Colored active tab"
-msgstr "Оцветен активен раздел"
+msgid "Colored"
+msgstr "Оцветено"
 
 msgid "Colored status icons"
 msgstr "Оцветени икони за състоянието"
@@ -483,11 +477,17 @@ msgstr "Контекстно меню"
 msgid "Continue"
 msgstr "Продължи"
 
+msgid "Controls"
+msgstr "Управление"
+
 msgid "Copy"
 msgstr "Копиране"
 
 msgid "Could not determine update status."
 msgstr "Състоянието на актуализацията не можа да се определи."
+
+msgid "Could not reach update server."
+msgstr "Неуспешна връзка със сървъра за актуализации."
 
 msgid "Could not reach update server. Check your internet connection."
 msgstr "Неуспешна връзка със сървъра за обновления. Проверете интернет връзката си."
@@ -497,6 +497,9 @@ msgstr "Сървърът за актуализации не е достъпен.
 
 msgid "Could not read release data from update server."
 msgstr "Данните за изданието не могат да се прочетат от сървъра за актуализации."
+
+msgid "Could not scan Wi-Fi networks. Please try again after waking the device."
+msgstr "Неуспешно сканиране на Wi-Fi мрежи. Моля, опитайте отново след събуждане на устройството."
 
 msgid "CoverBrowser plugin is not enabled, some features will not work correctly."
 msgstr "Плъгинът CoverBrowser не е активиран, някои функции няма да работят правилно."
@@ -513,6 +516,9 @@ msgstr "Създаване на тази папка и използване ка
 msgid "Crossword"
 msgstr "Кръстословица"
 
+msgid "Current / total pages"
+msgstr "Текущи / общо страници"
+
 msgid "Current home folder:"
 msgstr "Текуща начална папка:"
 
@@ -528,9 +534,6 @@ msgstr "По избор"
 msgid "Custom button label"
 msgstr "Етикет на персонализирания бутон"
 
-msgid "Custom buttons"
-msgstr "Персонализирани бутони"
-
 msgid "Custom featured widget"
 msgstr "Персонализиран избран уиджет"
 
@@ -545,9 +548,6 @@ msgstr "Персонализиран лентов уиджет"
 
 msgid "Custom tab label"
 msgstr "Етикет на персонализиран раздел"
-
-msgid "Custom tabs"
-msgstr "Персонализирани раздели"
 
 msgid "Custom text"
 msgstr "Текст по избор"
@@ -644,6 +644,9 @@ msgstr "Да се изтрие ли този бутон?"
 
 msgid "Delete this folder and its buttons?"
 msgstr "Да се изтрие ли тази папка и бутоните ѝ?"
+
+msgid "Delete this tab?"
+msgstr "Да се изтрие ли този раздел?"
 
 msgid "Descending"
 msgstr "Низходящо"
@@ -801,6 +804,9 @@ msgstr "Филтър"
 msgid "Filter by status"
 msgstr "Филтриране по статус"
 
+msgid "Finish"
+msgstr "Завършване"
+
 msgid "Finished"
 msgstr "Завършени"
 
@@ -812,6 +818,9 @@ msgstr "Фърмуер: "
 
 msgid "First cover image"
 msgstr "Първо изображение на корица"
+
+msgid "Fixed layout documents (pdf, djvu, pics…)"
+msgstr "Документи с фиксирано оформление (pdf, djvu, pics…)"
 
 msgid "Flip LH/RH icon"
 msgstr "Обръщане на иконата LH/RH"
@@ -861,6 +870,9 @@ msgstr "Принудителна синхронизация на всички к
 msgid "Format: R,G,B (0-255)"
 msgstr "Формат: R,G,B (0-255)"
 
+msgid "Frontlight"
+msgstr "Подсветка"
+
 msgid "Gallery"
 msgstr "Галерия"
 
@@ -903,6 +915,12 @@ msgstr "Зелено"
 msgid "Group book series into folders"
 msgstr "Групиране на книжни поредици в папки"
 
+msgid "Gyro"
+msgstr "Гироскоп"
+
+msgid "Gyroscope"
+msgstr "Гироскоп"
+
 msgid "Hide in CBZ/PDF files"
 msgstr "Скриване в CBZ/PDF файлове"
 
@@ -910,7 +928,7 @@ msgid "Hide list borders"
 msgstr "Скриване на границите на списъка"
 
 msgid "Hide reader actions in library"
-msgstr ""
+msgstr "Скриване на действията на четеца в библиотеката"
 
 msgid "Hide up folder"
 msgstr "Скриване на горната папка"
@@ -920,6 +938,9 @@ msgstr "Подчертаване / Справка"
 
 msgid "History"
 msgstr "Хронология"
+
+msgid "Hold to arrange"
+msgstr "Задръжте за подреждане"
 
 msgid "Hold to skip"
 msgstr "Задръжте за пропускане"
@@ -939,20 +960,26 @@ msgstr "Предварителна настройка на таблото"
 msgid "Home tab label"
 msgstr "Етикет на раздела Начало"
 
-msgid "Home tab label: "
-msgstr "Етикет на раздела Начало: "
-
 msgid "Hour"
 msgstr "Час"
+
+msgid "Icon size:"
+msgstr "Размер на иконите:"
 
 msgid "Icon: %1"
 msgstr "Икона: %1"
 
+msgid "Icons"
+msgstr "Икони"
+
+msgid "Image: "
+msgstr "Изображение: "
+
+msgid "Image: none"
+msgstr "Изображение: няма"
+
 msgid "Incompatible plugins have been disabled:"
 msgstr "Несъвместими добавки бяха деактивирани:"
-
-msgid "Install dictionary"
-msgstr "Инсталиране на речник"
 
 msgid "Installed version is newer than the latest release."
 msgstr "Инсталираната версия е по-нова от последното издание."
@@ -975,8 +1002,20 @@ msgstr "Запазване на текущите настройки"
 msgid "KOReader: "
 msgstr "KOReader: "
 
+msgid "Label"
+msgstr "Етикет"
+
+msgid "Label size:"
+msgstr "Размер на етикета:"
+
+msgid "Label: "
+msgstr "Етикет: "
+
 msgid "Label: %1"
 msgstr "Етикет: %1"
+
+msgid "Labels"
+msgstr "Етикети"
 
 msgid "Landscape mosaic mode"
 msgstr "Пейзажен мозаечен режим"
@@ -1026,6 +1065,9 @@ msgstr "Размер на шрифта на библиотеката"
 msgid "Library View"
 msgstr "Изглед на библиотеката"
 
+msgid "Light"
+msgstr "Светлина"
+
 msgid "List (basic)"
 msgstr "Списък (основен)"
 
@@ -1064,9 +1106,6 @@ msgstr "Манга"
 
 msgid "Manga folder not found: "
 msgstr "Папката за манга не е намерена: "
-
-msgid "Manga tab action: "
-msgstr "Действие за раздела Манга: "
 
 msgid "Match whole words"
 msgstr "Съвпадение на цели думи"
@@ -1119,6 +1158,12 @@ msgstr "Преместване в…"
 msgid "Navbar"
 msgstr "Навигационна лента"
 
+msgid "Navbar icon size"
+msgstr "Размер на иконите в навигационната лента"
+
+msgid "Navbar label size"
+msgstr "Размер на етикетите в навигационната лента"
+
 msgid "Navbar Tabs"
 msgstr "Раздели в навигационната лента"
 
@@ -1136,9 +1181,6 @@ msgstr "Новини"
 
 msgid "News folder not found: "
 msgstr "Папката за новини не е намерена: "
-
-msgid "News tab action: "
-msgstr "Действие за раздела Новини: "
 
 msgid "Next"
 msgstr "Напред"
@@ -1194,9 +1236,6 @@ msgstr "Нощна топлина: "
 msgid "No books found"
 msgstr "Не са намерени книги"
 
-msgid "No buttons"
-msgstr "Няма бутони"
-
 msgid "No changelog entries found.\n\nNo releases are available for this channel."
 msgstr "Не са намерени записи в списъка с промени.\n\nНяма налични издания за този канал."
 
@@ -1208,6 +1247,9 @@ msgstr "Без описание."
 
 msgid "No launchable plugin menus found"
 msgstr "Не са намерени менюта на плъгини за стартиране"
+
+msgid "No network connection."
+msgstr "Няма мрежова връзка."
 
 msgid "No network connection. Please connect to Wi-Fi and try again."
 msgstr "Няма мрежова връзка. Моля, свържете се с Wi-Fi и опитайте отново."
@@ -1250,9 +1292,6 @@ msgstr "OPDS"
 
 msgid "Open folder"
 msgstr "Отваряне на папка"
-
-msgid "Open folder: "
-msgstr "Отваряне на папка: "
 
 msgid "Open QuickRSS"
 msgstr "Отваряне на QuickRSS"
@@ -1317,8 +1356,14 @@ msgstr "Лични рекорди"
 msgid "Please delete the Project: Title plugin from your plugins folder and restart KOReader."
 msgstr "Моля, изтрийте плъгина Project: Title от папката с плъгини и рестартирайте KOReader."
 
+msgid "Plugin"
+msgstr "Плъгин"
+
 msgid "Plugin management"
 msgstr "Управление на плъгини"
+
+msgid "Plugin: %1"
+msgstr "Плъгин: %1"
 
 msgid "Portrait list mode"
 msgstr "Портретен режим на списък"
@@ -1344,6 +1389,9 @@ msgstr "Предишна страница"
 msgid "Progress"
 msgstr "Напредък"
 
+msgid "Progress %"
+msgstr "Напредък %"
+
 msgid "Progress bar"
 msgstr "Лента за напредък"
 
@@ -1359,6 +1407,9 @@ msgstr "Пъзел"
 msgid "Quick Settings"
 msgstr "Бързи настройки"
 
+msgid "Quick settings button is unavailable"
+msgstr "Бутонът за бързи настройки не е наличен"
+
 msgid "QuickRSS"
 msgstr "QuickRSS"
 
@@ -1373,9 +1424,6 @@ msgstr "Затваряне на KOReader"
 
 msgid "Quotes widget"
 msgstr "Уиджет за цитати"
-
-msgid "Rakuyomi"
-msgstr "Rakuyomi"
 
 msgid "Rakuyomi plugin is not installed."
 msgstr "Плъгинът Rakuyomi не е инсталиран."
@@ -1425,20 +1473,14 @@ msgstr "Лентов уиджет за наскоро прочетени"
 msgid "Red"
 msgstr "Червено"
 
+msgid "Reflowable documents (epub, fb2, txt…)"
+msgstr "Документи с променливо оформление (epub, fb2, txt…)"
+
 msgid "Refresh"
 msgstr "Опресняване"
 
-msgid "Refresh navbar"
-msgstr "Опресняване на навигационната лента"
-
 msgid "regular"
 msgstr "обикновен"
-
-msgid "Regular Oxford English"
-msgstr "Regular Oxford English"
-
-msgid "Regular Oxford English (203 MB)"
-msgstr "Regular Oxford English (203 MB)"
 
 msgid "Release metadata is invalid or incomplete."
 msgstr "Метаданните на изданието са невалидни или непълни."
@@ -1458,14 +1500,8 @@ msgstr "Премахване от история"
 msgid "Remove this book from history?"
 msgstr "Да се премахне ли тази книга от историята?"
 
-msgid "Remove this button"
-msgstr "Премахване на бутона"
-
 msgid "Remove this folder from additional home folders?"
 msgstr "Да се премахне ли тази папка от допълнителните начални папки?"
-
-msgid "Remove this tab"
-msgstr "Премахване на този раздел"
 
 msgid "Remove: "
 msgstr "Премахване: "
@@ -1478,6 +1514,21 @@ msgstr "Докладвай грешка"
 
 msgid "Require hold to toggle buttons"
 msgstr "Изискване на задържане за превключване на бутони"
+
+msgid "Reset"
+msgstr "Нулиране"
+
+msgid "Reset Controls to defaults?"
+msgstr "Да се върнат ли настройките на Управление към стандартните?"
+
+msgid "Reset font"
+msgstr "Възстановяване на шрифта"
+
+msgid "Reset font family and size to default?"
+msgstr "Да се възстановят ли стандартните семейство и размер на шрифта?"
+
+msgid "Reset to defaults"
+msgstr "Възстановяване на стандартните"
 
 msgid "Restart"
 msgstr "Рестартиране"
@@ -1518,9 +1569,6 @@ msgstr "Заоблени ъгли на кориците"
 msgid "Rows"
 msgstr "Редове"
 
-msgid "RSS Reader"
-msgstr "RSS четец"
-
 msgid "RSS Reader plugin is not installed."
 msgstr "Добавката RSS четец не е инсталирана."
 
@@ -1538,6 +1586,12 @@ msgstr "Снимка на екрана"
 
 msgid "Screenshot saved to:"
 msgstr "Снимката е запазена в:"
+
+msgid "Screenshot timer"
+msgstr "Таймер за снимка на екрана"
+
+msgid "Screenshot: %1 s"
+msgstr "Снимка на екрана: %1 s"
 
 msgid "Scroll bar"
 msgstr "Лента за превъртане"
@@ -1611,12 +1665,6 @@ msgstr "Настройки и Актуализации"
 msgid "Setup Guide"
 msgstr "Ръководство за настройка"
 
-msgid "Short Oxford English"
-msgstr "Short Oxford English"
-
-msgid "Short Oxford English (26 MB)"
-msgstr "Short Oxford English (26 MB)"
-
 msgid "Show author"
 msgstr "Показване на автора"
 
@@ -1652,12 +1700,6 @@ msgstr "Показване на скрити файлове"
 
 msgid "Show icons"
 msgstr "Показване на икони"
-
-msgid "Show in navbar"
-msgstr "Показване в навигационната лента"
-
-msgid "Show in quick settings"
-msgstr "Показване в бързите настройки"
 
 msgid "Show item count"
 msgstr "Показване на броя елементи"
@@ -1833,9 +1875,6 @@ msgstr "Синхронизация"
 msgid "Sync all catalogs"
 msgstr "Синхронизиране на всички каталози"
 
-msgid "Tab settings"
-msgstr "Настройки на разделите"
-
 msgid "Tabs"
 msgstr "Раздели"
 
@@ -1863,12 +1902,6 @@ msgstr "Мястото за всички ваши книги %1"
 msgid "This change requires a restart to take effect."
 msgstr "Тази промяна изисква рестартиране, за да влезе в сила."
 
-msgid "This is a large file and may take a few minutes. Please wait."
-msgstr "Това е голям файл и може да отнеме няколко минути. Моля, изчакайте."
-
-msgid "This may take a few minutes. Please wait."
-msgstr "Това може да отнеме няколко минути. Моля, изчакайте."
-
 msgid "This Month"
 msgstr "Този месец"
 
@@ -1887,6 +1920,9 @@ msgstr "Формат на часа"
 msgid "Time to book end"
 msgstr "Време до края на книгата"
 
+msgid "Timer: %1 s"
+msgstr "Таймер: %1 s"
+
 msgid "Title"
 msgstr "Заглавие"
 
@@ -1904,12 +1940,6 @@ msgstr "Лентов уиджет За четене"
 
 msgid "Today"
 msgstr "Днес"
-
-msgid "Toggle Lockdown Mode"
-msgstr "Превключване на режим на заключване"
-
-msgid "Toggle Zen Mode"
-msgstr "Превключване на режим Zen"
 
 msgid "Too many requests. Please try again later."
 msgstr "Твърде много заявки. Моля, опитайте по-късно."
@@ -1940,6 +1970,9 @@ msgstr "Включете режим Zen, за да сведете KOReader до 
 
 msgid "Two rows"
 msgstr "Два реда"
+
+msgid "Underline"
+msgstr "Подчертаване"
 
 msgid "Underline above icon"
 msgstr "Подчертаване над иконата"
@@ -2036,6 +2069,9 @@ msgstr "Актуализации"
 
 msgid "USB"
 msgstr "USB"
+
+msgid "Use border as progress bar"
+msgstr "Използване на рамката като лента за напредък"
 
 msgid "Use current folder"
 msgstr "Използване на текущата папка"
@@ -2145,6 +2181,36 @@ msgstr "Бърза справка Zen"
 msgid "Zen UI"
 msgstr "Zen UI"
 
+msgid "Zen UI - Authors"
+msgstr "Zen UI - Автори"
+
+msgid "Zen UI - Home"
+msgstr "Zen UI - Начало"
+
+msgid "Zen UI - Open folder"
+msgstr "Zen UI - Отваряне на папка"
+
+msgid "Zen UI - Series"
+msgstr "Zen UI - Поредици"
+
+msgid "Zen UI - Tags"
+msgstr "Zen UI - Тагове"
+
+msgid "Zen UI - Toggle bottom reader status bar"
+msgstr "Zen UI - Превключване на долната лента на състоянието на четеца"
+
+msgid "Zen UI - Toggle Lockdown Mode"
+msgstr "Zen UI - Превключване на режим на заключване"
+
+msgid "Zen UI - Toggle reader status bars"
+msgstr "Zen UI - Превключване на лентите на състоянието на четеца"
+
+msgid "Zen UI - Toggle top reader status bar"
+msgstr "Zen UI - Превключване на горната лента на състоянието на четеца"
+
+msgid "Zen UI - Toggle Zen Mode"
+msgstr "Zen UI - Превключване на режим Zen"
+
 msgid "Zen UI defaults"
 msgstr "По подразбиране за Zen UI"
 
@@ -2153,3 +2219,9 @@ msgstr "Zen UI е актуален."
 
 msgid "Zen UI: "
 msgstr "Zen UI: "
+
+msgid "Zen UI: folder not found: "
+msgstr "Zen UI: папката не е намерена: "
+
+msgid "Zen UI: no folder set for this action."
+msgstr "Zen UI: няма зададена папка за това действие."

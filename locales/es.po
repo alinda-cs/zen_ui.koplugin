@@ -24,6 +24,9 @@ msgstr "(auto)"
 msgid "(Kindle)"
 msgstr "(Kindle)"
 
+msgid "(none)"
+msgstr "(ninguno)"
+
 msgid "(standard)"
 msgstr "(estándar)"
 
@@ -81,6 +84,9 @@ msgstr "Acción: %1"
 msgid "Action: (none)"
 msgstr "Acción: (ninguna)"
 
+msgid "Active tab"
+msgstr "Pestaña activa"
+
 msgid "Active tab color"
 msgstr "Color de pestaña activa"
 
@@ -89,12 +95,6 @@ msgstr "Color de pestaña activa: "
 
 msgid "Active tab RGB"
 msgstr "RGB de pestaña activa"
-
-msgid "Active tab styling"
-msgstr "Estilo de pestaña activa"
-
-msgid "Active tab underline"
-msgstr "Subrayado de pestaña activa"
 
 msgid "Add"
 msgstr "Añadir"
@@ -111,17 +111,8 @@ msgstr "Añadir botones"
 msgid "Add catalog"
 msgstr "Añadir catálogo"
 
-msgid "Add custom button"
-msgstr "Añadir botón personalizado"
-
 msgid "Add custom buttons for other plugins or actions."
 msgstr "Añade botones personalizados para otros plugins o acciones."
-
-msgid "Add custom tab"
-msgstr "Añadir pestaña personalizada"
-
-msgid "Add folder"
-msgstr "Añadir carpeta"
 
 msgid "Add folder…"
 msgstr "Añadir carpeta…"
@@ -222,6 +213,12 @@ msgstr "tiempo medio/día"
 msgid "Back"
 msgstr "Atrás"
 
+msgid "Background"
+msgstr "Fondo"
+
+msgid "Background image must be a JPG or JPEG file."
+msgstr "La imagen de fondo debe ser un archivo JPG o JPEG."
+
 msgid "Badge color RGB"
 msgstr "RGB de insignia"
 
@@ -270,9 +267,6 @@ msgstr "Negrita"
 msgid "bold"
 msgstr "negrita"
 
-msgid "Bold active tab"
-msgstr "Pestaña activa en negrita"
-
 msgid "Bold text"
 msgstr "Texto en negrita"
 
@@ -320,9 +314,6 @@ msgstr "Libros mostrados: "
 
 msgid "Books tab label"
 msgstr "Etiqueta de la pestaña Libros"
-
-msgid "Books tab label: "
-msgstr "Etiqueta de la pestaña Libros: "
 
 msgid "Bottom"
 msgstr "Inferior"
@@ -374,6 +365,9 @@ msgstr "Ajedrez casual"
 
 msgid "Center"
 msgstr "Centro"
+
+msgid "Center align buttons"
+msgstr "Centrar botones"
 
 msgid "Center items"
 msgstr "Elementos centrales"
@@ -450,8 +444,8 @@ msgstr "Almacenamiento en la nube"
 msgid "Collections"
 msgstr "Colecciones"
 
-msgid "Colored active tab"
-msgstr "Pestaña activa con color"
+msgid "Colored"
+msgstr "En color"
 
 msgid "Colored status icons"
 msgstr "Iconos de estado con color"
@@ -474,11 +468,17 @@ msgstr "Menú contextual"
 msgid "Continue"
 msgstr "Continuar"
 
+msgid "Controls"
+msgstr "Controles"
+
 msgid "Copy"
 msgstr "Copiar"
 
 msgid "Could not determine update status."
 msgstr "No se pudo determinar el estado de la actualización."
+
+msgid "Could not reach update server."
+msgstr "No se pudo contactar con el servidor de actualizaciones."
 
 msgid "Could not reach update server. Check your internet connection."
 msgstr "No se pudo conectar al servidor de actualizaciones. Comprueba tu conexión a Internet."
@@ -488,6 +488,9 @@ msgstr "No se pudo conectar al servidor de actualizaciones. Comprueba tu conexi�
 
 msgid "Could not read release data from update server."
 msgstr "No se pudieron leer los datos de la versión desde el servidor de actualizaciones."
+
+msgid "Could not scan Wi-Fi networks. Please try again after waking the device."
+msgstr "No se pudieron escanear las redes Wi-Fi. Inténtalo de nuevo después de despertar el dispositivo."
 
 msgid "CoverBrowser plugin is not enabled, some features will not work correctly."
 msgstr "El plugin CoverBrowser no está activado, algunas funciones no funcionarán correctamente."
@@ -504,6 +507,9 @@ msgstr "Crear esta carpeta y usarla como inicio"
 msgid "Crossword"
 msgstr "Crucigrama"
 
+msgid "Current / total pages"
+msgstr "Páginas actuales / totales"
+
 msgid "Current home folder:"
 msgstr "Carpeta de inicio actual:"
 
@@ -519,9 +525,6 @@ msgstr "Personalizado"
 msgid "Custom button label"
 msgstr "Etiqueta del botón personalizado"
 
-msgid "Custom buttons"
-msgstr "Botones personalizados"
-
 msgid "Custom featured widget"
 msgstr "Widget destacado personalizado"
 
@@ -536,9 +539,6 @@ msgstr "Widget de tira personalizado"
 
 msgid "Custom tab label"
 msgstr "Etiqueta de pestaña personalizada"
-
-msgid "Custom tabs"
-msgstr "Pestañas personalizadas"
 
 msgid "Custom text"
 msgstr "Texto personalizado"
@@ -635,6 +635,9 @@ msgstr "¿Eliminar este botón?"
 
 msgid "Delete this folder and its buttons?"
 msgstr "¿Eliminar esta carpeta y sus botones?"
+
+msgid "Delete this tab?"
+msgstr "¿Eliminar esta pestaña?"
 
 msgid "Descending"
 msgstr "Descendente"
@@ -792,6 +795,9 @@ msgstr "Filtrar"
 msgid "Filter by status"
 msgstr "Filtrar por estado"
 
+msgid "Finish"
+msgstr "Finalizar"
+
 msgid "Finished"
 msgstr "Terminado"
 
@@ -803,6 +809,9 @@ msgstr "Firmware: "
 
 msgid "First cover image"
 msgstr "Primera imagen de portada"
+
+msgid "Fixed layout documents (pdf, djvu, pics…)"
+msgstr "Documentos de diseño fijo (pdf, djvu, pics…)"
 
 msgid "Flip LH/RH icon"
 msgstr "Invertir icono izq./der."
@@ -852,6 +861,9 @@ msgstr "Forzar sincronización de todos los catálogos"
 msgid "Format: R,G,B (0-255)"
 msgstr "Formato: R,G,B (0-255)"
 
+msgid "Frontlight"
+msgstr "Luz frontal"
+
 msgid "Gallery"
 msgstr "Galería"
 
@@ -894,6 +906,12 @@ msgstr "Verde"
 msgid "Group book series into folders"
 msgstr "Agrupar series de libros en carpetas"
 
+msgid "Gyro"
+msgstr "Giroscopio"
+
+msgid "Gyroscope"
+msgstr "Giroscopio"
+
 msgid "Hide in CBZ/PDF files"
 msgstr "Ocultar en archivos CBZ/PDF"
 
@@ -901,7 +919,7 @@ msgid "Hide list borders"
 msgstr "Ocultar bordes de lista"
 
 msgid "Hide reader actions in library"
-msgstr ""
+msgstr "Ocultar acciones del lector en la biblioteca"
 
 msgid "Hide up folder"
 msgstr "Ocultar carpeta superior"
@@ -911,6 +929,9 @@ msgstr "Resaltar / Buscar"
 
 msgid "History"
 msgstr "Historial"
+
+msgid "Hold to arrange"
+msgstr "Mantén pulsado para organizar"
 
 msgid "Hold to skip"
 msgstr "Mantén pulsado para omitir"
@@ -930,20 +951,26 @@ msgstr "Preajuste del panel"
 msgid "Home tab label"
 msgstr "Etiqueta de pestaña Inicio"
 
-msgid "Home tab label: "
-msgstr "Etiqueta de pestaña Inicio: "
-
 msgid "Hour"
 msgstr "Hora"
+
+msgid "Icon size:"
+msgstr "Tamaño de icono:"
 
 msgid "Icon: %1"
 msgstr "Icono: %1"
 
+msgid "Icons"
+msgstr "Iconos"
+
+msgid "Image: "
+msgstr "Imagen: "
+
+msgid "Image: none"
+msgstr "Imagen: ninguna"
+
 msgid "Incompatible plugins have been disabled:"
 msgstr "Los plugins incompatibles han sido desactivados:"
-
-msgid "Install dictionary"
-msgstr "Instalar diccionario"
 
 msgid "Installed version is newer than the latest release."
 msgstr "La versión instalada es más reciente que la última versión publicada."
@@ -966,8 +993,20 @@ msgstr "Mantener configuración actual"
 msgid "KOReader: "
 msgstr "KOReader: "
 
+msgid "Label"
+msgstr "Etiqueta"
+
+msgid "Label size:"
+msgstr "Tamaño de etiqueta:"
+
+msgid "Label: "
+msgstr "Etiqueta: "
+
 msgid "Label: %1"
 msgstr "Etiqueta: %1"
+
+msgid "Labels"
+msgstr "Etiquetas"
 
 msgid "Landscape mosaic mode"
 msgstr "Modo mosaico horizontal"
@@ -1017,6 +1056,9 @@ msgstr "Tamaño de fuente de biblioteca"
 msgid "Library View"
 msgstr "Vista de biblioteca"
 
+msgid "Light"
+msgstr "Claro"
+
 msgid "List (basic)"
 msgstr "Lista (básica)"
 
@@ -1055,9 +1097,6 @@ msgstr "Manga"
 
 msgid "Manga folder not found: "
 msgstr "Carpeta de manga no encontrada: "
-
-msgid "Manga tab action: "
-msgstr "Acción de pestaña manga: "
 
 msgid "Match whole words"
 msgstr "Solo palabras completas"
@@ -1110,6 +1149,12 @@ msgstr "Mover a…"
 msgid "Navbar"
 msgstr "Barra de navegación"
 
+msgid "Navbar icon size"
+msgstr "Tamaño de icono de barra de navegación"
+
+msgid "Navbar label size"
+msgstr "Tamaño de etiqueta de barra de navegación"
+
 msgid "Navbar Tabs"
 msgstr "Pestañas de navegación"
 
@@ -1127,9 +1172,6 @@ msgstr "Noticias"
 
 msgid "News folder not found: "
 msgstr "Carpeta de noticias no encontrada: "
-
-msgid "News tab action: "
-msgstr "Acción de pestaña noticias: "
 
 msgid "Next"
 msgstr "Siguiente"
@@ -1185,9 +1227,6 @@ msgstr "Calidez nocturna: "
 msgid "No books found"
 msgstr "No se encontraron libros"
 
-msgid "No buttons"
-msgstr "Sin botones"
-
 msgid "No changelog entries found.\n\nNo releases are available for this channel."
 msgstr "No se encontraron entradas del registro de cambios.\n\nNo hay versiones disponibles para este canal."
 
@@ -1199,6 +1238,9 @@ msgstr "Sin descripción."
 
 msgid "No launchable plugin menus found"
 msgstr "No se encontraron menús de plugins ejecutables"
+
+msgid "No network connection."
+msgstr "Sin conexión de red."
 
 msgid "No network connection. Please connect to Wi-Fi and try again."
 msgstr "Sin conexión de red. Conéctate al Wi-Fi e inténtalo de nuevo."
@@ -1241,9 +1283,6 @@ msgstr "OPDS"
 
 msgid "Open folder"
 msgstr "Abrir carpeta"
-
-msgid "Open folder: "
-msgstr "Abrir carpeta: "
 
 msgid "Open QuickRSS"
 msgstr "Abrir QuickRSS"
@@ -1308,8 +1347,14 @@ msgstr "Récords personales"
 msgid "Please delete the Project: Title plugin from your plugins folder and restart KOReader."
 msgstr "Por favor, elimina el complemento Project: Title de tu carpeta de complementos y reinicia KOReader."
 
+msgid "Plugin"
+msgstr "Plugin"
+
 msgid "Plugin management"
 msgstr "Gestión de plugins"
+
+msgid "Plugin: %1"
+msgstr "Plugin: %1"
 
 msgid "Portrait list mode"
 msgstr "Modo lista vertical"
@@ -1335,6 +1380,9 @@ msgstr "Página anterior"
 msgid "Progress"
 msgstr "Progreso"
 
+msgid "Progress %"
+msgstr "% de progreso"
+
 msgid "Progress bar"
 msgstr "Barra de progreso"
 
@@ -1350,6 +1398,9 @@ msgstr "Puzzle"
 msgid "Quick Settings"
 msgstr "Ajustes rápidos"
 
+msgid "Quick settings button is unavailable"
+msgstr "El botón de ajustes rápidos no está disponible"
+
 msgid "QuickRSS"
 msgstr "QuickRSS"
 
@@ -1364,9 +1415,6 @@ msgstr "Cerrar KOReader"
 
 msgid "Quotes widget"
 msgstr "Widget de citas"
-
-msgid "Rakuyomi"
-msgstr "Rakuyomi"
 
 msgid "Rakuyomi plugin is not installed."
 msgstr "El plugin Rakuyomi no está instalado."
@@ -1416,20 +1464,14 @@ msgstr "Widget de tira de leídos recientemente"
 msgid "Red"
 msgstr "Rojo"
 
+msgid "Reflowable documents (epub, fb2, txt…)"
+msgstr "Documentos reajustables (epub, fb2, txt…)"
+
 msgid "Refresh"
 msgstr "Actualizar"
 
-msgid "Refresh navbar"
-msgstr "Actualizar barra de navegación"
-
 msgid "regular"
 msgstr "normal"
-
-msgid "Regular Oxford English"
-msgstr "Regular Oxford English"
-
-msgid "Regular Oxford English (203 MB)"
-msgstr "Regular Oxford English (203 MB)"
 
 msgid "Release metadata is invalid or incomplete."
 msgstr "Los metadatos de la versión no son válidos o están incompletos."
@@ -1449,14 +1491,8 @@ msgstr "Eliminar del historial"
 msgid "Remove this book from history?"
 msgstr "¿Eliminar este libro del historial?"
 
-msgid "Remove this button"
-msgstr "Eliminar este botón"
-
 msgid "Remove this folder from additional home folders?"
 msgstr "¿Eliminar esta carpeta de las carpetas de inicio adicionales?"
-
-msgid "Remove this tab"
-msgstr "Eliminar esta pestaña"
 
 msgid "Remove: "
 msgstr "Eliminar: "
@@ -1469,6 +1505,21 @@ msgstr "Informar de un error"
 
 msgid "Require hold to toggle buttons"
 msgstr "Mantener pulsado para activar botones"
+
+msgid "Reset"
+msgstr "Restablecer"
+
+msgid "Reset Controls to defaults?"
+msgstr "¿Restablecer Controles a sus valores predeterminados?"
+
+msgid "Reset font"
+msgstr "Restablecer fuente"
+
+msgid "Reset font family and size to default?"
+msgstr "¿Restablecer la familia y el tamaño de fuente predeterminados?"
+
+msgid "Reset to defaults"
+msgstr "Restablecer valores predeterminados"
 
 msgid "Restart"
 msgstr "Reiniciar"
@@ -1509,9 +1560,6 @@ msgstr "Esquinas redondeadas de portadas"
 msgid "Rows"
 msgstr "Filas"
 
-msgid "RSS Reader"
-msgstr "Lector RSS"
-
 msgid "RSS Reader plugin is not installed."
 msgstr "El plugin RSS Reader no está instalado."
 
@@ -1529,6 +1577,12 @@ msgstr "Captura de pantalla"
 
 msgid "Screenshot saved to:"
 msgstr "Captura guardada en:"
+
+msgid "Screenshot timer"
+msgstr "Temporizador de captura"
+
+msgid "Screenshot: %1 s"
+msgstr "Captura: %1 s"
 
 msgid "Scroll bar"
 msgstr "Barra de desplazamiento"
@@ -1602,12 +1656,6 @@ msgstr "Ajustes y actualizaciones"
 msgid "Setup Guide"
 msgstr "Guía de configuración"
 
-msgid "Short Oxford English"
-msgstr "Short Oxford English"
-
-msgid "Short Oxford English (26 MB)"
-msgstr "Short Oxford English (26 MB)"
-
 msgid "Show author"
 msgstr "Mostrar autor"
 
@@ -1643,12 +1691,6 @@ msgstr "Mostrar archivos ocultos"
 
 msgid "Show icons"
 msgstr "Mostrar iconos"
-
-msgid "Show in navbar"
-msgstr "Mostrar en barra de navegación"
-
-msgid "Show in quick settings"
-msgstr "Mostrar en ajustes rápidos"
 
 msgid "Show item count"
 msgstr "Mostrar número de elementos"
@@ -1824,9 +1866,6 @@ msgstr "Sincronizar"
 msgid "Sync all catalogs"
 msgstr "Sincronizar todos los catálogos"
 
-msgid "Tab settings"
-msgstr "Ajustes de pestañas"
-
 msgid "Tabs"
 msgstr "Pestañas"
 
@@ -1854,12 +1893,6 @@ msgstr "El lugar para todos tus libros %1"
 msgid "This change requires a restart to take effect."
 msgstr "Este cambio requiere un reinicio para aplicarse."
 
-msgid "This is a large file and may take a few minutes. Please wait."
-msgstr "Este es un archivo grande y puede tardar unos minutos. Por favor, espera."
-
-msgid "This may take a few minutes. Please wait."
-msgstr "Esto puede tardar unos minutos. Por favor, espera."
-
 msgid "This Month"
 msgstr "Este mes"
 
@@ -1878,6 +1911,9 @@ msgstr "Formato de hora"
 msgid "Time to book end"
 msgstr "Tiempo hasta terminar el libro"
 
+msgid "Timer: %1 s"
+msgstr "Temporizador: %1 s"
+
 msgid "Title"
 msgstr "Título"
 
@@ -1895,12 +1931,6 @@ msgstr "Widget de tira Por leer"
 
 msgid "Today"
 msgstr "Hoy"
-
-msgid "Toggle Lockdown Mode"
-msgstr "Alternar modo de bloqueo"
-
-msgid "Toggle Zen Mode"
-msgstr "Alternar modo Zen"
 
 msgid "Too many requests. Please try again later."
 msgstr "Demasiadas solicitudes. Inténtalo de nuevo más tarde."
@@ -1931,6 +1961,9 @@ msgstr "Activa el modo Zen para reducir KOReader a lo esencial.\n\nElimina el de
 
 msgid "Two rows"
 msgstr "Dos filas"
+
+msgid "Underline"
+msgstr "Subrayado"
 
 msgid "Underline above icon"
 msgstr "Subrayado sobre el icono"
@@ -2027,6 +2060,9 @@ msgstr "Actualizaciones"
 
 msgid "USB"
 msgstr "USB"
+
+msgid "Use border as progress bar"
+msgstr "Usar borde como barra de progreso"
 
 msgid "Use current folder"
 msgstr "Usar carpeta actual"
@@ -2136,6 +2172,36 @@ msgstr "Búsqueda rápida Zen"
 msgid "Zen UI"
 msgstr "Zen UI"
 
+msgid "Zen UI - Authors"
+msgstr "Zen UI - Autores"
+
+msgid "Zen UI - Home"
+msgstr "Zen UI - Inicio"
+
+msgid "Zen UI - Open folder"
+msgstr "Zen UI - Abrir carpeta"
+
+msgid "Zen UI - Series"
+msgstr "Zen UI - Series"
+
+msgid "Zen UI - Tags"
+msgstr "Zen UI - Etiquetas"
+
+msgid "Zen UI - Toggle bottom reader status bar"
+msgstr "Zen UI - Alternar barra de estado inferior del lector"
+
+msgid "Zen UI - Toggle Lockdown Mode"
+msgstr "Zen UI - Alternar modo bloqueo"
+
+msgid "Zen UI - Toggle reader status bars"
+msgstr "Zen UI - Alternar barras de estado del lector"
+
+msgid "Zen UI - Toggle top reader status bar"
+msgstr "Zen UI - Alternar barra de estado superior del lector"
+
+msgid "Zen UI - Toggle Zen Mode"
+msgstr "Zen UI - Alternar modo Zen"
+
 msgid "Zen UI defaults"
 msgstr "Valores predeterminados de Zen UI"
 
@@ -2144,3 +2210,9 @@ msgstr "Zen UI está actualizado."
 
 msgid "Zen UI: "
 msgstr "Zen UI: "
+
+msgid "Zen UI: folder not found: "
+msgstr "Zen UI: carpeta no encontrada: "
+
+msgid "Zen UI: no folder set for this action."
+msgstr "Zen UI: no hay ninguna carpeta configurada para esta acción."

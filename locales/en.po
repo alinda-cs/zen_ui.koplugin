@@ -24,6 +24,9 @@ msgstr "(auto)"
 msgid "(Kindle)"
 msgstr "(Kindle)"
 
+msgid "(none)"
+msgstr "(none)"
+
 msgid "(standard)"
 msgstr "(standard)"
 
@@ -81,6 +84,9 @@ msgstr "Action: %1"
 msgid "Action: (none)"
 msgstr "Action: (none)"
 
+msgid "Active tab"
+msgstr "Active tab"
+
 msgid "Active tab color"
 msgstr "Active tab color"
 
@@ -89,12 +95,6 @@ msgstr "Active tab color: "
 
 msgid "Active tab RGB"
 msgstr "Active tab RGB"
-
-msgid "Active tab styling"
-msgstr "Active tab styling"
-
-msgid "Active tab underline"
-msgstr "Active tab underline"
 
 msgid "Add"
 msgstr "Add"
@@ -111,17 +111,8 @@ msgstr "Add buttons"
 msgid "Add catalog"
 msgstr "Add catalog"
 
-msgid "Add custom button"
-msgstr "Add custom button"
-
 msgid "Add custom buttons for other plugins or actions."
 msgstr "Add custom buttons for other plugins or actions."
-
-msgid "Add custom tab"
-msgstr "Add custom tab"
-
-msgid "Add folder"
-msgstr "Add folder"
 
 msgid "Add folder…"
 msgstr "Add folder…"
@@ -222,6 +213,12 @@ msgstr "avg time/day"
 msgid "Back"
 msgstr "Back"
 
+msgid "Background"
+msgstr "Background"
+
+msgid "Background image must be a JPG or JPEG file."
+msgstr "Background image must be a JPG or JPEG file."
+
 msgid "Badge color RGB"
 msgstr "Badge color RGB"
 
@@ -270,9 +267,6 @@ msgstr "Bold"
 msgid "bold"
 msgstr "bold"
 
-msgid "Bold active tab"
-msgstr "Bold active tab"
-
 msgid "Bold text"
 msgstr "Bold text"
 
@@ -320,9 +314,6 @@ msgstr "Books shown: "
 
 msgid "Books tab label"
 msgstr "Books tab label"
-
-msgid "Books tab label: "
-msgstr "Books tab label: "
 
 msgid "Bottom"
 msgstr "Bottom"
@@ -374,6 +365,9 @@ msgstr "Casual Chess"
 
 msgid "Center"
 msgstr "Center"
+
+msgid "Center align buttons"
+msgstr "Center align buttons"
 
 msgid "Center items"
 msgstr "Center items"
@@ -450,8 +444,8 @@ msgstr "Cloud storage"
 msgid "Collections"
 msgstr "Collections"
 
-msgid "Colored active tab"
-msgstr "Colored active tab"
+msgid "Colored"
+msgstr "Colored"
 
 msgid "Colored status icons"
 msgstr "Colored status icons"
@@ -474,11 +468,17 @@ msgstr "Context Menu"
 msgid "Continue"
 msgstr "Continue"
 
+msgid "Controls"
+msgstr "Controls"
+
 msgid "Copy"
 msgstr "Copy"
 
 msgid "Could not determine update status."
 msgstr "Could not determine update status."
+
+msgid "Could not reach update server."
+msgstr "Could not reach update server."
 
 msgid "Could not reach update server. Check your internet connection."
 msgstr "Could not reach update server. Check your internet connection."
@@ -488,6 +488,9 @@ msgstr "Could not reach update server. Check your internet connection.\n\nUnable
 
 msgid "Could not read release data from update server."
 msgstr "Could not read release data from update server."
+
+msgid "Could not scan Wi-Fi networks. Please try again after waking the device."
+msgstr "Could not scan Wi-Fi networks. Please try again after waking the device."
 
 msgid "CoverBrowser plugin is not enabled, some features will not work correctly."
 msgstr "CoverBrowser plugin is not enabled, some features will not work correctly."
@@ -504,6 +507,9 @@ msgstr "Create this folder and use as home"
 msgid "Crossword"
 msgstr "Crossword"
 
+msgid "Current / total pages"
+msgstr "Current / total pages"
+
 msgid "Current home folder:"
 msgstr "Current home folder:"
 
@@ -519,9 +525,6 @@ msgstr "Custom"
 msgid "Custom button label"
 msgstr "Custom button label"
 
-msgid "Custom buttons"
-msgstr "Custom buttons"
-
 msgid "Custom featured widget"
 msgstr "Custom featured widget"
 
@@ -536,9 +539,6 @@ msgstr "Custom strip widget"
 
 msgid "Custom tab label"
 msgstr "Custom tab label"
-
-msgid "Custom tabs"
-msgstr "Custom tabs"
 
 msgid "Custom text"
 msgstr "Custom text"
@@ -635,6 +635,9 @@ msgstr "Delete this button?"
 
 msgid "Delete this folder and its buttons?"
 msgstr "Delete this folder and its buttons?"
+
+msgid "Delete this tab?"
+msgstr "Delete this tab?"
 
 msgid "Descending"
 msgstr "Descending"
@@ -792,6 +795,9 @@ msgstr "Filter"
 msgid "Filter by status"
 msgstr "Filter by status"
 
+msgid "Finish"
+msgstr "Finish"
+
 msgid "Finished"
 msgstr "Finished"
 
@@ -803,6 +809,9 @@ msgstr "Firmware: "
 
 msgid "First cover image"
 msgstr "First cover image"
+
+msgid "Fixed layout documents (pdf, djvu, pics…)"
+msgstr "Fixed layout documents (pdf, djvu, pics…)"
 
 msgid "Flip LH/RH icon"
 msgstr "Flip LH/RH icon"
@@ -852,6 +861,9 @@ msgstr "Force sync all catalogs"
 msgid "Format: R,G,B (0-255)"
 msgstr "Format: R,G,B (0-255)"
 
+msgid "Frontlight"
+msgstr "Frontlight"
+
 msgid "Gallery"
 msgstr "Gallery"
 
@@ -894,6 +906,12 @@ msgstr "Green"
 msgid "Group book series into folders"
 msgstr "Group book series into folders"
 
+msgid "Gyro"
+msgstr "Gyro"
+
+msgid "Gyroscope"
+msgstr "Gyroscope"
+
 msgid "Hide in CBZ/PDF files"
 msgstr "Hide in CBZ/PDF files"
 
@@ -911,6 +929,9 @@ msgstr "Highlight / Lookup"
 
 msgid "History"
 msgstr "History"
+
+msgid "Hold to arrange"
+msgstr "Hold to arrange"
 
 msgid "Hold to skip"
 msgstr "Hold to skip"
@@ -930,20 +951,26 @@ msgstr "Home page preset"
 msgid "Home tab label"
 msgstr "Home tab label"
 
-msgid "Home tab label: "
-msgstr "Home tab label: "
-
 msgid "Hour"
 msgstr "Hour"
+
+msgid "Icon size:"
+msgstr "Icon size:"
 
 msgid "Icon: %1"
 msgstr "Icon: %1"
 
+msgid "Icons"
+msgstr "Icons"
+
+msgid "Image: "
+msgstr "Image: "
+
+msgid "Image: none"
+msgstr "Image: none"
+
 msgid "Incompatible plugins have been disabled:"
 msgstr "Incompatible plugins have been disabled:"
-
-msgid "Install dictionary"
-msgstr "Install dictionary"
 
 msgid "Installed version is newer than the latest release."
 msgstr "Installed version is newer than the latest release."
@@ -966,8 +993,20 @@ msgstr "Keep existing settings"
 msgid "KOReader: "
 msgstr "KOReader: "
 
+msgid "Label"
+msgstr "Label"
+
+msgid "Label size:"
+msgstr "Label size:"
+
+msgid "Label: "
+msgstr "Label: "
+
 msgid "Label: %1"
 msgstr "Label: %1"
+
+msgid "Labels"
+msgstr "Labels"
 
 msgid "Landscape mosaic mode"
 msgstr "Landscape mosaic mode"
@@ -1017,6 +1056,9 @@ msgstr "Library font size"
 msgid "Library View"
 msgstr "Library View"
 
+msgid "Light"
+msgstr "Light"
+
 msgid "List (basic)"
 msgstr "List (basic)"
 
@@ -1055,9 +1097,6 @@ msgstr "Manga"
 
 msgid "Manga folder not found: "
 msgstr "Manga folder not found: "
-
-msgid "Manga tab action: "
-msgstr "Manga tab action: "
 
 msgid "Match whole words"
 msgstr "Match whole words"
@@ -1110,6 +1149,12 @@ msgstr "Move to…"
 msgid "Navbar"
 msgstr "Navbar"
 
+msgid "Navbar icon size"
+msgstr "Navbar icon size"
+
+msgid "Navbar label size"
+msgstr "Navbar label size"
+
 msgid "Navbar Tabs"
 msgstr "Navbar Tabs"
 
@@ -1127,9 +1172,6 @@ msgstr "News"
 
 msgid "News folder not found: "
 msgstr "News folder not found: "
-
-msgid "News tab action: "
-msgstr "News tab action: "
 
 msgid "Next"
 msgstr "Next"
@@ -1185,9 +1227,6 @@ msgstr "Night warmth: "
 msgid "No books found"
 msgstr "No books found"
 
-msgid "No buttons"
-msgstr "No buttons"
-
 msgid "No changelog entries found.\n\nNo releases are available for this channel."
 msgstr "No changelog entries found.\n\nNo releases are available for this channel."
 
@@ -1199,6 +1238,9 @@ msgstr "No description."
 
 msgid "No launchable plugin menus found"
 msgstr "No launchable plugin menus found"
+
+msgid "No network connection."
+msgstr "No network connection."
 
 msgid "No network connection. Please connect to Wi-Fi and try again."
 msgstr "No network connection. Please connect to Wi-Fi and try again."
@@ -1241,9 +1283,6 @@ msgstr "OPDS"
 
 msgid "Open folder"
 msgstr "Open folder"
-
-msgid "Open folder: "
-msgstr "Open folder: "
 
 msgid "Open QuickRSS"
 msgstr "Open QuickRSS"
@@ -1308,8 +1347,14 @@ msgstr "Personal Records"
 msgid "Please delete the Project: Title plugin from your plugins folder and restart KOReader."
 msgstr "Please delete the Project: Title plugin from your plugins folder and restart KOReader."
 
+msgid "Plugin"
+msgstr "Plugin"
+
 msgid "Plugin management"
 msgstr "Plugin management"
+
+msgid "Plugin: %1"
+msgstr "Plugin: %1"
 
 msgid "Portrait list mode"
 msgstr "Portrait list mode"
@@ -1335,6 +1380,9 @@ msgstr "Previous page"
 msgid "Progress"
 msgstr "Progress"
 
+msgid "Progress %"
+msgstr "Progress %"
+
 msgid "Progress bar"
 msgstr "Progress bar"
 
@@ -1350,6 +1398,9 @@ msgstr "Puzzle"
 msgid "Quick Settings"
 msgstr "Quick Settings"
 
+msgid "Quick settings button is unavailable"
+msgstr "Quick settings button is unavailable"
+
 msgid "QuickRSS"
 msgstr "QuickRSS"
 
@@ -1364,9 +1415,6 @@ msgstr "Quit KOReader"
 
 msgid "Quotes widget"
 msgstr "Quotes widget"
-
-msgid "Rakuyomi"
-msgstr "Rakuyomi"
 
 msgid "Rakuyomi plugin is not installed."
 msgstr "Rakuyomi plugin is not installed."
@@ -1416,20 +1464,14 @@ msgstr "Recently read strip widget"
 msgid "Red"
 msgstr "Red"
 
+msgid "Reflowable documents (epub, fb2, txt…)"
+msgstr "Reflowable documents (epub, fb2, txt…)"
+
 msgid "Refresh"
 msgstr "Refresh"
 
-msgid "Refresh navbar"
-msgstr "Refresh navbar"
-
 msgid "regular"
 msgstr "regular"
-
-msgid "Regular Oxford English"
-msgstr "Regular Oxford English"
-
-msgid "Regular Oxford English (203 MB)"
-msgstr "Regular Oxford English (203 MB)"
 
 msgid "Release metadata is invalid or incomplete."
 msgstr "Release metadata is invalid or incomplete."
@@ -1449,14 +1491,8 @@ msgstr "Remove from history"
 msgid "Remove this book from history?"
 msgstr "Remove this book from history?"
 
-msgid "Remove this button"
-msgstr "Remove this button"
-
 msgid "Remove this folder from additional home folders?"
 msgstr "Remove this folder from additional home folders?"
-
-msgid "Remove this tab"
-msgstr "Remove this tab"
 
 msgid "Remove: "
 msgstr "Remove: "
@@ -1469,6 +1505,21 @@ msgstr "Report a Bug"
 
 msgid "Require hold to toggle buttons"
 msgstr "Require hold to toggle buttons"
+
+msgid "Reset"
+msgstr "Reset"
+
+msgid "Reset Controls to defaults?"
+msgstr "Reset Controls to defaults?"
+
+msgid "Reset font"
+msgstr "Reset font"
+
+msgid "Reset font family and size to default?"
+msgstr "Reset font family and size to default?"
+
+msgid "Reset to defaults"
+msgstr "Reset to defaults"
 
 msgid "Restart"
 msgstr "Restart"
@@ -1509,9 +1560,6 @@ msgstr "Rounded cover corners"
 msgid "Rows"
 msgstr "Rows"
 
-msgid "RSS Reader"
-msgstr "RSS Reader"
-
 msgid "RSS Reader plugin is not installed."
 msgstr "RSS Reader plugin is not installed."
 
@@ -1529,6 +1577,12 @@ msgstr "Screenshot"
 
 msgid "Screenshot saved to:"
 msgstr "Screenshot saved to:"
+
+msgid "Screenshot timer"
+msgstr "Screenshot timer"
+
+msgid "Screenshot: %1 s"
+msgstr "Screenshot: %1 s"
 
 msgid "Scroll bar"
 msgstr "Scroll bar"
@@ -1602,12 +1656,6 @@ msgstr "Settings & Updates"
 msgid "Setup Guide"
 msgstr "Setup Guide"
 
-msgid "Short Oxford English"
-msgstr "Short Oxford English"
-
-msgid "Short Oxford English (26 MB)"
-msgstr "Short Oxford English (26 MB)"
-
 msgid "Show author"
 msgstr "Show author"
 
@@ -1643,12 +1691,6 @@ msgstr "Show hidden files"
 
 msgid "Show icons"
 msgstr "Show icons"
-
-msgid "Show in navbar"
-msgstr "Show in navbar"
-
-msgid "Show in quick settings"
-msgstr "Show in quick settings"
 
 msgid "Show item count"
 msgstr "Show item count"
@@ -1824,9 +1866,6 @@ msgstr "Sync"
 msgid "Sync all catalogs"
 msgstr "Sync all catalogs"
 
-msgid "Tab settings"
-msgstr "Tab settings"
-
 msgid "Tabs"
 msgstr "Tabs"
 
@@ -1854,12 +1893,6 @@ msgstr "The place for all your books %1"
 msgid "This change requires a restart to take effect."
 msgstr "This change requires a restart to take effect."
 
-msgid "This is a large file and may take a few minutes. Please wait."
-msgstr "This is a large file and may take a few minutes. Please wait."
-
-msgid "This may take a few minutes. Please wait."
-msgstr "This may take a few minutes. Please wait."
-
 msgid "This Month"
 msgstr "This Month"
 
@@ -1878,6 +1911,9 @@ msgstr "Time Format"
 msgid "Time to book end"
 msgstr "Time to book end"
 
+msgid "Timer: %1 s"
+msgstr "Timer: %1 s"
+
 msgid "Title"
 msgstr "Title"
 
@@ -1895,12 +1931,6 @@ msgstr "To Be Read strip widget"
 
 msgid "Today"
 msgstr "Today"
-
-msgid "Toggle Lockdown Mode"
-msgstr "Toggle Lockdown Mode"
-
-msgid "Toggle Zen Mode"
-msgstr "Toggle Zen Mode"
 
 msgid "Too many requests. Please try again later."
 msgstr "Too many requests. Please try again later."
@@ -1931,6 +1961,9 @@ msgstr "Turn on Zen mode to strip KOReader down to its bare essentials.\n\nRemov
 
 msgid "Two rows"
 msgstr "Two rows"
+
+msgid "Underline"
+msgstr "Underline"
 
 msgid "Underline above icon"
 msgstr "Underline above icon"
@@ -2027,6 +2060,9 @@ msgstr "Updates"
 
 msgid "USB"
 msgstr "USB"
+
+msgid "Use border as progress bar"
+msgstr "Use border as progress bar"
 
 msgid "Use current folder"
 msgstr "Use current folder"
@@ -2136,6 +2172,36 @@ msgstr "Zen quick lookup"
 msgid "Zen UI"
 msgstr "Zen UI"
 
+msgid "Zen UI - Authors"
+msgstr "Zen UI - Authors"
+
+msgid "Zen UI - Home"
+msgstr "Zen UI - Home"
+
+msgid "Zen UI - Open folder"
+msgstr "Zen UI - Open folder"
+
+msgid "Zen UI - Series"
+msgstr "Zen UI - Series"
+
+msgid "Zen UI - Tags"
+msgstr "Zen UI - Tags"
+
+msgid "Zen UI - Toggle bottom reader status bar"
+msgstr "Zen UI - Toggle bottom reader status bar"
+
+msgid "Zen UI - Toggle Lockdown Mode"
+msgstr "Zen UI - Toggle Lockdown Mode"
+
+msgid "Zen UI - Toggle reader status bars"
+msgstr "Zen UI - Toggle reader status bars"
+
+msgid "Zen UI - Toggle top reader status bar"
+msgstr "Zen UI - Toggle top reader status bar"
+
+msgid "Zen UI - Toggle Zen Mode"
+msgstr "Zen UI - Toggle Zen Mode"
+
 msgid "Zen UI defaults"
 msgstr "Zen UI defaults"
 
@@ -2144,3 +2210,9 @@ msgstr "Zen UI is up to date."
 
 msgid "Zen UI: "
 msgstr "Zen UI: "
+
+msgid "Zen UI: folder not found: "
+msgstr "Zen UI: folder not found: "
+
+msgid "Zen UI: no folder set for this action."
+msgstr "Zen UI: no folder set for this action."

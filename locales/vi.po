@@ -24,6 +24,9 @@ msgstr "(tự động)"
 msgid "(Kindle)"
 msgstr "(Kindle)"
 
+msgid "(none)"
+msgstr "(không có)"
+
 msgid "(standard)"
 msgstr "(tiêu chuẩn)"
 
@@ -81,6 +84,9 @@ msgstr "Hành động: %1"
 msgid "Action: (none)"
 msgstr "Hành động: (none)"
 
+msgid "Active tab"
+msgstr "Tab đang hoạt động"
+
 msgid "Active tab color"
 msgstr "Màu tab hoạt động"
 
@@ -89,12 +95,6 @@ msgstr "Màu tab hoạt động: "
 
 msgid "Active tab RGB"
 msgstr "RGB tab hoạt động"
-
-msgid "Active tab styling"
-msgstr "Kiểu dáng tab hoạt động"
-
-msgid "Active tab underline"
-msgstr "Dòng gạch chân tab hoạt động"
 
 msgid "Add"
 msgstr "Thêm"
@@ -111,17 +111,8 @@ msgstr "Thêm nút bấm"
 msgid "Add catalog"
 msgstr "Thêm danh mục"
 
-msgid "Add custom button"
-msgstr "Thêm nút tùy chỉnh"
-
 msgid "Add custom buttons for other plugins or actions."
 msgstr "Thêm nút tùy chỉnh cho các plugin hoặc hành động khác."
-
-msgid "Add custom tab"
-msgstr "Thêm tab tùy chỉnh"
-
-msgid "Add folder"
-msgstr "Thêm thư mục"
 
 msgid "Add folder…"
 msgstr "Thêm thư mục…"
@@ -222,6 +213,12 @@ msgstr "trung bình thời gian/ngày"
 msgid "Back"
 msgstr "Quay lại"
 
+msgid "Background"
+msgstr "Nền"
+
+msgid "Background image must be a JPG or JPEG file."
+msgstr "Ảnh nền phải là tệp JPG hoặc JPEG."
+
 msgid "Badge color RGB"
 msgstr "Màu RGB của huy hiệu"
 
@@ -270,9 +267,6 @@ msgstr "In đậm"
 msgid "bold"
 msgstr "đậm"
 
-msgid "Bold active tab"
-msgstr "Tab hoạt động in đậm"
-
 msgid "Bold text"
 msgstr "Văn bản in đậm"
 
@@ -320,9 +314,6 @@ msgstr "Sách hiển thị: "
 
 msgid "Books tab label"
 msgstr "Nhãn tab Sách"
-
-msgid "Books tab label: "
-msgstr "Nhãn tab Sách: "
 
 msgid "Bottom"
 msgstr "Đáy"
@@ -374,6 +365,9 @@ msgstr "Cờ vua thông thường"
 
 msgid "Center"
 msgstr "Trung tâm"
+
+msgid "Center align buttons"
+msgstr "Căn giữa các nút"
 
 msgid "Center items"
 msgstr "Các mục ở trung tâm"
@@ -450,8 +444,8 @@ msgstr "Lưu đám mây"
 msgid "Collections"
 msgstr "Bộ sưu tập"
 
-msgid "Colored active tab"
-msgstr "Tab hoạt động có màu"
+msgid "Colored"
+msgstr "Có màu"
 
 msgid "Colored status icons"
 msgstr "Biểu tượng trạng thái có màu"
@@ -474,11 +468,17 @@ msgstr "Menu ngữ cảnh"
 msgid "Continue"
 msgstr "Tiếp tục"
 
+msgid "Controls"
+msgstr "Điều khiển"
+
 msgid "Copy"
 msgstr "Sao chép"
 
 msgid "Could not determine update status."
 msgstr "Không thể xác định trạng thái cập nhật."
+
+msgid "Could not reach update server."
+msgstr "Không thể kết nối tới máy chủ cập nhật."
 
 msgid "Could not reach update server. Check your internet connection."
 msgstr "Không thể kết nối đến máy chủ cập nhật. Kiểm tra kết nối internet của bạn."
@@ -488,6 +488,9 @@ msgstr "Không thể kết nối tới máy chủ cập nhật. Hãy kiểm tra 
 
 msgid "Could not read release data from update server."
 msgstr "Không thể đọc dữ liệu bản phát hành từ máy chủ cập nhật."
+
+msgid "Could not scan Wi-Fi networks. Please try again after waking the device."
+msgstr "Không thể quét mạng Wi-Fi. Vui lòng thử lại sau khi đánh thức thiết bị."
 
 msgid "CoverBrowser plugin is not enabled, some features will not work correctly."
 msgstr "Plugin CoverBrowser không được kích hoạt, một số tính năng sẽ không hoạt động đúng cách."
@@ -504,6 +507,9 @@ msgstr "Tạo thư mục này và sử dụng làm thư mục chính"
 msgid "Crossword"
 msgstr "Đố chữ"
 
+msgid "Current / total pages"
+msgstr "Trang hiện tại / tổng số"
+
 msgid "Current home folder:"
 msgstr "Thư mục home hiện tại:"
 
@@ -519,9 +525,6 @@ msgstr "Tùy chỉnh"
 msgid "Custom button label"
 msgstr "Nhãn nút tùy chỉnh"
 
-msgid "Custom buttons"
-msgstr "Nút tùy chỉnh"
-
 msgid "Custom featured widget"
 msgstr "Widget nổi bật tùy chỉnh"
 
@@ -536,9 +539,6 @@ msgstr "Widget dải tùy chỉnh"
 
 msgid "Custom tab label"
 msgstr "Nhãn tab tùy chỉnh"
-
-msgid "Custom tabs"
-msgstr "Tab tùy chỉnh"
 
 msgid "Custom text"
 msgstr "Văn bản tùy chỉnh"
@@ -635,6 +635,9 @@ msgstr "Xóa nút này?"
 
 msgid "Delete this folder and its buttons?"
 msgstr "Xóa thư mục này và các nút của nó?"
+
+msgid "Delete this tab?"
+msgstr "Xóa tab này?"
 
 msgid "Descending"
 msgstr "Giảm dần"
@@ -792,6 +795,9 @@ msgstr "Lọc"
 msgid "Filter by status"
 msgstr "Lọc theo trạng thái"
 
+msgid "Finish"
+msgstr "Hoàn tất"
+
 msgid "Finished"
 msgstr "Hoàn thành"
 
@@ -803,6 +809,9 @@ msgstr "Phần mềm firmware: "
 
 msgid "First cover image"
 msgstr "Ảnh bìa đầu tiên"
+
+msgid "Fixed layout documents (pdf, djvu, pics…)"
+msgstr "Tài liệu bố cục cố định (pdf, djvu, pics…)"
 
 msgid "Flip LH/RH icon"
 msgstr "Lật biểu tượng LH/RH"
@@ -852,6 +861,9 @@ msgstr "Đồng bộ hóa bắt buộc tất cả danh mục"
 msgid "Format: R,G,B (0-255)"
 msgstr "Định dạng: R,G,B (0-255)"
 
+msgid "Frontlight"
+msgstr "Đèn trước"
+
 msgid "Gallery"
 msgstr "Thư viện ảnh"
 
@@ -894,6 +906,12 @@ msgstr "Xanh"
 msgid "Group book series into folders"
 msgstr "Nhóm bộ sách vào thư mục"
 
+msgid "Gyro"
+msgstr "Con quay hồi chuyển"
+
+msgid "Gyroscope"
+msgstr "Con quay hồi chuyển"
+
 msgid "Hide in CBZ/PDF files"
 msgstr "Ẩn trong tệp CBZ/PDF"
 
@@ -901,7 +919,7 @@ msgid "Hide list borders"
 msgstr "Ẩn viền danh sách"
 
 msgid "Hide reader actions in library"
-msgstr ""
+msgstr "Ẩn hành động đọc trong thư viện"
 
 msgid "Hide up folder"
 msgstr "Ẩn thư mục lên"
@@ -911,6 +929,9 @@ msgstr "Đánh dấu / Tìm kiếm"
 
 msgid "History"
 msgstr "Lịch sử"
+
+msgid "Hold to arrange"
+msgstr "Giữ để sắp xếp"
 
 msgid "Hold to skip"
 msgstr "Giữ để bỏ qua"
@@ -930,20 +951,26 @@ msgstr "Mẫu bảng điều khiển"
 msgid "Home tab label"
 msgstr "Nhãn tab Trang chủ"
 
-msgid "Home tab label: "
-msgstr "Nhãn tab Trang chủ: "
-
 msgid "Hour"
 msgstr "Giờ"
+
+msgid "Icon size:"
+msgstr "Kích thước biểu tượng:"
 
 msgid "Icon: %1"
 msgstr "Biểu tượng: %1"
 
+msgid "Icons"
+msgstr "Biểu tượng"
+
+msgid "Image: "
+msgstr "Ảnh: "
+
+msgid "Image: none"
+msgstr "Ảnh: không có"
+
 msgid "Incompatible plugins have been disabled:"
 msgstr "Các plugin không tương thích đã bị vô hiệu hóa:"
-
-msgid "Install dictionary"
-msgstr "Cài đặt từ điển"
 
 msgid "Installed version is newer than the latest release."
 msgstr "Phiên bản đã cài mới hơn bản phát hành mới nhất."
@@ -966,8 +993,20 @@ msgstr "Giữ cài đặt hiện có"
 msgid "KOReader: "
 msgstr "KOReader: "
 
+msgid "Label"
+msgstr "Nhãn"
+
+msgid "Label size:"
+msgstr "Kích thước nhãn:"
+
+msgid "Label: "
+msgstr "Nhãn: "
+
 msgid "Label: %1"
 msgstr "Nhãn: %1"
+
+msgid "Labels"
+msgstr "Nhãn"
 
 msgid "Landscape mosaic mode"
 msgstr "Chế độ ghép ảnh ngang"
@@ -1017,6 +1056,9 @@ msgstr "Cỡ chữ thư viện"
 msgid "Library View"
 msgstr "Xem thư viện"
 
+msgid "Light"
+msgstr "Sáng"
+
 msgid "List (basic)"
 msgstr "Danh sách (cơ bản)"
 
@@ -1055,9 +1097,6 @@ msgstr "Manga"
 
 msgid "Manga folder not found: "
 msgstr "Thư mục Manga không tìm thấy: "
-
-msgid "Manga tab action: "
-msgstr "Hành động tab Manga: "
 
 msgid "Match whole words"
 msgstr "Khớp cả từ"
@@ -1110,6 +1149,12 @@ msgstr "Di chuyển đến…"
 msgid "Navbar"
 msgstr "Thanh điều hướng"
 
+msgid "Navbar icon size"
+msgstr "Kích thước biểu tượng thanh điều hướng"
+
+msgid "Navbar label size"
+msgstr "Kích thước nhãn thanh điều hướng"
+
 msgid "Navbar Tabs"
 msgstr "Tab thanh điều hướng"
 
@@ -1127,9 +1172,6 @@ msgstr "Tin tức"
 
 msgid "News folder not found: "
 msgstr "Không tìm thấy thư mục tin tức: "
-
-msgid "News tab action: "
-msgstr "Hành động tab tin tức: "
 
 msgid "Next"
 msgstr "Tiếp theo"
@@ -1185,9 +1227,6 @@ msgstr "Sự ấm áp ban đêm: "
 msgid "No books found"
 msgstr "Không tìm thấy sách"
 
-msgid "No buttons"
-msgstr "Không có nút bấm"
-
 msgid "No changelog entries found.\n\nNo releases are available for this channel."
 msgstr "Không tìm thấy mục nào trong nhật ký thay đổi.\n\nKhông có bản phát hành nào cho kênh này."
 
@@ -1199,6 +1238,9 @@ msgstr "Không mô tả."
 
 msgid "No launchable plugin menus found"
 msgstr "Không tìm thấy menu plugin nào có thể khởi chạy"
+
+msgid "No network connection."
+msgstr "Không có kết nối mạng."
 
 msgid "No network connection. Please connect to Wi-Fi and try again."
 msgstr "Không có kết nối mạng. Vui lòng kết nối Wi-Fi và thử lại."
@@ -1241,9 +1283,6 @@ msgstr "OPDS"
 
 msgid "Open folder"
 msgstr "Mở thư mục"
-
-msgid "Open folder: "
-msgstr "Mở thư mục: "
 
 msgid "Open QuickRSS"
 msgstr "Mở QuickRSS"
@@ -1308,8 +1347,14 @@ msgstr "Bản ghi cá nhân"
 msgid "Please delete the Project: Title plugin from your plugins folder and restart KOReader."
 msgstr "Vui lòng xóa plugin Project: Title từ thư mục plugins của bạn và khởi động lại KOReader."
 
+msgid "Plugin"
+msgstr "Plugin"
+
 msgid "Plugin management"
 msgstr "Quản lý plugin"
+
+msgid "Plugin: %1"
+msgstr "Plugin: %1"
 
 msgid "Portrait list mode"
 msgstr "Chế độ danh sách dọc"
@@ -1335,6 +1380,9 @@ msgstr "Trang trước"
 msgid "Progress"
 msgstr "Tiến trình"
 
+msgid "Progress %"
+msgstr "Tiến độ %"
+
 msgid "Progress bar"
 msgstr "Thanh tiến độ"
 
@@ -1350,6 +1398,9 @@ msgstr "Đốm"
 msgid "Quick Settings"
 msgstr "Cài đặt nhanh"
 
+msgid "Quick settings button is unavailable"
+msgstr "Nút cài đặt nhanh không khả dụng"
+
 msgid "QuickRSS"
 msgstr "QuickRSS"
 
@@ -1364,9 +1415,6 @@ msgstr "Thoát KOReader"
 
 msgid "Quotes widget"
 msgstr "Widget trích dẫn"
-
-msgid "Rakuyomi"
-msgstr "Rakuyomi"
 
 msgid "Rakuyomi plugin is not installed."
 msgstr "Plugin Rakuyomi chưa được cài đặt."
@@ -1416,20 +1464,14 @@ msgstr "Widget dải đã đọc gần đây"
 msgid "Red"
 msgstr "Đỏ"
 
+msgid "Reflowable documents (epub, fb2, txt…)"
+msgstr "Tài liệu có thể dàn lại (epub, fb2, txt…)"
+
 msgid "Refresh"
 msgstr "Làm mới"
 
-msgid "Refresh navbar"
-msgstr "Làm mới thanh điều hướng"
-
 msgid "regular"
 msgstr "bình thường"
-
-msgid "Regular Oxford English"
-msgstr "Tiếng Anh Oxford thông thường"
-
-msgid "Regular Oxford English (203 MB)"
-msgstr "Tiếng Anh Oxford thông thường (203 MB)"
 
 msgid "Release metadata is invalid or incomplete."
 msgstr "Siêu dữ liệu bản phát hành không hợp lệ hoặc chưa đầy đủ."
@@ -1449,14 +1491,8 @@ msgstr "Xóa khỏi lịch sử"
 msgid "Remove this book from history?"
 msgstr "Xóa sách này khỏi lịch sử?"
 
-msgid "Remove this button"
-msgstr "Xóa nút này"
-
 msgid "Remove this folder from additional home folders?"
 msgstr "Xóa thư mục này khỏi các thư mục trang chủ bổ sung?"
-
-msgid "Remove this tab"
-msgstr "Xóa tab này"
 
 msgid "Remove: "
 msgstr "Xóa: "
@@ -1469,6 +1505,21 @@ msgstr "Báo cáo lỗi"
 
 msgid "Require hold to toggle buttons"
 msgstr "Yêu cầu giữ để chuyển đổi nút"
+
+msgid "Reset"
+msgstr "Đặt lại"
+
+msgid "Reset Controls to defaults?"
+msgstr "Đặt lại Điều khiển về mặc định?"
+
+msgid "Reset font"
+msgstr "Đặt lại phông chữ"
+
+msgid "Reset font family and size to default?"
+msgstr "Đặt lại họ phông chữ và kích thước về mặc định?"
+
+msgid "Reset to defaults"
+msgstr "Đặt lại về mặc định"
 
 msgid "Restart"
 msgstr "Khởi động lại"
@@ -1509,9 +1560,6 @@ msgstr "Góc bo bìa"
 msgid "Rows"
 msgstr "Hàng"
 
-msgid "RSS Reader"
-msgstr "Trình đọc RSS"
-
 msgid "RSS Reader plugin is not installed."
 msgstr "Plugin Trình đọc RSS chưa được cài đặt."
 
@@ -1529,6 +1577,12 @@ msgstr "Chụp màn hình"
 
 msgid "Screenshot saved to:"
 msgstr "Ảnh chụp màn hình đã lưu vào:"
+
+msgid "Screenshot timer"
+msgstr "Hẹn giờ chụp màn hình"
+
+msgid "Screenshot: %1 s"
+msgstr "Ảnh chụp màn hình: %1 s"
 
 msgid "Scroll bar"
 msgstr "Thanh cuộn"
@@ -1602,12 +1656,6 @@ msgstr "Cài đặt & Cập nhật"
 msgid "Setup Guide"
 msgstr "Hướng dẫn cài đặt"
 
-msgid "Short Oxford English"
-msgstr "Tiếng Anh Oxford ngắn"
-
-msgid "Short Oxford English (26 MB)"
-msgstr "Tiếng Anh Oxford ngắn (26 MB)"
-
 msgid "Show author"
 msgstr "Hiển thị tác giả"
 
@@ -1643,12 +1691,6 @@ msgstr "Hiển thị các file ẩn"
 
 msgid "Show icons"
 msgstr "Hiển thị biểu tượng"
-
-msgid "Show in navbar"
-msgstr "Hiển thị trên thanh điều hướng"
-
-msgid "Show in quick settings"
-msgstr "Hiển thị trong cài đặt nhanh"
 
 msgid "Show item count"
 msgstr "Hiển thị số mục"
@@ -1824,9 +1866,6 @@ msgstr "Đồng bộ"
 msgid "Sync all catalogs"
 msgstr "Đồng bộ tất cả các danh mục"
 
-msgid "Tab settings"
-msgstr "Cài đặt tab"
-
 msgid "Tabs"
 msgstr "Tab"
 
@@ -1854,12 +1893,6 @@ msgstr "Nơi lưu trữ tất cả sách của bạn %1"
 msgid "This change requires a restart to take effect."
 msgstr "Thay đổi này yêu cầu khởi động lại để có hiệu lực."
 
-msgid "This is a large file and may take a few minutes. Please wait."
-msgstr "Đây là một tệp lớn và có thể mất vài phút. Vui lòng chờ."
-
-msgid "This may take a few minutes. Please wait."
-msgstr "Điều này có thể mất vài phút. Vui lòng chờ."
-
 msgid "This Month"
 msgstr "Tháng này"
 
@@ -1878,6 +1911,9 @@ msgstr "Định dạng thời gian"
 msgid "Time to book end"
 msgstr "Thời gian đến hết sách"
 
+msgid "Timer: %1 s"
+msgstr "Hẹn giờ: %1 s"
+
 msgid "Title"
 msgstr "Tiêu đề"
 
@@ -1895,12 +1931,6 @@ msgstr "Widget dải Đọc Sau"
 
 msgid "Today"
 msgstr "Hôm nay"
-
-msgid "Toggle Lockdown Mode"
-msgstr "Bật/tắt chế độ khóa chặt"
-
-msgid "Toggle Zen Mode"
-msgstr "Bật/tắt chế độ Zen"
 
 msgid "Too many requests. Please try again later."
 msgstr "Quá nhiều yêu cầu. Vui lòng thử lại sau."
@@ -1931,6 +1961,9 @@ msgstr "Bật chế độ Zen để tinh chỉnh KOReader về những tính nă
 
 msgid "Two rows"
 msgstr "Hai hàng"
+
+msgid "Underline"
+msgstr "Gạch chân"
 
 msgid "Underline above icon"
 msgstr "Gạch chân trên biểu tượng"
@@ -2027,6 +2060,9 @@ msgstr "Cập nhật"
 
 msgid "USB"
 msgstr "USB"
+
+msgid "Use border as progress bar"
+msgstr "Dùng viền làm thanh tiến độ"
 
 msgid "Use current folder"
 msgstr "Sử dụng thư mục hiện tại"
@@ -2136,6 +2172,36 @@ msgstr "Tra cứu nhanh Zen"
 msgid "Zen UI"
 msgstr "Zen UI"
 
+msgid "Zen UI - Authors"
+msgstr "Zen UI - Tác giả"
+
+msgid "Zen UI - Home"
+msgstr "Zen UI - Trang chủ"
+
+msgid "Zen UI - Open folder"
+msgstr "Zen UI - Mở thư mục"
+
+msgid "Zen UI - Series"
+msgstr "Zen UI - Bộ sách"
+
+msgid "Zen UI - Tags"
+msgstr "Zen UI - Thẻ"
+
+msgid "Zen UI - Toggle bottom reader status bar"
+msgstr "Zen UI - Bật/tắt thanh trạng thái dưới khi đọc"
+
+msgid "Zen UI - Toggle Lockdown Mode"
+msgstr "Zen UI - Bật/tắt chế độ khóa"
+
+msgid "Zen UI - Toggle reader status bars"
+msgstr "Zen UI - Bật/tắt các thanh trạng thái khi đọc"
+
+msgid "Zen UI - Toggle top reader status bar"
+msgstr "Zen UI - Bật/tắt thanh trạng thái trên khi đọc"
+
+msgid "Zen UI - Toggle Zen Mode"
+msgstr "Zen UI - Bật/tắt chế độ Zen"
+
 msgid "Zen UI defaults"
 msgstr "Cài đặt mặc định của Zen UI"
 
@@ -2144,3 +2210,9 @@ msgstr "Zen UI đã được cập nhật."
 
 msgid "Zen UI: "
 msgstr "Zen UI: "
+
+msgid "Zen UI: folder not found: "
+msgstr "Zen UI: không tìm thấy thư mục: "
+
+msgid "Zen UI: no folder set for this action."
+msgstr "Zen UI: chưa đặt thư mục cho hành động này."
