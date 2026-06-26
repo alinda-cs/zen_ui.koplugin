@@ -445,7 +445,6 @@ local function apply_status_bar()
         -- Detect whether we are inside a subfolder of, or at, the home directory
         local in_subfolder = false
         local folder_name = nil
-        local g_settings = rawget(_G, "G_reader_settings")
         local home_dir = paths.getHomeDir()
         if home_dir and path then
             local norm_path = paths.normPath(path:gsub("/$", ""))
@@ -465,12 +464,7 @@ local function apply_status_bar()
             in_subfolder = true
         end
 
-        -- Respect KOReader's "Lock home folder" setting; zen mode always treats home as locked
-        local is_zen_mode = zen_plugin.config
-            and type(zen_plugin.config.features) == "table"
-            and zen_plugin.config.features.zen_mode == true
-        local home_locked = is_zen_mode
-            or (g_settings ~= nil and g_settings:isTrue("lock_home_folder"))
+        local home_locked = paths.isHomeLocked()
 
         -- Show back chevron in subfolders always; everywhere when home is not locked.
         -- path must be non-nil — callers like collections pass nil for non-filesystem views.

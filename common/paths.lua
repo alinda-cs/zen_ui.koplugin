@@ -73,4 +73,32 @@ function M.isInHomeDir(path)
     return false
 end
 
+function M.getHomeLockMode()
+    local cfg = require("config/manager").get()
+    if type(cfg) ~= "table" then
+        local plugin = rawget(_G, "__ZEN_UI_PLUGIN")
+        cfg = plugin and plugin.config
+    end
+    local browser_cfg = type(cfg) == "table" and cfg.browser_hide_up_folder
+    local mode = type(browser_cfg) == "table" and browser_cfg.lock_home_folder
+    if mode == "off" or mode == "zen" or mode == "on" then
+        return mode
+    end
+    return "zen"
+end
+
+function M.isHomeLocked()
+    local mode = M.getHomeLockMode()
+    if mode == "on" then return true end
+    if mode == "off" then return false end
+
+    local cfg = require("config/manager").get()
+    if type(cfg) ~= "table" then
+        local plugin = rawget(_G, "__ZEN_UI_PLUGIN")
+        cfg = plugin and plugin.config
+    end
+    local features = type(cfg) == "table" and cfg.features
+    return type(features) == "table" and features.zen_mode == true
+end
+
 return M

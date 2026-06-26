@@ -71,6 +71,21 @@ local function normalize_renamed_keys(cfg)
         cfg.browser_hide_up_folder = cfg.browser_up_folder
         changed = true
     end
+    if type(cfg.browser_hide_up_folder) ~= "table" then
+        cfg.browser_hide_up_folder = {}
+        changed = true
+    end
+    local lock_mode = cfg.browser_hide_up_folder.lock_home_folder
+    if lock_mode == true then
+        cfg.browser_hide_up_folder.lock_home_folder = "on"
+        changed = true
+    elseif lock_mode == false then
+        cfg.browser_hide_up_folder.lock_home_folder = "off"
+        changed = true
+    elseif lock_mode ~= "off" and lock_mode ~= "zen" and lock_mode ~= "on" then
+        cfg.browser_hide_up_folder.lock_home_folder = "zen"
+        changed = true
+    end
 
     -- Always-on features: no user toggle in Zen settings.
     cfg.features.browser_folder_cover = true
@@ -634,6 +649,19 @@ end
 
 function M.load()
     local stored, migrated_file_config = load_raw_config()
+    local migrated_home_lock = false
+    local stored_hide_up = type(stored) == "table" and rawget(stored, "browser_hide_up_folder")
+    if type(stored_hide_up) ~= "table" or stored_hide_up.lock_home_folder == nil then
+        local g = rawget(_G, "G_reader_settings")
+        if g and g.isTrue and g:isTrue("lock_home_folder") then
+            if type(stored_hide_up) ~= "table" then
+                stored.browser_hide_up_folder = {}
+                stored_hide_up = stored.browser_hide_up_folder
+            end
+            stored_hide_up.lock_home_folder = "on"
+            migrated_home_lock = true
+        end
+    end
 
     -- Existing install that predates the quickstart feature: stored config is
     -- non-empty but lacks quickstart_shown_for_version. deepmerge would fill
@@ -662,7 +690,7 @@ function M.load()
     cfg, migrated_changed_defaults = migrate_changed_defaults(cfg)
     if migrated_renamed or migrated_group or migrated_updater or migrated_fbc or migrated_bim
             or migrated_reader_backup or migrated_qs or migrated_file_config
-            or migrated_settings_files or migrated_changed_defaults then
+            or migrated_settings_files or migrated_changed_defaults or migrated_home_lock then
         M.save(cfg)
     end
     if migrated_file_config then

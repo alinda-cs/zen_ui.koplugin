@@ -52,13 +52,9 @@ local function apply_browser_hide_up_folder()
             return item_table
         end
 
-        -- Force-hide up-folder at home root when zen mode or KOReader's lock_home_folder is active
+        -- Force-hide up-folder at home root when the configured lock mode is active.
         local at_home_root = paths.isHomeRoot(path)
-        local is_zen = type(zen_plugin.config.features) == "table"
-            and zen_plugin.config.features.zen_mode == true
-        local g_settings = rawget(_G, "G_reader_settings")
-        local force_hide_at_home = at_home_root
-            and (is_zen or (g_settings ~= nil and g_settings:isTrue("lock_home_folder")))
+        local force_hide_at_home = at_home_root and paths.isHomeLocked()
 
         local enabled = is_enabled()
         if not enabled and not force_hide_at_home then

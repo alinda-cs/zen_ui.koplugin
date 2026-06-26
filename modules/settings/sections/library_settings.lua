@@ -127,6 +127,7 @@ function M.build(ctx)
     local config        = ctx.config
     local plugin        = ctx.plugin
     local save_and_apply = ctx.save_and_apply
+    local refresh_filechooser
 
     local function fbc()
         if type(config.browser_folder_cover) ~= "table" then
@@ -142,6 +143,23 @@ function M.build(ctx)
         plugin:saveConfig()
         local ui = require("apps/filemanager/filemanager").instance
         if ui and ui.file_chooser then ui.file_chooser:updateItems() end
+    end
+    local function get_home_lock_mode()
+        local cfg = config.browser_hide_up_folder
+        local mode = type(cfg) == "table" and cfg.lock_home_folder
+        if mode == "off" or mode == "zen" or mode == "on" then
+            return mode
+        end
+        return "zen"
+    end
+    local function set_home_lock_mode(mode)
+        if type(config.browser_hide_up_folder) ~= "table" then
+            config.browser_hide_up_folder = {}
+        end
+        config.browser_hide_up_folder.lock_home_folder = mode
+        G_reader_settings:saveSetting("lock_home_folder", mode == "on")
+        plugin:saveConfig()
+        refresh_filechooser()
     end
 
     local items = {}
@@ -891,7 +909,7 @@ function M.build(ctx)
         }
     end
 
-    local function refresh_filechooser()
+    refresh_filechooser = function()
         local ok, FileManager = pcall(require, "apps/filemanager/filemanager")
         local fm = ok and FileManager and FileManager.instance
         if fm and fm.file_chooser and type(fm.file_chooser.refreshPath) == "function" then
@@ -1163,13 +1181,26 @@ function M.build(ctx)
                 enabled_func = function()
                     return G_reader_settings:has("home_dir")
                 end,
-                checked_func = function()
-                    return G_reader_settings:isTrue("lock_home_folder")
-                end,
-                callback = function()
-                    G_reader_settings:flipNilOrFalse("lock_home_folder")
-                    refresh_filechooser()
-                end,
+                sub_item_table = {
+                    {
+                        text = _("Off"),
+                        radio = true,
+                        checked_func = function() return get_home_lock_mode() == "off" end,
+                        callback = function() set_home_lock_mode("off") end,
+                    },
+                    {
+                        text = _("Only in Zen mode"),
+                        radio = true,
+                        checked_func = function() return get_home_lock_mode() == "zen" end,
+                        callback = function() set_home_lock_mode("zen") end,
+                    },
+                    {
+                        text = _("On"),
+                        radio = true,
+                        checked_func = function() return get_home_lock_mode() == "on" end,
+                        callback = function() set_home_lock_mode("on") end,
+                    },
+                },
             },
             {
                 text = _("Additional home folders"),

@@ -146,6 +146,7 @@ local defaults = {
     },
     browser_hide_up_folder = {
         hide_up_folder = true,
+        lock_home_folder = "zen", -- "off" | "zen" | "on"
     },
     library_background = {
         enabled = false,
