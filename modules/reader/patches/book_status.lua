@@ -88,9 +88,14 @@ local function apply_book_status()
         -- normal Lua method dispatch without duplicating genBookInfoGroup.
         -- genBookInfoGroup already has a large top gap (height * 0.2 ≈ 55px+) so the
         -- slightly taller content just shifts title/author up slightly — no overflow.
+        -- "Open next file" is only offered by KOReader when the folder collate
+        -- order supports sequential navigation (not by access/date).
+        local collate = G_reader_settings:readSetting("collate")
+        local next_file_enabled = collate ~= "access" and collate ~= "date"
+
         local restart_book_btn = Button:new{
             text = _("Restart Book"),
-            width = math.floor(width * 0.55),
+            width = next_file_enabled and math.floor(width * 0.27) or math.floor(width * 0.55),
             show_parent = self,
             callback = function()
                 local ui = self.ui
@@ -103,14 +108,46 @@ local function apply_book_status()
                 end)
             end,
         }
+        local next_file_btn
+        if next_file_enabled then
+            next_file_btn = Button:new{
+                text = _("Open next file"),
+                width = math.floor(width * 0.27),
+                preselect = true, -- inverts colors: black bg, white text
+                show_parent = self,
+                callback = function()
+                    local ui = self.ui
+                    if self.updated then
+                        ui.doc_settings:flush()
+                    end
+                    UIManager:close(self)
+                    UIManager:scheduleIn(0, function()
+                        if ui and ui.status then
+                            ui.status:onOpenNextOrPreviousFileInFolder()
+                        end
+                    end)
+                end,
+            }
+        end
         local orig_generateRateGroup = BookStatusWidget.generateRateGroup
         self.generateRateGroup = function(s, w, h, rating)
             local stars = orig_generateRateGroup(s, w, h, rating)
             local btn_h = restart_book_btn:getSize().h
+            local btn_row
+            if next_file_btn then
+                btn_row = HorizontalGroup:new{
+                    align = "center",
+                    restart_book_btn,
+                    HorizontalSpan:new{ width = Screen:scaleBySize(8) },
+                    next_file_btn,
+                }
+            else
+                btn_row = restart_book_btn
+            end
             return VerticalGroup:new{
                 CenterContainer:new{
                     dimen = Geom:new{ w = w, h = btn_h },
-                    restart_book_btn,
+                    btn_row,
                 },
                 VerticalSpan:new{ width = Screen:scaleBySize(6) },
                 stars,
