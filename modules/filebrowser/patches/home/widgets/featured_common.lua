@@ -96,7 +96,7 @@ local function render_progress(percent, w, h)
         paintTo = function(_self, bb, x, y)
             paint_pill(bb, x, y, w, h, Blitbuffer.COLOR_LIGHT_GRAY)
             if fill_w > 0 then
-                paint_pill(bb, x, y, math.min(w, math.max(fill_w, h)), h, Blitbuffer.COLOR_DARK_GRAY)
+                paint_pill(bb, x, y, math.min(w, math.max(fill_w, h)), h, Blitbuffer.COLOR_GRAY_5)
             end
         end,
     }

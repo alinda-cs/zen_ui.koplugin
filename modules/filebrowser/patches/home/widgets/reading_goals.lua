@@ -57,7 +57,7 @@ local function progress_bar(width, current, target, bar_h)
         paintTo = function(_self, bb, x, y)
             paint_pill(bb, x, y, bar_w, bar_h, Blitbuffer.COLOR_LIGHT_GRAY)
             if fill_w > 0 then
-                paint_pill(bb, x, y, fill_w, bar_h, Blitbuffer.COLOR_DARK_GRAY)
+                paint_pill(bb, x, y, fill_w, bar_h, Blitbuffer.COLOR_GRAY_5)
             end
         end,
     }

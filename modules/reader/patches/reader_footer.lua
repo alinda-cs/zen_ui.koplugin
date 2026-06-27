@@ -280,7 +280,7 @@ local function apply_reader_footer()
     ReaderFooter.updateFooterContainer = function(self)
         orig_updateFooterContainer(self)
         if self.progress_bar then
-            self.progress_bar.fillcolor = Blitbuffer.COLOR_BLACK
+            self.progress_bar.fillcolor = Blitbuffer.COLOR_GRAY_5
         end
         if not is_lcr_alongside(self) then
             -- Remove any stale left container from a previous mode.
