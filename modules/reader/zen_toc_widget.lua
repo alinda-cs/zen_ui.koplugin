@@ -404,7 +404,7 @@ function ZenTocWidget:_onTap(ges)
         return true
     end
 
-    -- Tap on the page_number footer chevrons / center (prev / next / go-to-page)
+    -- Tap on the page_number footer chevrons; center label is display-only.
     local zone = self:_footerZone(p)
     if zone == "left" then
         self:_gotoTocPage((self._toc_page or 1) - 1)
@@ -413,7 +413,6 @@ function ZenTocWidget:_onTap(ges)
         self:_gotoTocPage((self._toc_page or 1) + 1)
         return true
     elseif zone == "center" then
-        self:_showGotoDialog()
         return true
     end
 
@@ -438,7 +437,8 @@ end
 -- Hold on a page_number footer chevron → skip back / forward (or to ends).
 function ZenTocWidget:_onHold(ges)
     local zone = self:_footerZone(ges.pos)
-    if not zone or zone == "center" then return false end
+    if zone == "center" then return true end
+    if not zone then return false end
     local skip = pager.getHoldSkip()
     local page = self._toc_page or 1
     if zone == "left" then
@@ -449,28 +449,6 @@ function ZenTocWidget:_onHold(ges)
         self:_gotoTocPage(target)
     end
     return true
-end
-
--- Numeric "Go to page" dialog for the page_number footer center tap.
-function ZenTocWidget:_showGotoDialog()
-    local createZenDialog = require("common/ui/zen_dialog")
-    local nb     = self._nb_pages or 1
-    local dialog = createZenDialog{
-        title       = "Go to page",
-        input       = "",
-        input_type  = "number",
-        input_hint  = "1 - " .. tostring(nb),
-        button_text = "\u{F124} Go",
-        button_callback = function(dialog)
-            local pnum = tonumber(dialog:getInputText())
-            if pnum and pnum >= 1 and pnum <= nb then
-                UIManager:close(dialog)
-                self:_gotoTocPage(math.floor(pnum))
-            end
-        end,
-    }
-    UIManager:show(dialog)
-    dialog:onShowKeyboard()
 end
 
 function ZenTocWidget:_onSwipe(ges)

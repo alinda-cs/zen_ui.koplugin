@@ -50,6 +50,7 @@ rsync -a \
   --exclude '.gitignore' \
   --exclude '*.zip' \
   --exclude '*.sh' \
+  --include 'LICENSE.md' \
   --exclude '*.md' \
   --exclude '*_includes/' \
   --exclude '_config.yml' \

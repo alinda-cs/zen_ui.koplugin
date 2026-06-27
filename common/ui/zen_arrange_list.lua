@@ -131,6 +131,21 @@ local function suppress_footer_jump_buttons(sort_widget)
     hide_button_icon(sort_widget.footer_last_down)
 end
 
+local function suppress_footer_page_button(sort_widget)
+    local button = sort_widget and sort_widget.footer_page
+    if not button then return end
+    button.call_hold_input_on_tap = false
+    button.tap_input = nil
+    button.tap_input_func = nil
+    button.hold_input = nil
+    button.hold_input_func = nil
+    button.callback = nil
+    button:disableWithoutDimming()
+    button.onTapSelectButton = function() return true end
+    button.onHoldSelectButton = function() return true end
+    button.onHoldReleaseSelectButton = function() return true end
+end
+
 local function item_order_key(item)
     if type(item) ~= "table" then return item end
     local key = item.orig_item
@@ -685,6 +700,7 @@ show_submenu = function(title, items, refresh, opts)
     end
     suppress_footer_cancel(sort_widget.footer_cancel)
     suppress_footer_jump_buttons(sort_widget)
+    suppress_footer_page_button(sort_widget)
     sync_footer_ok(sort_widget)
     apply_icon_rows(sort_widget)
     install_submenu_tap_handlers(sort_widget)
@@ -696,6 +712,7 @@ show_submenu = function(title, items, refresh, opts)
         suppress_page_centering(self)
         suppress_footer_cancel(self.footer_cancel)
         suppress_footer_jump_buttons(self)
+        suppress_footer_page_button(self)
         sync_footer_ok(self)
         sync_done_button(self, menu_proxy, opts)
         apply_icon_rows(self)
@@ -832,6 +849,7 @@ function M.show(opts)
         sync_footer_cancel(sort_widget)
     end
     suppress_footer_jump_buttons(sort_widget)
+    suppress_footer_page_button(sort_widget)
     sync_footer_ok(sort_widget)
     apply_icon_rows(sort_widget)
     install_root_tap_handlers(sort_widget)
@@ -847,6 +865,7 @@ function M.show(opts)
             sync_footer_cancel(self)
         end
         suppress_footer_jump_buttons(self)
+        suppress_footer_page_button(self)
         sync_footer_ok(self)
         apply_icon_rows(self)
         install_root_tap_handlers(self)

@@ -88,26 +88,6 @@ local function showMenuPicker(opts)
         return "center"
     end
 
-    local function showGoToPage()
-        local createZenDialog = require("common/ui/zen_dialog")
-        local input_dialog = createZenDialog{
-            title           = _("Go to page"),
-            input           = "",
-            input_type      = "number",
-            input_hint      = "1 - " .. tostring(total_pages),
-            button_text     = "\u{F124} " .. _("Go"),
-            button_callback = function(input_dialog)
-                local page = tonumber(input_dialog:getInputText())
-                if page and page >= 1 and page <= total_pages then
-                    UIManager:close(input_dialog)
-                    goToPage(math.floor(page))
-                end
-            end,
-        }
-        UIManager:show(input_dialog)
-        input_dialog:onShowKeyboard()
-    end
-
     local function handlePageNumberTap(gx, gy)
         if not inPageNumberBar(gx, gy) then return false end
         local zone = pageNumberZone(gx)
@@ -115,8 +95,6 @@ local function showMenuPicker(opts)
             goToPage(cur_page > 1 and cur_page - 1 or total_pages)
         elseif zone == "right" then
             goToPage(cur_page < total_pages and cur_page + 1 or 1)
-        else
-            showGoToPage()
         end
         return true
     end
@@ -133,7 +111,7 @@ local function showMenuPicker(opts)
             goToPage(skip == "ends" and total_pages or math.min(total_pages, cur_page + (tonumber(skip) or 10)))
             return true
         end
-        return false
+        return true
     end
 
     local Picker = IC:extend{}
