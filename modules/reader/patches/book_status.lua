@@ -49,6 +49,16 @@ local function apply_book_status()
             end
         end
 
+        -- On key devices, a page-turn forward from this end-of-book screen opens
+        -- the library (same as tapping the home button).
+        if Device:hasKeys() then
+            self.key_events.ZenGoLibrary = { { Device.input.group.PgFwd } }
+            self.onZenGoLibrary = function()
+                home_callback()
+                return true
+            end
+        end
+
         local close_btn = IconButton:new{
             icon = "chevron.left",
             width = close_size, height = close_size,
