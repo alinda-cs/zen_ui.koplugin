@@ -246,23 +246,6 @@ function ZenUI:init()
         self:saveConfig()
     end
 
-    -- First-run: suppress KOReader's two startup dialogs (quickstart guide book
-    -- and the "rendered in color" InfoMessage). Both are gated on G_reader_settings
-    -- keys; pre-setting them before KOReader checks skips the dialogs. Only set when
-    -- absent so we never clobber a choice the user already made.
-    if not self.config._meta.koreader_startup_dialogs_suppressed then
-        -- quickstart.lua:isShown() is true when shown_version >= force_show_version (2021070000).
-        if not G_reader_settings:has("quickstart_shown_version") then
-            G_reader_settings:saveSetting("quickstart_shown_version", 202603000000)
-        end
-        -- reader.lua color popup only fires when this key is absent.
-        if not G_reader_settings:has("color_rendering") then
-            G_reader_settings:makeTrue("color_rendering")
-        end
-        self.config._meta.koreader_startup_dialogs_suppressed = true
-        self:saveConfig()
-    end
-
     -- First-run: defaults for folder covers (gallery, bottom name, transparent bg)
     -- are now in config/defaults.lua under browser_folder_cover; no explicit init needed.
     -- Guard flag kept so this block doesn't run on every startup for existing installs.
