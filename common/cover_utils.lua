@@ -136,7 +136,7 @@ function CoverUtils.genCover(filepath, target_w, target_h, no_fallback)
 
     local title_area_h = split_y - 10
     local author_area_h = height - split_y - 10
-    local max_text_width = width - 16
+    local max_text_width = math.max(1, width - 16)
 
     local title_color = Blitbuffer.ColorRGB32(1, 68, 142, 255)
     local authors_color = Blitbuffer.ColorRGB32(8, 51, 93, 255)
