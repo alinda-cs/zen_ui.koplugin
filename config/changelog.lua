@@ -125,6 +125,7 @@ return {
         "Set reasonable max items for list mode - preventing crash",
         "Update end of book page to automatically mark finished and show next file button",
         "Update end of book page to return to library on page forward button/key",
+        "Update slightly darker color of all progress bars",
         "Remove go to page in scrollbar for menus like icon picker, plugin list etc",
         "Fix discolored status bar color on color e-ink devices",
         "Fix a crash on KOReader 2024",
