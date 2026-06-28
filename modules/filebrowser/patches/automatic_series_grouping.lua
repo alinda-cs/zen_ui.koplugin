@@ -115,7 +115,12 @@ local function apply_automatic_series_grouping()
             return cache[filename]
         end
 
-        local bookinfo = BookInfoManager:getDocProps(path)
+        local bookinfo
+        if type(BookInfoManager.getDocProps) == "function" then
+            bookinfo = BookInfoManager:getDocProps(path)
+        else
+            bookinfo = BookInfoManager:getBookInfo(path)
+        end
         if type(bookinfo) == "table" then
             item.doc_props = bookinfo
             return bookinfo
