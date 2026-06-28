@@ -878,7 +878,14 @@ local function apply_status_bar()
             end
         end
         UIManager:widgetRepaint(tb, tb.dimen.x, tb.dimen.y)
-        UIManager:setDirty(nil, "ui", tb.dimen)
+        -- CoverBrowser paints library/group pages dithered (show_parent.dithered).
+        -- A non-dithered "ui" refresh of this region renders whiter than the
+        -- surrounding dithered page, leaving a brighter box. Honor the top
+        -- widget's dithering hint so the region matches.
+        local stack = UIManager._window_stack
+        local top = stack and stack[#stack]
+        local refresh_dither = top and top.widget and top.widget.dithered or nil
+        UIManager:setDirty(nil, "ui", tb.dimen, refresh_dither)
     end
 
     -- Expose for cross-patch use. Stored on the plugin table so it is naturally
