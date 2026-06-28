@@ -695,19 +695,6 @@ function M.build(ctx)
                 end
             end,
         },
-        {
-            text = _("Center align buttons"),
-            checked_func = function()
-                return cfg.center_icons == true
-            end,
-            callback = function(touch_menu)
-                cfg.center_icons = cfg.center_icons ~= true
-                save_app_launcher()
-                if touch_menu and touch_menu.updateItems then
-                    touch_menu:updateItems(1)
-                end
-            end,
-        },
     }
 
     return {

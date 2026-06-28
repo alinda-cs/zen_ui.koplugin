@@ -337,7 +337,6 @@ local function apply_app_launcher()
         local entries, folder = current_entries(touch_menu)
         local cfg = Model.ensure(zen_plugin.config)
         local show_labels = cfg.show_labels ~= false
-        local center_icons = cfg.center_icons == true
         local panel_width = touch_menu.item_width
         local pad = Screen:scaleBySize(8)
         local inner_w = panel_width - pad * 2
@@ -353,6 +352,7 @@ local function apply_app_launcher()
         local label_face = library_font.getFace(label_size)
         local rows = {}
         local row_counts = {}
+        local row_widths = {}
         local layout_rows = {}
         local refs = { buttons = {}, layout_rows = layout_rows }
         local visible = {}
@@ -450,12 +450,15 @@ local function apply_app_launcher()
             if col == 1 then
                 rows[#rows + 1] = HorizontalGroup:new{ align = "top" }
                 row_counts[#rows] = 0
+                local remaining = #page_items - i + 1
+                local row_count = math.min(cols, remaining)
+                row_widths[#rows] = math.floor(inner_w / row_count)
                 layout_rows[#layout_rows + 1] = {}
             end
             row_counts[#rows] = row_counts[#rows] + 1
             local dim = not entry._app_back and not entry_available(entry, touch_menu, cfg)
             local cell = make_cell{
-                cell_w = cell_w,
+                cell_w = row_widths[#rows] or cell_w,
                 cell_h = cell_h,
                 pad = pad,
                 icon_size = icon_size,
@@ -481,16 +484,9 @@ local function apply_app_launcher()
         end
 
         for _i, row in ipairs(rows) do
-            local used = (row_counts[_i] or 0) * cell_w
-            local slack = math.max(0, panel_width - pad * 2 - used)
-            local lead, trail
-            if center_icons then
-                lead = pad + math.floor(slack / 2)
-                trail = panel_width - lead - used
-            else
-                lead = pad
-                trail = panel_width - pad - used
-            end
+            local used = (row_counts[_i] or 0) * (row_widths[_i] or cell_w)
+            local lead = pad
+            local trail = panel_width - pad - used
             table.insert(row, 1, HorizontalSpan:new{ width = lead })
             row[#row + 1] = HorizontalSpan:new{ width = math.max(0, trail) }
             panel[#panel + 1] = row
